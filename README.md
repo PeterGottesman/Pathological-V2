@@ -1,32 +1,42 @@
 # Pathological
 
-Pathological will be a distributed C++/Vulkan Path tracer.
+Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 
-This project takes it's name from [Pathological](https://www.github.com/PeterGottesman/Pathological). That was the first C++ project I wrote back in college, and was used a few years later as the base of a project for students Univeristy of Louisville's CSE 496: BACS Capstone.
+## Features
 
-This iteration of the project - "V2"- is being created solely to be used for the same University of Louisville class. I am initiating a complete rewrite with the goal of having improved code quality and improved performance through hardware acceleration. This should reflect this project's purpose as a teaching tool rather than being my toy intro to c++ project as the original was.
+- Hardware-accelerated ray tracing via Vulkan RT extensions
+- Cornell box scene with emissive and Lambertian materials
+- Headless rendering (no window required)
+- PNG output
 
-## Installing
+## Requirements
 
-### Dependencies 
-
-Dependencies for this project are managed by `vcpkg`, although the following should be installed externally
-- Vulkan SDK - See https://vulkan.lunarg.com/doc/sdk/latest/linux/getting_started.html for installation instructions & dependencies
-- Graphics Driver Supporting Vulkan Raytracing
+- Vulkan SDK 1.3+
+- NVIDIA GPU with ray tracing support
 - vcpkg
-- cmake
-- ninja-build
-- xinerama
-- xcursor
-- xorg
-- libglu1-mesa
-- pkg-config
+- CMake 3.20+
 
-### Compiling
+## Building
 
-TODO: Fill out this section more
-
-```
+```bash
 cmake --preset default
 cmake --build build
+```
+
+## Usage
+
+```bash
+./build/pathological [options]
+
+Options:
+  -W, --width   Image width (default: 1024)
+  -H, --height  Image height (default: 1024)
+  -s, --samples Samples per pixel (default: 256)
+  -o, --output  Output filename (default: output.png)
+```
+
+## Example
+
+```bash
+./build/pathological -W 1920 -H 1080 -s 512 -o render.png
 ```
