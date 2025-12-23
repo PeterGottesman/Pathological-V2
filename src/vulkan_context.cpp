@@ -143,7 +143,55 @@ void VulkanContext::selectPhysicalDevice() {
 }
 
 void VulkanContext::createLogicalDevice() {
-    // Implemented in next step
+    float queuePriority = 1.0f;
+    vk::DeviceQueueCreateInfo queueCreateInfo{
+        {},
+        m_queueFamilyIndex,
+        1,
+        &queuePriority
+    };
+
+    // Required extensions
+    std::vector<const char*> extensions = {
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    };
+
+    // Enable required features via pNext chain
+    vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+    vk::PhysicalDeviceAccelerationStructureFeaturesKHR accelStructFeatures{};
+    accelStructFeatures.accelerationStructure = VK_TRUE;
+    accelStructFeatures.pNext = &bufferDeviceAddressFeatures;
+
+    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures{};
+    rtPipelineFeatures.rayTracingPipeline = VK_TRUE;
+    rtPipelineFeatures.pNext = &accelStructFeatures;
+
+    vk::PhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+    indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+    indexingFeatures.pNext = &rtPipelineFeatures;
+
+    vk::PhysicalDeviceFeatures2 features2{};
+    features2.pNext = &indexingFeatures;
+
+    vk::DeviceCreateInfo deviceCreateInfo{
+        {},
+        queueCreateInfo,
+        {},
+        extensions,
+        nullptr
+    };
+    deviceCreateInfo.pNext = &features2;
+
+    m_device = vk::raii::Device(*m_physicalDevice, deviceCreateInfo);
+    m_queue = vk::raii::Queue(*m_device, m_queueFamilyIndex, 0);
 }
 
 void VulkanContext::createCommandPool() {
