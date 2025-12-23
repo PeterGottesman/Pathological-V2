@@ -238,7 +238,114 @@ void PathTracer::createAccelerationStructures() {
 }
 
 void PathTracer::createRayTracingPipeline() {
-    // Will implement later
+    // Load shaders
+    auto raygenCode = loadShader("shaders/raygen.rgen.spv");
+    auto missCode = loadShader("shaders/miss.rmiss.spv");
+    auto chitCode = loadShader("shaders/closesthit.rchit.spv");
+
+    auto raygenModule = createShaderModule(raygenCode);
+    auto missModule = createShaderModule(missCode);
+    auto chitModule = createShaderModule(chitCode);
+
+    // Shader stages
+    std::vector<vk::PipelineShaderStageCreateInfo> stages;
+
+    vk::PipelineShaderStageCreateInfo raygenStage{};
+    raygenStage.stage = vk::ShaderStageFlagBits::eRaygenKHR;
+    raygenStage.module = *raygenModule;
+    raygenStage.pName = "main";
+    stages.push_back(raygenStage);
+
+    vk::PipelineShaderStageCreateInfo missStage{};
+    missStage.stage = vk::ShaderStageFlagBits::eMissKHR;
+    missStage.module = *missModule;
+    missStage.pName = "main";
+    stages.push_back(missStage);
+
+    vk::PipelineShaderStageCreateInfo chitStage{};
+    chitStage.stage = vk::ShaderStageFlagBits::eClosestHitKHR;
+    chitStage.module = *chitModule;
+    chitStage.pName = "main";
+    stages.push_back(chitStage);
+
+    // Shader groups
+    std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
+
+    // Raygen group
+    vk::RayTracingShaderGroupCreateInfoKHR raygenGroup{};
+    raygenGroup.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
+    raygenGroup.generalShader = 0;
+    raygenGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
+    raygenGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+    raygenGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+    groups.push_back(raygenGroup);
+
+    // Miss group
+    vk::RayTracingShaderGroupCreateInfoKHR missGroup{};
+    missGroup.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
+    missGroup.generalShader = 1;
+    missGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
+    missGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+    missGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+    groups.push_back(missGroup);
+
+    // Hit group
+    vk::RayTracingShaderGroupCreateInfoKHR hitGroup{};
+    hitGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
+    hitGroup.generalShader = VK_SHADER_UNUSED_KHR;
+    hitGroup.closestHitShader = 2;
+    hitGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+    hitGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+    groups.push_back(hitGroup);
+
+    // Descriptor set layout
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {
+        {0, vk::DescriptorType::eAccelerationStructureKHR, 1, vk::ShaderStageFlagBits::eRaygenKHR},
+        {1, vk::DescriptorType::eStorageImage, 1, vk::ShaderStageFlagBits::eRaygenKHR},
+        {2, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eClosestHitKHR},
+        {3, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eClosestHitKHR},
+        {4, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eClosestHitKHR},
+        {5, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eClosestHitKHR},
+    };
+
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    m_descriptorSetLayout = vk::raii::DescriptorSetLayout(m_ctx.device(), layoutInfo);
+
+    // Pipeline layout
+    vk::PushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eRaygenKHR;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(PushConstants);
+
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.setLayoutCount = 1;
+    vk::DescriptorSetLayout setLayout = **m_descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = &setLayout;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+    m_pipelineLayout = vk::raii::PipelineLayout(m_ctx.device(), pipelineLayoutInfo);
+
+    // Create ray tracing pipeline
+    vk::RayTracingPipelineCreateInfoKHR pipelineInfo{};
+    pipelineInfo.stageCount = static_cast<uint32_t>(stages.size());
+    pipelineInfo.pStages = stages.data();
+    pipelineInfo.groupCount = static_cast<uint32_t>(groups.size());
+    pipelineInfo.pGroups = groups.data();
+    pipelineInfo.maxPipelineRayRecursionDepth = 1;
+    pipelineInfo.layout = **m_pipelineLayout;
+
+    m_pipeline = vk::raii::Pipeline(
+        m_ctx.device(),
+        nullptr,  // deferred operation
+        nullptr,  // pipeline cache
+        pipelineInfo
+    );
+
+    std::cout << "Ray tracing pipeline created" << std::endl;
 }
 
 void PathTracer::createShaderBindingTable() {
