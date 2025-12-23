@@ -499,7 +499,54 @@ void PathTracer::createDescriptorSets() {
 }
 
 void PathTracer::render(uint32_t samplesPerPixel) {
-    // Will implement later
+    std::cout << "Rendering " << m_width << "x" << m_height
+              << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
+
+    // Set up camera (looking into Cornell box)
+    PushConstants pc{};
+    pc.cameraPosition = glm::vec3(0.0f, 1.0f, 3.5f);
+    pc.fov = glm::radians(45.0f);
+
+    glm::vec3 target = glm::vec3(0.0f, 1.0f, 0.0f);
+    pc.cameraForward = glm::normalize(target - pc.cameraPosition);
+    pc.cameraRight = glm::normalize(glm::cross(pc.cameraForward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    pc.cameraUp = glm::cross(pc.cameraRight, pc.cameraForward);
+
+    pc.samplesPerPixel = samplesPerPixel;
+    pc.frameIndex = 0;
+    pc.maxBounces = 8;
+
+    m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
+        cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, **m_pipeline);
+
+        vk::DescriptorSet descSet = **m_descriptorSet;
+        cmd.bindDescriptorSets(
+            vk::PipelineBindPoint::eRayTracingKHR,
+            **m_pipelineLayout,
+            0,
+            descSet,
+            nullptr
+        );
+
+        cmd.pushConstants<PushConstants>(
+            **m_pipelineLayout,
+            vk::ShaderStageFlagBits::eRaygenKHR,
+            0,
+            pc
+        );
+
+        cmd.traceRaysKHR(
+            m_raygenRegion,
+            m_missRegion,
+            m_hitRegion,
+            m_callableRegion,
+            m_width,
+            m_height,
+            1
+        );
+    });
+
+    std::cout << "Rendering complete" << std::endl;
 }
 
 void PathTracer::saveImage(const std::string& filename) {
