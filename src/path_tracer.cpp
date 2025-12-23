@@ -404,7 +404,98 @@ void PathTracer::createShaderBindingTable() {
 }
 
 void PathTracer::createDescriptorSets() {
-    // Will implement later
+    // Create descriptor pool
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        {vk::DescriptorType::eAccelerationStructureKHR, 1},
+        {vk::DescriptorType::eStorageImage, 1},
+        {vk::DescriptorType::eStorageBuffer, 4},
+    };
+
+    vk::DescriptorPoolCreateInfo poolInfo{};
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+
+    m_descriptorPool = vk::raii::DescriptorPool(m_ctx.device(), poolInfo);
+
+    // Allocate descriptor set
+    vk::DescriptorSetAllocateInfo allocInfo{};
+    allocInfo.descriptorPool = **m_descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    vk::DescriptorSetLayout setLayout = **m_descriptorSetLayout;
+    allocInfo.pSetLayouts = &setLayout;
+
+    auto sets = vk::raii::DescriptorSets(m_ctx.device(), allocInfo);
+    m_descriptorSet = std::move(sets[0]);
+
+    // Update descriptor set
+    vk::WriteDescriptorSetAccelerationStructureKHR asInfo{};
+    asInfo.accelerationStructureCount = 1;
+    vk::AccelerationStructureKHR tlas = **m_tlas;
+    asInfo.pAccelerationStructures = &tlas;
+
+    vk::DescriptorImageInfo imageInfo{};
+    imageInfo.imageView = **m_outputImageView;
+    imageInfo.imageLayout = vk::ImageLayout::eGeneral;
+
+    vk::DescriptorBufferInfo vertexInfo{m_scene.vertexBuffer().buffer(), 0, VK_WHOLE_SIZE};
+    vk::DescriptorBufferInfo indexInfo{m_scene.indexBuffer().buffer(), 0, VK_WHOLE_SIZE};
+    vk::DescriptorBufferInfo materialInfo{m_scene.materialBuffer().buffer(), 0, VK_WHOLE_SIZE};
+    vk::DescriptorBufferInfo matIndexInfo{m_scene.materialIndexBuffer().buffer(), 0, VK_WHOLE_SIZE};
+
+    std::vector<vk::WriteDescriptorSet> writes;
+
+    vk::WriteDescriptorSet asWrite{};
+    asWrite.dstSet = **m_descriptorSet;
+    asWrite.dstBinding = 0;
+    asWrite.descriptorCount = 1;
+    asWrite.descriptorType = vk::DescriptorType::eAccelerationStructureKHR;
+    asWrite.pNext = &asInfo;
+    writes.push_back(asWrite);
+
+    vk::WriteDescriptorSet imageWrite{};
+    imageWrite.dstSet = **m_descriptorSet;
+    imageWrite.dstBinding = 1;
+    imageWrite.descriptorCount = 1;
+    imageWrite.descriptorType = vk::DescriptorType::eStorageImage;
+    imageWrite.pImageInfo = &imageInfo;
+    writes.push_back(imageWrite);
+
+    vk::WriteDescriptorSet vertexWrite{};
+    vertexWrite.dstSet = **m_descriptorSet;
+    vertexWrite.dstBinding = 2;
+    vertexWrite.descriptorCount = 1;
+    vertexWrite.descriptorType = vk::DescriptorType::eStorageBuffer;
+    vertexWrite.pBufferInfo = &vertexInfo;
+    writes.push_back(vertexWrite);
+
+    vk::WriteDescriptorSet indexWrite{};
+    indexWrite.dstSet = **m_descriptorSet;
+    indexWrite.dstBinding = 3;
+    indexWrite.descriptorCount = 1;
+    indexWrite.descriptorType = vk::DescriptorType::eStorageBuffer;
+    indexWrite.pBufferInfo = &indexInfo;
+    writes.push_back(indexWrite);
+
+    vk::WriteDescriptorSet materialWrite{};
+    materialWrite.dstSet = **m_descriptorSet;
+    materialWrite.dstBinding = 4;
+    materialWrite.descriptorCount = 1;
+    materialWrite.descriptorType = vk::DescriptorType::eStorageBuffer;
+    materialWrite.pBufferInfo = &materialInfo;
+    writes.push_back(materialWrite);
+
+    vk::WriteDescriptorSet matIndexWrite{};
+    matIndexWrite.dstSet = **m_descriptorSet;
+    matIndexWrite.dstBinding = 5;
+    matIndexWrite.descriptorCount = 1;
+    matIndexWrite.descriptorType = vk::DescriptorType::eStorageBuffer;
+    matIndexWrite.pBufferInfo = &matIndexInfo;
+    writes.push_back(matIndexWrite);
+
+    m_ctx.device().updateDescriptorSets(writes, nullptr);
+
+    std::cout << "Descriptor sets created" << std::endl;
 }
 
 void PathTracer::render(uint32_t samplesPerPixel) {
