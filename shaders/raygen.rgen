@@ -1,5 +1,94 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 
+#include "common.glsl"
+
+layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
+layout(binding = 1, set = 0, rgba8) uniform image2D outputImage;
+
+layout(push_constant) uniform PushConstants {
+    vec3 cameraPosition;
+    float fov;
+    vec3 cameraForward;
+    uint samplesPerPixel;
+    vec3 cameraRight;
+    uint frameIndex;
+    vec3 cameraUp;
+    uint maxBounces;
+} pc;
+
+layout(location = 0) rayPayloadEXT RayPayload payload;
+
 void main() {
+    const uvec2 pixelCoord = gl_LaunchIDEXT.xy;
+    const uvec2 imageSize = gl_LaunchSizeEXT.xy;
+
+    uint seed = pixelCoord.x + pixelCoord.y * imageSize.x + pc.frameIndex * imageSize.x * imageSize.y;
+
+    vec3 accumulatedColor = vec3(0.0);
+
+    for (uint s = 0; s < pc.samplesPerPixel; s++) {
+        // Jittered pixel position for anti-aliasing
+        float jitterX = randomFloat(seed) - 0.5;
+        float jitterY = randomFloat(seed) - 0.5;
+
+        vec2 uv = (vec2(pixelCoord) + vec2(0.5) + vec2(jitterX, jitterY)) / vec2(imageSize);
+        uv = uv * 2.0 - 1.0; // Convert to [-1, 1]
+
+        float aspect = float(imageSize.x) / float(imageSize.y);
+        float tanHalfFov = tan(pc.fov * 0.5);
+
+        vec3 rayDir = normalize(
+            pc.cameraForward +
+            pc.cameraRight * uv.x * tanHalfFov * aspect +
+            pc.cameraUp * uv.y * tanHalfFov
+        );
+
+        // Initialize ray
+        payload.origin = pc.cameraPosition;
+        payload.direction = rayDir;
+        payload.color = vec3(0.0);
+        payload.seed = seed;
+        payload.done = false;
+
+        vec3 throughput = vec3(1.0);
+        vec3 color = vec3(0.0);
+
+        for (uint bounce = 0; bounce < pc.maxBounces; bounce++) {
+            traceRayEXT(
+                topLevelAS,
+                gl_RayFlagsOpaqueEXT,
+                0xFF,
+                0, // sbtRecordOffset
+                0, // sbtRecordStride
+                0, // missIndex
+                payload.origin,
+                0.001,
+                payload.direction,
+                10000.0,
+                0  // payload location
+            );
+
+            seed = payload.seed;
+
+            if (payload.done) {
+                color += throughput * payload.color;
+                break;
+            }
+
+            throughput *= payload.color;
+        }
+
+        accumulatedColor += color;
+    }
+
+    vec3 finalColor = accumulatedColor / float(pc.samplesPerPixel);
+
+    // Gamma correction
+    finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
+    // Clamp to valid range
+    finalColor = clamp(finalColor, 0.0, 1.0);
+
+    imageStore(outputImage, ivec2(pixelCoord), vec4(finalColor, 1.0));
 }
