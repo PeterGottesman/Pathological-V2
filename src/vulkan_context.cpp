@@ -195,13 +195,46 @@ void VulkanContext::createLogicalDevice() {
 }
 
 void VulkanContext::createCommandPool() {
-    // Implemented in next step
+    vk::CommandPoolCreateInfo poolInfo{
+        vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+        m_queueFamilyIndex
+    };
+
+    m_commandPool = vk::raii::CommandPool(*m_device, poolInfo);
 }
 
 void VulkanContext::createAllocator() {
-    // Implemented in next step
+    VmaAllocatorCreateInfo allocatorInfo{};
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    allocatorInfo.physicalDevice = **m_physicalDevice;
+    allocatorInfo.device = **m_device;
+    allocatorInfo.instance = **m_instance;
+    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+
+    if (vmaCreateAllocator(&allocatorInfo, &m_allocator) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create VMA allocator");
+    }
 }
 
 void VulkanContext::executeCommands(std::function<void(vk::raii::CommandBuffer&)> func) const {
-    // Implemented later
+    vk::CommandBufferAllocateInfo allocInfo{
+        **m_commandPool,
+        vk::CommandBufferLevel::ePrimary,
+        1
+    };
+
+    auto commandBuffers = vk::raii::CommandBuffers(*m_device, allocInfo);
+    auto& cmd = commandBuffers[0];
+
+    cmd.begin(vk::CommandBufferBeginInfo{vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    func(cmd);
+    cmd.end();
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.commandBufferCount = 1;
+    vk::CommandBuffer cmdBuf = *cmd;
+    submitInfo.pCommandBuffers = &cmdBuf;
+
+    m_queue->submit(submitInfo);
+    m_queue->waitIdle();
 }
