@@ -4,6 +4,9 @@
 #include <stdexcept>
 #include <iostream>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 PathTracer::PathTracer(const VulkanContext& ctx, const Scene& scene,
                        uint32_t width, uint32_t height)
     : m_ctx(ctx), m_scene(scene), m_width(width), m_height(height)
@@ -550,7 +553,72 @@ void PathTracer::render(uint32_t samplesPerPixel) {
 }
 
 void PathTracer::saveImage(const std::string& filename) {
-    // Will implement later
+    std::cout << "Saving image to " << filename << "..." << std::endl;
+
+    // Create staging buffer
+    vk::DeviceSize imageSize = m_width * m_height * 4;
+    Buffer stagingBuffer(
+        m_ctx.allocator(),
+        imageSize,
+        vk::BufferUsageFlagBits::eTransferDst,
+        VMA_MEMORY_USAGE_GPU_TO_CPU,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
+    );
+
+    // Copy image to staging buffer
+    m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
+        // Transition image to transfer src
+        vk::ImageMemoryBarrier barrier{};
+        barrier.oldLayout = vk::ImageLayout::eGeneral;
+        barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = m_outputImage;
+        barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+        barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+        cmd.pipelineBarrier(
+            vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            nullptr, nullptr, barrier
+        );
+
+        // Copy image to buffer
+        vk::BufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset.x = 0;
+        region.imageOffset.y = 0;
+        region.imageOffset.z = 0;
+        region.imageExtent.width = m_width;
+        region.imageExtent.height = m_height;
+        region.imageExtent.depth = 1;
+
+        cmd.copyImageToBuffer(
+            m_outputImage,
+            vk::ImageLayout::eTransferSrcOptimal,
+            stagingBuffer.buffer(),
+            region
+        );
+    });
+
+    // Read back and save
+    uint8_t* data = static_cast<uint8_t*>(stagingBuffer.map());
+    stbi_write_png(filename.c_str(), m_width, m_height, 4, data, m_width * 4);
+    stagingBuffer.unmap();
+
+    std::cout << "Image saved" << std::endl;
 }
 
 std::vector<char> PathTracer::loadShader(const std::string& filename) {
