@@ -17,6 +17,7 @@ find_package(Stb REQUIRED)
 add_executable(pathological
     src/main.cpp
     src/vulkan_context.cpp
+    src/scene.cpp
 )
 
 target_link_libraries(pathological PRIVATE
