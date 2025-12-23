@@ -66,7 +66,80 @@ void VulkanContext::createInstance() {
 }
 
 void VulkanContext::selectPhysicalDevice() {
-    // Implemented in next step
+    auto devices = vk::raii::PhysicalDevices(*m_instance);
+
+    if (devices.empty()) {
+        throw std::runtime_error("No Vulkan-capable GPU found");
+    }
+
+    const std::vector<const char*> requiredExtensions = {
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    };
+
+    for (const auto& device : devices) {
+        auto properties = device.getProperties();
+
+        // Prefer NVIDIA discrete GPU
+        if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
+            continue;
+        }
+
+        // Check for required extensions
+        auto availableExtensions = device.enumerateDeviceExtensionProperties();
+        bool hasAllExtensions = true;
+
+        for (const char* required : requiredExtensions) {
+            bool found = false;
+            for (const auto& available : availableExtensions) {
+                if (strcmp(required, available.extensionName) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                hasAllExtensions = false;
+                break;
+            }
+        }
+
+        if (!hasAllExtensions) {
+            continue;
+        }
+
+        // Check for compute queue
+        auto queueFamilies = device.getQueueFamilyProperties();
+        bool hasComputeQueue = false;
+
+        for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
+            if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute) {
+                m_queueFamilyIndex = i;
+                hasComputeQueue = true;
+                break;
+            }
+        }
+
+        if (!hasComputeQueue) {
+            continue;
+        }
+
+        // Found a suitable device
+        m_physicalDevice = vk::raii::PhysicalDevice(device);
+
+        // Get ray tracing properties using StructureChain
+        auto props2Chain = m_physicalDevice->getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        m_rtProperties = props2Chain.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+
+        std::cout << "Selected GPU: " << properties.deviceName << std::endl;
+        return;
+    }
+
+    throw std::runtime_error("No suitable GPU with ray tracing support found");
 }
 
 void VulkanContext::createLogicalDevice() {
