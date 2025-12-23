@@ -83,7 +83,158 @@ void PathTracer::createOutputImage() {
 }
 
 void PathTracer::createAccelerationStructures() {
-    // Will implement in next task
+    // === Build BLAS ===
+
+    vk::DeviceAddress vertexAddress = m_scene.vertexBuffer().deviceAddress(*m_ctx.device());
+    vk::DeviceAddress indexAddress = m_scene.indexBuffer().deviceAddress(*m_ctx.device());
+
+    vk::AccelerationStructureGeometryTrianglesDataKHR trianglesData{};
+    trianglesData.vertexFormat = vk::Format::eR32G32B32Sfloat;
+    trianglesData.vertexData.deviceAddress = vertexAddress;
+    trianglesData.vertexStride = sizeof(Vertex);
+    trianglesData.maxVertex = static_cast<uint32_t>(m_scene.indexCount());
+    trianglesData.indexType = vk::IndexType::eUint32;
+    trianglesData.indexData.deviceAddress = indexAddress;
+
+    vk::AccelerationStructureGeometryKHR geometry{};
+    geometry.geometryType = vk::GeometryTypeKHR::eTriangles;
+    geometry.flags = vk::GeometryFlagBitsKHR::eOpaque;
+    geometry.geometry.triangles = trianglesData;
+
+    vk::AccelerationStructureBuildGeometryInfoKHR buildInfo{};
+    buildInfo.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
+    buildInfo.flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
+    buildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    buildInfo.geometryCount = 1;
+    buildInfo.pGeometries = &geometry;
+
+    uint32_t primitiveCount = m_scene.triangleCount();
+
+    auto sizeInfo = m_ctx.device().getAccelerationStructureBuildSizesKHR(
+        vk::AccelerationStructureBuildTypeKHR::eDevice,
+        buildInfo,
+        primitiveCount
+    );
+
+    // Create BLAS buffer
+    m_blasBuffer = std::make_unique<Buffer>(
+        m_ctx.allocator(),
+        sizeInfo.accelerationStructureSize,
+        vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
+        vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
+    // Create BLAS
+    vk::AccelerationStructureCreateInfoKHR blasCreateInfo{};
+    blasCreateInfo.buffer = m_blasBuffer->buffer();
+    blasCreateInfo.size = sizeInfo.accelerationStructureSize;
+    blasCreateInfo.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
+
+    m_blas = vk::raii::AccelerationStructureKHR(m_ctx.device(), blasCreateInfo);
+
+    // Create scratch buffer
+    Buffer scratchBuffer(
+        m_ctx.allocator(),
+        sizeInfo.buildScratchSize,
+        vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
+    buildInfo.dstAccelerationStructure = **m_blas;
+    buildInfo.scratchData.deviceAddress = scratchBuffer.deviceAddress(*m_ctx.device());
+
+    vk::AccelerationStructureBuildRangeInfoKHR rangeInfo{};
+    rangeInfo.primitiveCount = primitiveCount;
+    rangeInfo.primitiveOffset = 0;
+    rangeInfo.firstVertex = 0;
+    rangeInfo.transformOffset = 0;
+
+    const vk::AccelerationStructureBuildRangeInfoKHR* pRangeInfo = &rangeInfo;
+
+    m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
+        cmd.buildAccelerationStructuresKHR(buildInfo, pRangeInfo);
+    });
+
+    // === Build TLAS ===
+
+    vk::DeviceAddress blasAddress = m_ctx.device().getAccelerationStructureAddressKHR({**m_blas});
+
+    vk::AccelerationStructureInstanceKHR instance{};
+    instance.transform.matrix[0][0] = 1.0f;
+    instance.transform.matrix[1][1] = 1.0f;
+    instance.transform.matrix[2][2] = 1.0f;
+    instance.instanceCustomIndex = 0;
+    instance.mask = 0xFF;
+    instance.instanceShaderBindingTableRecordOffset = 0;
+    instance.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsKHR::eTriangleFacingCullDisable);
+    instance.accelerationStructureReference = blasAddress;
+
+    m_instanceBuffer = std::make_unique<Buffer>(
+        m_ctx.allocator(),
+        sizeof(vk::AccelerationStructureInstanceKHR),
+        vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+        vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_CPU_TO_GPU,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+    );
+    m_instanceBuffer->upload(&instance, 1);
+
+    vk::AccelerationStructureGeometryInstancesDataKHR instancesData{};
+    instancesData.arrayOfPointers = VK_FALSE;
+    instancesData.data.deviceAddress = m_instanceBuffer->deviceAddress(*m_ctx.device());
+
+    vk::AccelerationStructureGeometryKHR tlasGeometry{};
+    tlasGeometry.geometryType = vk::GeometryTypeKHR::eInstances;
+    tlasGeometry.geometry.instances = instancesData;
+
+    vk::AccelerationStructureBuildGeometryInfoKHR tlasBuildInfo{};
+    tlasBuildInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+    tlasBuildInfo.flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
+    tlasBuildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    tlasBuildInfo.geometryCount = 1;
+    tlasBuildInfo.pGeometries = &tlasGeometry;
+
+    auto tlasSizeInfo = m_ctx.device().getAccelerationStructureBuildSizesKHR(
+        vk::AccelerationStructureBuildTypeKHR::eDevice,
+        tlasBuildInfo,
+        1u
+    );
+
+    m_tlasBuffer = std::make_unique<Buffer>(
+        m_ctx.allocator(),
+        tlasSizeInfo.accelerationStructureSize,
+        vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
+        vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
+    vk::AccelerationStructureCreateInfoKHR tlasCreateInfo{};
+    tlasCreateInfo.buffer = m_tlasBuffer->buffer();
+    tlasCreateInfo.size = tlasSizeInfo.accelerationStructureSize;
+    tlasCreateInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+
+    m_tlas = vk::raii::AccelerationStructureKHR(m_ctx.device(), tlasCreateInfo);
+
+    Buffer tlasScratchBuffer(
+        m_ctx.allocator(),
+        tlasSizeInfo.buildScratchSize,
+        vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
+    tlasBuildInfo.dstAccelerationStructure = **m_tlas;
+    tlasBuildInfo.scratchData.deviceAddress = tlasScratchBuffer.deviceAddress(*m_ctx.device());
+
+    vk::AccelerationStructureBuildRangeInfoKHR tlasRangeInfo{};
+    tlasRangeInfo.primitiveCount = 1;
+    const vk::AccelerationStructureBuildRangeInfoKHR* pTlasRangeInfo = &tlasRangeInfo;
+
+    m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
+        cmd.buildAccelerationStructuresKHR(tlasBuildInfo, pTlasRangeInfo);
+    });
+
+    std::cout << "Acceleration structures built successfully" << std::endl;
 }
 
 void PathTracer::createRayTracingPipeline() {
