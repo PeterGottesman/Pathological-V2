@@ -349,7 +349,58 @@ void PathTracer::createRayTracingPipeline() {
 }
 
 void PathTracer::createShaderBindingTable() {
-    // Will implement later
+    const auto& rtProps = m_ctx.rtProperties();
+    uint32_t handleSize = rtProps.shaderGroupHandleSize;
+    uint32_t handleAlignment = rtProps.shaderGroupHandleAlignment;
+    uint32_t baseAlignment = rtProps.shaderGroupBaseAlignment;
+
+    uint32_t handleSizeAligned = (handleSize + handleAlignment - 1) & ~(handleAlignment - 1);
+
+    uint32_t groupCount = 3; // raygen, miss, hit
+    uint32_t sbtSize = groupCount * handleSizeAligned;
+
+    // Get shader group handles
+    auto handleData = m_pipeline->getRayTracingShaderGroupHandlesKHR<uint8_t>(
+        0, groupCount, groupCount * handleSize
+    );
+    std::vector<uint8_t> handles = handleData;
+
+    // Create SBT buffer
+    m_sbtBuffer = std::make_unique<Buffer>(
+        m_ctx.allocator(),
+        sbtSize,
+        vk::BufferUsageFlagBits::eShaderBindingTableKHR |
+        vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_CPU_TO_GPU,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+    );
+
+    // Copy handles to SBT buffer with proper alignment
+    uint8_t* sbtData = static_cast<uint8_t*>(m_sbtBuffer->map());
+    for (uint32_t i = 0; i < groupCount; i++) {
+        std::memcpy(sbtData + i * handleSizeAligned,
+                    handles.data() + i * handleSize,
+                    handleSize);
+    }
+    m_sbtBuffer->unmap();
+
+    vk::DeviceAddress sbtAddress = m_sbtBuffer->deviceAddress(*m_ctx.device());
+
+    m_raygenRegion.deviceAddress = sbtAddress;
+    m_raygenRegion.stride = handleSizeAligned;
+    m_raygenRegion.size = handleSizeAligned;
+
+    m_missRegion.deviceAddress = sbtAddress + handleSizeAligned;
+    m_missRegion.stride = handleSizeAligned;
+    m_missRegion.size = handleSizeAligned;
+
+    m_hitRegion.deviceAddress = sbtAddress + 2 * handleSizeAligned;
+    m_hitRegion.stride = handleSizeAligned;
+    m_hitRegion.size = handleSizeAligned;
+
+    m_callableRegion = vk::StridedDeviceAddressRegionKHR{};
+
+    std::cout << "Shader binding table created" << std::endl;
 }
 
 void PathTracer::createDescriptorSets() {
