@@ -82,13 +82,18 @@ void VulkanContext::selectPhysicalDevice() {
         VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     };
 
+    std::cout << "Found devices: " << devices.size() << std::endl;
+
     for (const auto& device : devices) {
         auto properties = device.getProperties();
 
+        std::cout << "Checking GPU: " << properties.deviceName << std::endl;
+
         // Prefer NVIDIA discrete GPU
-        if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
-            continue;
-        }
+        //if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
+	//    std::cout << "Skipping, not a discrete gpu" << std::endl;
+        //    continue;
+        //}
 
         // Check for required extensions
         auto availableExtensions = device.enumerateDeviceExtensionProperties();
@@ -103,6 +108,7 @@ void VulkanContext::selectPhysicalDevice() {
                 }
             }
             if (!found) {
+		std::cout << "Skipping, missing required extension: " << required << std::endl;
                 hasAllExtensions = false;
                 break;
             }
