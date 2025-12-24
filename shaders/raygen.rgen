@@ -34,6 +34,7 @@ void main() {
 
         vec2 uv = (vec2(pixelCoord) + vec2(0.5) + vec2(jitterX, jitterY)) / vec2(imageSize);
         uv = uv * 2.0 - 1.0; // Convert to [-1, 1]
+        uv.y = -uv.y; // Flip Y: image top (y=0) should use positive camera up
 
         float aspect = float(imageSize.x) / float(imageSize.y);
         float tanHalfFov = tan(pc.fov * 0.5);
