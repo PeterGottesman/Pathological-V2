@@ -22,18 +22,20 @@ public:
 
 private:
     SceneGraph(SceneBuilder builder,
-               std::optional<tinygltf::Animation> animation);
+               std::optional<tinygltf::Animation> animation,
+               std::shared_ptr<tinygltf::Model> model);
 
     SceneBuilder m_builder;
     std::optional<tinygltf::Animation> m_animation;
+    std::shared_ptr<tinygltf::Model> m_model;
 
     // Animation sampling helpers
-    static glm::vec3 sampleVec3Channel(const tinygltf::Animation& anim,
-                                       const tinygltf::AnimationChannel& channel,
-                                       float time);
-    static glm::quat sampleQuatChannel(const tinygltf::Animation& anim,
-                                      const tinygltf::AnimationChannel& channel,
-                                      float time);
+    glm::vec3 sampleVec3Channel(const tinygltf::AnimationChannel& channel,
+                                 int samplerIdx,
+                                 float time);
+    glm::quat sampleQuatChannel(const tinygltf::AnimationChannel& channel,
+                                int samplerIdx,
+                                float time);
 };
 
 // Helper function to load glTF file

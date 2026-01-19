@@ -1,0 +1,545 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Cornell Box Animated Generator"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Cornell Box Animated",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Floor",
+      "mesh": 0
+    },
+    {
+      "name": "Ceiling",
+      "mesh": 1
+    },
+    {
+      "name": "Back Wall",
+      "mesh": 2
+    },
+    {
+      "name": "Left Wall",
+      "mesh": 3
+    },
+    {
+      "name": "Right Wall",
+      "mesh": 4
+    },
+    {
+      "name": "Ceiling Light",
+      "mesh": 5,
+      "translation": [
+        0.0,
+        0.99,
+        0.0
+      ]
+    },
+    {
+      "name": "Short Box",
+      "mesh": 6,
+      "translation": [
+        0.35,
+        -0.75,
+        0.2
+      ]
+    },
+    {
+      "name": "Tall Box",
+      "mesh": 7,
+      "translation": [
+        -0.35,
+        -0.5,
+        -0.2
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Floor",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Ceiling",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Back Wall",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Left Wall",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 6
+          },
+          "indices": 7,
+          "material": 1
+        }
+      ]
+    },
+    {
+      "name": "Right Wall",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 8
+          },
+          "indices": 9,
+          "material": 2
+        }
+      ]
+    },
+    {
+      "name": "Ceiling Light",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 10
+          },
+          "indices": 11,
+          "material": 3
+        }
+      ]
+    },
+    {
+      "name": "Short Box",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 12
+          },
+          "indices": 13,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Tall Box",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 14
+          },
+          "indices": 15,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "White",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.8,
+          0.8,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "Red",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.1,
+          0.1,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "Green",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.1,
+          0.8,
+          0.1,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "Light",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "emissiveFactor": [
+        10.0,
+        10.0,
+        10.0
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5121,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5121,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5121,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5121,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5121,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 11,
+      "componentType": 5121,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 12,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 13,
+      "componentType": 5121,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 14,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 15,
+      "componentType": 5121,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 16,
+      "componentType": 5126,
+      "count": 9,
+      "type": "SCALAR",
+      "min": [
+        0.0
+      ],
+      "max": [
+        4.0
+      ]
+    },
+    {
+      "bufferView": 17,
+      "componentType": 5126,
+      "count": 9,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 18,
+      "componentType": 5126,
+      "count": 9,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 19,
+      "componentType": 5126,
+      "count": 9,
+      "type": "VEC3"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 48,
+      "byteLength": 6
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 48,
+      "byteLength": 6
+    },
+    {
+      "buffer": 2,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 2,
+      "byteOffset": 48,
+      "byteLength": 6
+    },
+    {
+      "buffer": 3,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 3,
+      "byteOffset": 48,
+      "byteLength": 6
+    },
+    {
+      "buffer": 4,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 4,
+      "byteOffset": 48,
+      "byteLength": 6
+    },
+    {
+      "buffer": 5,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 5,
+      "byteOffset": 48,
+      "byteLength": 6
+    },
+    {
+      "buffer": 6,
+      "byteOffset": 0,
+      "byteLength": 288
+    },
+    {
+      "buffer": 6,
+      "byteOffset": 288,
+      "byteLength": 36
+    },
+    {
+      "buffer": 7,
+      "byteOffset": 0,
+      "byteLength": 288
+    },
+    {
+      "buffer": 7,
+      "byteOffset": 288,
+      "byteLength": 36
+    },
+    {
+      "buffer": 8,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 9,
+      "byteOffset": 0,
+      "byteLength": 108
+    },
+    {
+      "buffer": 10,
+      "byteOffset": 0,
+      "byteLength": 108
+    },
+    {
+      "buffer": 11,
+      "byteOffset": 0,
+      "byteLength": 108
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 54,
+      "uri": "data:application/octet-stream;base64,AACAvwAAgL8AAIC/AACAPwAAgL8AAIC/AACAPwAAgL8AAIA/AACAvwAAgL8AAIA/AAECAAID"
+    },
+    {
+      "byteLength": 54,
+      "uri": "data:application/octet-stream;base64,AACAvwAAgD8AAIC/AACAvwAAgD8AAIA/AACAPwAAgD8AAIA/AACAPwAAgD8AAIC/AAECAAID"
+    },
+    {
+      "byteLength": 54,
+      "uri": "data:application/octet-stream;base64,AACAvwAAgL8AAIC/AACAvwAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgL8AAIC/AAECAAID"
+    },
+    {
+      "byteLength": 54,
+      "uri": "data:application/octet-stream;base64,AACAvwAAgL8AAIC/AACAvwAAgL8AAIA/AACAvwAAgD8AAIA/AACAvwAAgD8AAIC/AAECAAID"
+    },
+    {
+      "byteLength": 54,
+      "uri": "data:application/octet-stream;base64,AACAPwAAgL8AAIC/AACAPwAAgD8AAIC/AACAPwAAgD8AAIA/AACAPwAAgL8AAIA/AAECAAID"
+    },
+    {
+      "byteLength": 54,
+      "uri": "data:application/octet-stream;base64,mpmZvgAAAACamZm+mpmZvgAAAACamZk+mpmZPgAAAACamZk+mpmZPgAAAACamZm+AAECAAID"
+    },
+    {
+      "byteLength": 324,
+      "uri": "data:application/octet-stream;base64,zcxMvgAAgL7NzEw+zcxMPgAAgL7NzEw+zcxMPgAAgD7NzEw+zcxMvgAAgD7NzEw+zcxMPgAAgL7NzEy+zcxMvgAAgL7NzEy+zcxMvgAAgD7NzEy+zcxMPgAAgD7NzEy+zcxMvgAAgL7NzEy+zcxMvgAAgL7NzEw+zcxMvgAAgD7NzEw+zcxMvgAAgD7NzEy+zcxMPgAAgL7NzEw+zcxMPgAAgL7NzEy+zcxMPgAAgD7NzEy+zcxMPgAAgD7NzEw+zcxMvgAAgD7NzEy+zcxMvgAAgD7NzEw+zcxMPgAAgD7NzEw+zcxMPgAAgD7NzEy+zcxMvgAAgL7NzEw+zcxMvgAAgL7NzEy+zcxMPgAAgL7NzEy+zcxMPgAAgL7NzEw+AAECAAIDBAUGBAYHCAkKCAoLDA0ODA4PEBESEBITFBUWFBYX"
+    },
+    {
+      "byteLength": 324,
+      "uri": "data:application/octet-stream;base64,zcxMvgAAAL/NzEw+zcxMPgAAAL/NzEw+zcxMPgAAAD/NzEw+zcxMvgAAAD/NzEw+zcxMPgAAAL/NzEy+zcxMvgAAAL/NzEy+zcxMvgAAAD/NzEy+zcxMPgAAAD/NzEy+zcxMvgAAAL/NzEy+zcxMvgAAAL/NzEw+zcxMvgAAAD/NzEw+zcxMvgAAAD/NzEy+zcxMPgAAAL/NzEw+zcxMPgAAAL/NzEy+zcxMPgAAAD/NzEy+zcxMPgAAAD/NzEw+zcxMvgAAAD/NzEy+zcxMvgAAAD/NzEw+zcxMPgAAAD/NzEw+zcxMPgAAAD/NzEy+zcxMvgAAAL/NzEw+zcxMvgAAAL/NzEy+zcxMPgAAAL/NzEy+zcxMPgAAAL/NzEw+AAECAAIDBAUGBAYHCAkKCAoLDA0ODA4PEBESEBITFBUWFBYX"
+    },
+    {
+      "byteLength": 36,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAD8AAIA/AADAPwAAAEAAACBAAABAQAAAYEAAAIBA"
+    },
+    {
+      "byteLength": 108,
+      "uri": "data:application/octet-stream;base64,MzOzPgAAQL8AAAAAVG19PgAAQL9UbX0+RavFIwAAQL8zM7M+VG19vgAAQL9UbX0+MzOzvgAAQL9Fq0UkVG19vgAAQL9UbX2+dECUpAAAQL8zM7O+VG19PgAAQL9UbX2+MzOzPgAAQL9Fq8Wk"
+    },
+    {
+      "byteLength": 108,
+      "uri": "data:application/octet-stream;base64,AAAAvwAAAL/NzEy+AADAvgAAAL/NzEy+AACAvgAAAL/NzEy+AAAAvgAAAL/NzEy+AAAAAAAAAL/NzEy+AAAAPgAAAL/NzEy+AACAPgAAAL/NzEy+AADAPgAAAL/NzEy+AAAAPwAAAL/NzEy+"
+    },
+    {
+      "byteLength": 108,
+      "uri": "data:application/octet-stream;base64,AAAAAKRwfT8AAAAAw9CQPqRwfT/NzMw+zczMPqRwfT9P6GEkw9CQPqRwfT/NzMy+T+hhJKRwfT9P6OGkw9CQvqRwfT/NzMw+zczMvqRwfT88biklw9CQvqRwfT/NzMy+T+jhpKRwfT9P6GGl"
+    }
+  ],
+  "animations": [
+    {
+      "name": "Cornell Box Animation",
+      "samplers": [
+        {
+          "input": 16,
+          "output": 17,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 16,
+          "output": 18,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 16,
+          "output": 19,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 6,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 7,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "node": 5,
+            "path": "translation"
+          }
+        }
+      ]
+    }
+  ]
+}

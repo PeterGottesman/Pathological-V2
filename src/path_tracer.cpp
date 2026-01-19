@@ -509,7 +509,7 @@ void PathTracer::render(uint32_t samplesPerPixel) {
 
     // Set up camera (looking at scene center)
     PushConstants pc{};
-    pc.cameraPosition = glm::vec3(0.0f, 1.0f, 3.5f);
+    pc.cameraPosition = glm::vec3(0.0f, 0.0f, 3.5f);
     pc.fov = glm::radians(45.0f);
 
     glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
