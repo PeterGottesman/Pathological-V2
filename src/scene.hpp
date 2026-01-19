@@ -9,6 +9,7 @@
 
 struct Vertex {
     glm::vec3 position;
+    float pad;
 };
 
 struct Material {

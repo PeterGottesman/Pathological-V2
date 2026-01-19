@@ -1,4 +1,5 @@
 #include "path_tracer.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <fstream>
 #include <stdexcept>
@@ -414,7 +415,8 @@ void PathTracer::createDescriptorSets() {
         {vk::DescriptorType::eStorageBuffer, 4},
     };
 
-    vk::DescriptorPoolCreateInfo poolInfo{};
+	vk::DescriptorPoolCreateFlags poolCreateFlags{vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet};
+    vk::DescriptorPoolCreateInfo poolInfo{poolCreateFlags};
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();

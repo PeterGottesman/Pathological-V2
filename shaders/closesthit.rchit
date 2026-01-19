@@ -10,6 +10,7 @@ hitAttributeEXT vec2 attribs;
 
 struct Vertex {
     vec3 position;
+	float pad;
 };
 
 layout(binding = 2, set = 0, scalar) readonly buffer Vertices { Vertex vertices[]; };
