@@ -1,0 +1,83 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Pathological Test Generator"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [0]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Cube",
+      "mesh": 0,
+      "translation": [0.0, 0.0, 0.0],
+      "scale": [1.0, 1.0, 1.0]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "Default Material",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [1.0, 1.0, 1.0, 1.0],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      },
+      "emissiveFactor": [0.0, 0.0, 0.0]
+    }
+  ],
+  "accessors": [
+    {
+      "name": "Positions",
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC3",
+      "min": [-1.0, -1.0, -1.0],
+      "max": [1.0, 1.0, 1.0]
+    },
+    {
+      "name": "Indices",
+      "bufferView": 1,
+      "componentType": 5125,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 96,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 144,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "cube.bin",
+      "byteLength": 240
+    }
+  ]
+}
