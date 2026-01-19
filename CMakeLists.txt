@@ -13,12 +13,16 @@ find_package(glm CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 
+# tinygltf is header-only
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
+
 # Main executable
 add_executable(pathological
     src/main.cpp
     src/vulkan_context.cpp
     src/scene.cpp
     src/scene_builder.cpp
+    src/scene_graph.cpp
     src/path_tracer.cpp
 )
 
@@ -29,7 +33,7 @@ target_link_libraries(pathological PRIVATE
     CLI11::CLI11
 )
 
-target_include_directories(pathological PRIVATE ${Stb_INCLUDE_DIR})
+target_include_directories(pathological PRIVATE ${Stb_INCLUDE_DIR} ${TINYGLTF_INCLUDE_DIRS})
 
 # Shader compilation
 set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/shaders)
