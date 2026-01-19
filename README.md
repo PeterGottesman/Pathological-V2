@@ -15,6 +15,7 @@ Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 - NVIDIA GPU with ray tracing support
 - vcpkg
 - CMake 3.20+
+- ninja-build
 
 ## Building
 
@@ -26,7 +27,7 @@ cmake --build build
 ## Usage
 
 ```bash
-./build/pathological [options]
+./pathological [options]
 
 Options:
   -W, --width   Image width (default: 1024)
@@ -38,5 +39,6 @@ Options:
 ## Example
 
 ```bash
-./build/pathological -W 1920 -H 1080 -s 512 -o render.png
+cd build
+./pathological -W 1920 -H 1080 -s 16 -o render.png
 ```
