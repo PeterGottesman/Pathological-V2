@@ -36,14 +36,19 @@ int main(int argc, char** argv) {
         std::cout << "Output: " << output << std::endl;
         std::cout << std::endl;
 
-        VulkanContext ctx;
-        SceneGraph sceneGraph = SceneGraph::fromGltf(ctx, gltfFile);
-        sceneGraph.updateAnimation(time);
-        Scene scene = sceneGraph.build(ctx);
-        PathTracer tracer(ctx, scene, width, height);
+        {
+            VulkanContext ctx;
+            SceneGraph sceneGraph = SceneGraph::fromGltf(ctx, gltfFile);
+            sceneGraph.updateAnimation(time);
+            Scene scene = sceneGraph.build(ctx);
+            PathTracer tracer(ctx, scene, width, height);
 
-        tracer.render(samples);
-        tracer.saveImage(output);
+            tracer.render(samples);
+            tracer.saveImage(output);
+
+            // Wait for all GPU work to complete before cleanup
+            ctx.device().waitIdle();
+        } // Explicit scope to ensure cleanup order
 
         std::cout << std::endl;
         std::cout << "Done!" << std::endl;

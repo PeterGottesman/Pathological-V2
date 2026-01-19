@@ -33,6 +33,11 @@ VulkanContext::VulkanContext() {
 }
 
 VulkanContext::~VulkanContext() {
+    // Wait for device to finish before destroying allocations
+    if (m_device) {
+        m_device->waitIdle();
+    }
+
     if (m_allocator) {
         vmaDestroyAllocator(m_allocator);
     }
