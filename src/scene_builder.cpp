@@ -2,6 +2,7 @@
 #include <tiny_gltf.h>
 #include <stdexcept>
 #include <iostream>
+#include <glm/gtc/type_ptr.hpp>
 
 NodeId SceneBuilder::createNode(const std::string& name) {
     NodeId id = m_nodes.size();
@@ -94,12 +95,158 @@ std::vector<NodeId> SceneBuilder::getRootNodes() const {
     return roots;
 }
 
-// Placeholder implementations - will be completed in next tasks
+static Material convertGltfMaterial(const tinygltf::Material& gltfMat) {
+    Material mat;
+
+    // Base color (albedo)
+    const auto& baseColor = gltfMat.pbrMetallicRoughness.baseColorFactor;
+    mat.albedo = glm::vec3(baseColor[0], baseColor[1], baseColor[2]);
+
+    // Emission
+    const auto& emission = gltfMat.emissiveFactor;
+    mat.emission = glm::vec3(emission[0], emission[1], emission[2]);
+
+    return mat;
+}
+
+static glm::mat4 getGltfNodeTransform(const tinygltf::Node& gltfNode) {
+    glm::mat4 transform(1.0f);
+
+    if (gltfNode.matrix.size() == 16) {
+        // Matrix provided directly
+        transform = glm::make_mat4(gltfNode.matrix.data());
+    } else {
+        // Compose from TRS
+        glm::vec3 translation(0.0f);
+        glm::quat rotation(1.0f, 0.0f, 0.0f, 0.0f);
+        glm::vec3 scale(1.0f);
+
+        if (gltfNode.translation.size() == 3) {
+            translation = glm::vec3(gltfNode.translation[0],
+                                   gltfNode.translation[1],
+                                   gltfNode.translation[2]);
+        }
+
+        if (gltfNode.rotation.size() == 4) {
+            // glTF uses [x, y, z, w], glm uses [w, x, y, z]
+            rotation = glm::quat(gltfNode.rotation[3],
+                                gltfNode.rotation[0],
+                                gltfNode.rotation[1],
+                                gltfNode.rotation[2]);
+        }
+
+        if (gltfNode.scale.size() == 3) {
+            scale = glm::vec3(gltfNode.scale[0],
+                             gltfNode.scale[1],
+                             gltfNode.scale[2]);
+        }
+
+        glm::mat4 T = glm::translate(glm::mat4(1.0f), translation);
+        glm::mat4 R = glm::mat4_cast(rotation);
+        glm::mat4 S = glm::scale(glm::mat4(1.0f), scale);
+        transform = T * R * S;
+    }
+
+    return transform;
+}
+
 void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
                                 std::optional<NodeId> parent,
                                 const tinygltf::Model& model) {
-    // TODO: Implement in Task 4
-    throw std::runtime_error("loadGltfNode not yet implemented");
+    // Create node
+    NodeId nodeId = createNode(gltfNode.name);
+
+    // Set transform
+    glm::mat4 transform = getGltfNodeTransform(gltfNode);
+    setLocalTransform(nodeId, transform);
+
+    // Set parent relationship
+    if (parent.has_value()) {
+        setParent(nodeId, parent.value());
+    }
+
+    // Load mesh if present
+    if (gltfNode.mesh >= 0) {
+        const tinygltf::Mesh& gltfMesh = model.meshes[gltfNode.mesh];
+
+        // Process each primitive (we only handle first primitive for simplicity)
+        if (!gltfMesh.primitives.empty()) {
+            const tinygltf::Primitive& primitive = gltfMesh.primitives[0];
+
+            // Only support triangles
+            if (primitive.mode != TINYGLTF_MODE_TRIANGLES) {
+                std::cerr << "Warning: Skipping non-triangle primitive in mesh "
+                         << gltfMesh.name << std::endl;
+                return;
+            }
+
+            // Extract vertices (positions)
+            std::vector<Vertex> vertices;
+            auto posIt = primitive.attributes.find("POSITION");
+            if (posIt != primitive.attributes.end()) {
+                const tinygltf::Accessor& accessor = model.accessors[posIt->second];
+                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+                const float* positions = reinterpret_cast<const float*>(
+                    &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+
+                vertices.resize(accessor.count);
+                for (size_t i = 0; i < accessor.count; ++i) {
+                    vertices[i].position = glm::vec3(
+                        positions[i * 3 + 0],
+                        positions[i * 3 + 1],
+                        positions[i * 3 + 2]
+                    );
+                    vertices[i].pad = 0.0f;
+                }
+            }
+
+            // Extract indices
+            std::vector<uint32_t> indices;
+            if (primitive.indices >= 0) {
+                const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+                indices.resize(accessor.count);
+
+                if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+                    const uint16_t* idx = reinterpret_cast<const uint16_t*>(
+                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                    for (size_t i = 0; i < accessor.count; ++i) {
+                        indices[i] = idx[i];
+                    }
+                } else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+                    const uint32_t* idx = reinterpret_cast<const uint32_t*>(
+                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                    std::copy(idx, idx + accessor.count, indices.begin());
+                }
+            }
+
+            // Create material
+            MaterialId matId;
+            if (primitive.material >= 0) {
+                Material mat = convertGltfMaterial(model.materials[primitive.material]);
+                matId = createMaterial(mat);
+            } else {
+                // Default material (white diffuse)
+                Material mat;
+                mat.albedo = glm::vec3(0.8f, 0.8f, 0.8f);
+                mat.emission = glm::vec3(0.0f);
+                matId = createMaterial(mat);
+            }
+
+            // Create mesh and attach to node
+            MeshId meshId = createMesh(vertices, indices, matId);
+            setMesh(nodeId, meshId);
+        }
+    }
+
+    // Recursively load children
+    for (int childIdx : gltfNode.children) {
+        loadGltfNode(model.nodes[childIdx], nodeId, model);
+    }
 }
 
 Scene SceneBuilder::flattenToScene(const VulkanContext& ctx) {
