@@ -5,7 +5,7 @@ Scene::Scene(const VulkanContext& ctx,
              const std::vector<uint32_t>& indices,
              const std::vector<Material>& materials,
              const std::vector<uint32_t>& materialIndices)
-    : m_indexCount(indices.size())
+    : m_vertexCount(vertices.size()), m_indexCount(indices.size())
 {
     // Create vertex buffer
     m_vertexBuffer = std::make_unique<Buffer>(

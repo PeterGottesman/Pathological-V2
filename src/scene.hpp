@@ -33,6 +33,7 @@ public:
     const Buffer& materialBuffer() const { return *m_materialBuffer; }
     const Buffer& materialIndexBuffer() const { return *m_materialIndexBuffer; }
 
+    uint32_t vertexCount() const { return m_vertexCount; }
     uint32_t indexCount() const { return m_indexCount; }
     uint32_t triangleCount() const { return m_indexCount / 3; }
 
@@ -43,5 +44,6 @@ private:
     std::unique_ptr<Buffer> m_materialBuffer;
     std::unique_ptr<Buffer> m_materialIndexBuffer;
 
+    uint32_t m_vertexCount = 0;
     uint32_t m_indexCount = 0;
 };

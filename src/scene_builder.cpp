@@ -211,7 +211,13 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
 
                 indices.resize(accessor.count);
 
-                if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+                if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                    const uint8_t* idx = reinterpret_cast<const uint8_t*>(
+                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                    for (size_t i = 0; i < accessor.count; ++i) {
+                        indices[i] = idx[i];
+                    }
+                } else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
                     const uint16_t* idx = reinterpret_cast<const uint16_t*>(
                         &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
                     for (size_t i = 0; i < accessor.count; ++i) {

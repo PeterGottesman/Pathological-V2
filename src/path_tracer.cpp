@@ -96,7 +96,7 @@ void PathTracer::createAccelerationStructures() {
     trianglesData.vertexFormat = vk::Format::eR32G32B32Sfloat;
     trianglesData.vertexData.deviceAddress = vertexAddress;
     trianglesData.vertexStride = sizeof(Vertex);
-    trianglesData.maxVertex = static_cast<uint32_t>(m_scene.indexCount());
+    trianglesData.maxVertex = static_cast<uint32_t>(m_scene.vertexCount() - 1);
     trianglesData.indexType = vk::IndexType::eUint32;
     trianglesData.indexData.deviceAddress = indexAddress;
 
@@ -507,12 +507,12 @@ void PathTracer::render(uint32_t samplesPerPixel) {
     std::cout << "Rendering " << m_width << "x" << m_height
               << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
 
-    // Set up camera (looking into Cornell box)
+    // Set up camera (looking at scene center)
     PushConstants pc{};
     pc.cameraPosition = glm::vec3(0.0f, 1.0f, 3.5f);
     pc.fov = glm::radians(45.0f);
 
-    glm::vec3 target = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
     pc.cameraForward = glm::normalize(target - pc.cameraPosition);
     pc.cameraRight = glm::normalize(glm::cross(pc.cameraForward, glm::vec3(0.0f, 1.0f, 0.0f)));
     pc.cameraUp = glm::cross(pc.cameraRight, pc.cameraForward);
