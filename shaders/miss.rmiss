@@ -7,6 +7,6 @@ layout(location = 0) rayPayloadInEXT RayPayload payload;
 
 void main() {
     // No environment lighting - return black
-    payload.color = vec3(0.0);
+    payload.color = vec3(0.01, 0.01, 0.012);
     payload.done = true;
 }
