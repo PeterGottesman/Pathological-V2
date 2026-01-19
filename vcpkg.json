@@ -5,6 +5,7 @@
     "vulkan-memory-allocator",
     "glm",
     "cli11",
-    "stb"
+    "stb",
+    "tinygltf"
   ]
 }
