@@ -21,7 +21,12 @@ struct Material {
 
 class Scene {
 public:
-    explicit Scene(const VulkanContext& ctx);
+    // New constructor for dynamic scene loading
+    Scene(const VulkanContext& ctx,
+          const std::vector<Vertex>& vertices,
+          const std::vector<uint32_t>& indices,
+          const std::vector<Material>& materials,
+          const std::vector<uint32_t>& materialIndices);
 
     const Buffer& vertexBuffer() const { return *m_vertexBuffer; }
     const Buffer& indexBuffer() const { return *m_indexBuffer; }
@@ -32,15 +37,6 @@ public:
     uint32_t triangleCount() const { return m_indexCount / 3; }
 
 private:
-    void buildCornellBox();
-    void uploadToGPU(const VulkanContext& ctx);
-
-    // CPU-side data
-    std::vector<Vertex> m_vertices;
-    std::vector<uint32_t> m_indices;
-    std::vector<Material> m_materials;
-    std::vector<uint32_t> m_materialIndices; // Per-triangle material index
-
     // GPU buffers
     std::unique_ptr<Buffer> m_vertexBuffer;
     std::unique_ptr<Buffer> m_indexBuffer;
