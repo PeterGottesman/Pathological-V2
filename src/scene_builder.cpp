@@ -250,8 +250,23 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
 }
 
 Scene SceneBuilder::flattenToScene(const VulkanContext& ctx) {
-    // TODO: Implement in Task 5
-    throw std::runtime_error("flattenToScene not yet implemented");
+    std::vector<Vertex> allVertices;
+    std::vector<uint32_t> allIndices;
+    std::vector<uint32_t> allMaterialIndices;
+
+    // Traverse from each root node
+    std::vector<NodeId> roots = getRootNodes();
+    for (NodeId rootId : roots) {
+        traverseAndFlatten(rootId, glm::mat4(1.0f),
+                          allVertices, allIndices, allMaterialIndices);
+    }
+
+    // Handle empty scene
+    if (allVertices.empty()) {
+        throw std::runtime_error("Scene has no geometry");
+    }
+
+    return Scene(ctx, allVertices, allIndices, m_materials, allMaterialIndices);
 }
 
 void SceneBuilder::traverseAndFlatten(NodeId nodeId,
@@ -259,5 +274,37 @@ void SceneBuilder::traverseAndFlatten(NodeId nodeId,
                                      std::vector<Vertex>& outVertices,
                                      std::vector<uint32_t>& outIndices,
                                      std::vector<uint32_t>& outMaterialIndices) {
-    // TODO: Implement in Task 5
+    const Node& node = m_nodes[nodeId];
+    glm::mat4 worldTransform = parentTransform * node.localTransform;
+
+    // If node has a mesh, transform and append vertices
+    if (node.mesh.has_value()) {
+        const MeshData& mesh = m_meshes[node.mesh.value()];
+        uint32_t baseVertex = outVertices.size();
+
+        // Transform vertices to world space
+        for (const Vertex& v : mesh.vertices) {
+            Vertex transformed;
+            glm::vec4 worldPos = worldTransform * glm::vec4(v.position, 1.0f);
+            transformed.position = glm::vec3(worldPos);
+            transformed.pad = 0.0f;
+            outVertices.push_back(transformed);
+        }
+
+        // Append indices with base offset
+        for (uint32_t idx : mesh.indices) {
+            outIndices.push_back(baseVertex + idx);
+        }
+
+        // Add material index for each triangle
+        uint32_t triangleCount = mesh.indices.size() / 3;
+        for (uint32_t i = 0; i < triangleCount; ++i) {
+            outMaterialIndices.push_back(mesh.materialId);
+        }
+    }
+
+    // Recursively traverse children
+    for (NodeId child : node.children) {
+        traverseAndFlatten(child, worldTransform, outVertices, outIndices, outMaterialIndices);
+    }
 }
