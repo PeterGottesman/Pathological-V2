@@ -2,3 +2,6 @@
 /build/
 /CMakeFiles/
 /.worktrees/
+/.cache/
+/docs/
+/CLAUDE.md

@@ -42,3 +42,17 @@ Options:
 cd build
 ./pathological -W 1920 -H 1080 -s 16 -o render.png
 ```
+
+# Student Project Spring 2026
+- Implement server/client architecture
+  - Implement server (C++ or python)
+  - Create cli client (C++ or python)
+  - Create web client
+- Graphics features:
+  - Camera positioning
+  - Texture loading & sampling
+  - Cosine weighted hemisphere sampling
+  - Animated lights
+- Video rendering
+
+- Use S3 interface for object storage
