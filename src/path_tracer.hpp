@@ -32,6 +32,13 @@ public:
     void saveImage(const std::string& filename);
 
 private:
+    struct SubdivisionStats {
+        uint32_t minTileSize = UINT32_MAX;
+        uint32_t maxTileSize = 0;
+        uint32_t totalTiles = 0;
+        uint32_t subdivisions = 0;
+    };
+
     void createOutputImage();
     void createAccelerationStructures();
     void createRayTracingPipeline();
@@ -41,6 +48,13 @@ private:
     void renderTileRegion(uint32_t offsetX, uint32_t offsetY,
                           uint32_t width, uint32_t height,
                           uint32_t samplesPerPixel);
+
+    void renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
+                             uint32_t width, uint32_t height,
+                             uint32_t samplesPerPixel,
+                             uint32_t maxTileSize,
+                             bool verbose,
+                             SubdivisionStats& stats);
 
     std::vector<char> loadShader(const std::string& filename);
     vk::raii::ShaderModule createShaderModule(const std::vector<char>& code);
