@@ -16,6 +16,8 @@ int main(int argc, char** argv) {
     uint32_t samples = 256;
     std::string output = "output.png";
     float time = 0.0f;
+    uint32_t tileSize = 512;
+    bool verbose = false;
 
     app.add_option("gltf", gltfFile, "glTF scene file")->required();
     app.add_option("-W,--width", width, "Image width")->default_val(1024);
@@ -23,6 +25,8 @@ int main(int argc, char** argv) {
     app.add_option("-s,--samples", samples, "Samples per pixel")->default_val(256);
     app.add_option("-o,--output", output, "Output filename")->default_val("output.png");
     app.add_option("-t,--time", time, "Animation time in seconds")->default_val(0.0f);
+    app.add_option("--tile-size", tileSize, "Tile size for tiled rendering")->default_val(512);
+    app.add_flag("-v,--verbose", verbose, "Enable verbose output");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -33,6 +37,7 @@ int main(int argc, char** argv) {
         std::cout << "Resolution: " << width << "x" << height << std::endl;
         std::cout << "Samples: " << samples << std::endl;
         std::cout << "Animation Time: " << time << "s" << std::endl;
+        std::cout << "Tile Size: " << tileSize << "x" << tileSize << std::endl;
         std::cout << "Output: " << output << std::endl;
         std::cout << std::endl;
 
@@ -43,7 +48,7 @@ int main(int argc, char** argv) {
             Scene scene = sceneGraph.build(ctx);
             PathTracer tracer(ctx, scene, width, height);
 
-            tracer.render(samples);
+            tracer.render(samples, tileSize, verbose);
             tracer.saveImage(output);
 
             // Wait for all GPU work to complete before cleanup
