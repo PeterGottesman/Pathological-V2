@@ -505,16 +505,39 @@ void PathTracer::createDescriptorSets() {
 }
 
 void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbose) {
-    // tileSize and verbose will be used in tiled rendering implementation
-    (void)tileSize;
-    (void)verbose;
-
     std::cout << "Rendering " << m_width << "x" << m_height
               << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
 
-    // Render will be implemented in task 4
-    // For now, just call renderTileRegion for the full image
-    renderTileRegion(0, 0, m_width, m_height, samplesPerPixel);
+    // Calculate number of tiles needed
+    uint32_t tilesX = (m_width + tileSize - 1) / tileSize;
+    uint32_t tilesY = (m_height + tileSize - 1) / tileSize;
+    uint32_t totalTiles = tilesX * tilesY;
+
+    if (verbose) {
+        std::cout << "Tiling: " << tilesX << "x" << tilesY
+                  << " (" << totalTiles << " tiles total)" << std::endl;
+    }
+
+    uint32_t tileIndex = 0;
+
+    // Iterate over tiles
+    for (uint32_t ty = 0; ty < m_height; ty += tileSize) {
+        for (uint32_t tx = 0; tx < m_width; tx += tileSize) {
+            // Calculate actual tile dimensions (handle edge tiles)
+            uint32_t tileW = std::min(tileSize, m_width - tx);
+            uint32_t tileH = std::min(tileSize, m_height - ty);
+
+            if (verbose) {
+                std::cout << "Rendering tile " << (tileIndex + 1) << "/" << totalTiles
+                          << " at (" << tx << "," << ty << ") size "
+                          << tileW << "x" << tileH << std::endl;
+            }
+
+            renderTileRegion(tx, ty, tileW, tileH, samplesPerPixel);
+
+            tileIndex++;
+        }
+    }
 
     std::cout << "Rendering complete" << std::endl;
 }
