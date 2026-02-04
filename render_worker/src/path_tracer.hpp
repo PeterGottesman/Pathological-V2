@@ -28,7 +28,7 @@ public:
                uint32_t width, uint32_t height);
     ~PathTracer();
 
-    void render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbose);
+    void render(uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose);
     void saveImage(const std::string& filename);
 
 private:
