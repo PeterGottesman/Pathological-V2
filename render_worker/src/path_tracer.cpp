@@ -514,7 +514,7 @@ void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbos
     uint32_t tilesY = (m_height + tileSize - 1) / tileSize;
     uint32_t totalTiles = tilesX * tilesY;
 
-    if (verbose) {
+    if (verbose && totalTiles > 1) {
         std::cout << "Tiling: " << tilesX << "x" << tilesY
                   << " (" << totalTiles << " tiles total)" << std::endl;
     }
