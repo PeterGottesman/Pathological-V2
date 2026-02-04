@@ -504,6 +504,10 @@ void PathTracer::createDescriptorSets() {
 }
 
 void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbose) {
+    // tileSize and verbose will be used in tiled rendering implementation
+    (void)tileSize;
+    (void)verbose;
+
     std::cout << "Rendering " << m_width << "x" << m_height
               << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
 
