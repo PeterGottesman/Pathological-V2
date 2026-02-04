@@ -36,6 +36,9 @@ public:
     // Utility: run a one-shot command
     void executeCommands(std::function<void(vk::raii::CommandBuffer&)> func) const;
 
+    // Recovery: recreate device and dependent resources after device lost
+    void recoverFromDeviceLost();
+
 private:
     void createInstance();
     void selectPhysicalDevice();
