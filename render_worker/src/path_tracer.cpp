@@ -4,7 +4,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
-#include <sstream>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -505,58 +504,25 @@ void PathTracer::createDescriptorSets() {
     std::cout << "Descriptor sets created" << std::endl;
 }
 
-void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbose) {
+void PathTracer::render(uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose) {
     std::cout << "Rendering " << m_width << "x" << m_height
               << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
+    std::cout << "Max tile size: " << maxTileSize << "x" << maxTileSize << std::endl;
 
-    // Calculate number of tiles needed
-    uint32_t tilesX = (m_width + tileSize - 1) / tileSize;
-    uint32_t tilesY = (m_height + tileSize - 1) / tileSize;
-    uint32_t totalTiles = tilesX * tilesY;
+    SubdivisionStats stats;
 
-    if (verbose && totalTiles > 1) {
-        std::cout << "Tiling: " << tilesX << "x" << tilesY
-                  << " (" << totalTiles << " tiles total)" << std::endl;
-    }
+    // Render entire image using recursive subdivision
+    renderTileRecursive(0, 0, m_width, m_height, samplesPerPixel, maxTileSize, verbose, stats);
 
-    uint32_t tileIndex = 0;
-    size_t lastProgressLength = 0;
-
-    // Iterate over tiles
-    for (uint32_t ty = 0; ty < m_height; ty += tileSize) {
-        for (uint32_t tx = 0; tx < m_width; tx += tileSize) {
-            // Calculate actual tile dimensions (handle edge tiles)
-            uint32_t tileW = std::min(tileSize, m_width - tx);
-            uint32_t tileH = std::min(tileSize, m_height - ty);
-
-            if (verbose) {
-                std::cout << "Rendering tile " << (tileIndex + 1) << "/" << totalTiles
-                          << " at (" << tx << "," << ty << ") size "
-                          << tileW << "x" << tileH << std::endl;
-            }
-
-            renderTileRegion(tx, ty, tileW, tileH, samplesPerPixel);
-
-            tileIndex++;
-
-            // Show progress for multi-tile renders (even without verbose)
-            if (!verbose && totalTiles > 1) {
-                std::ostringstream progress;
-                progress << "Progress: " << tileIndex << "/" << totalTiles
-                         << " tiles complete";
-                std::string progressStr = progress.str();
-                lastProgressLength = progressStr.length();
-                std::cout << progressStr << "\r" << std::flush;
-            }
-        }
-    }
-
-    // Clear progress line if it was used
-    if (!verbose && totalTiles > 1 && lastProgressLength > 0) {
-        std::cout << std::string(lastProgressLength, ' ') << "\r" << std::flush;
-    }
-
+    // Display statistics
     std::cout << "Rendering complete" << std::endl;
+    std::cout << "Subdivision statistics:" << std::endl;
+    std::cout << "  Total tiles rendered: " << stats.totalTiles << std::endl;
+    std::cout << "  Subdivisions performed: " << stats.subdivisions << std::endl;
+    if (stats.totalTiles > 0) {
+        std::cout << "  Tile size range: " << stats.minTileSize << " - "
+                  << stats.maxTileSize << " pixels" << std::endl;
+    }
 }
 
 void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY,
@@ -607,6 +573,58 @@ void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY,
             1
         );
     });
+}
+
+void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
+                                      uint32_t width, uint32_t height,
+                                      uint32_t samplesPerPixel,
+                                      uint32_t maxTileSize,
+                                      bool verbose,
+                                      SubdivisionStats& stats) {
+    const uint32_t MIN_TILE_SIZE = 64;
+    uint32_t tileArea = width * height;
+
+    // Check if this tile is larger than max allowed size
+    bool needsSubdivision = (width > maxTileSize || height > maxTileSize);
+
+    // Check if we've hit minimum tile size
+    bool canSubdivide = (width >= MIN_TILE_SIZE * 2 && height >= MIN_TILE_SIZE * 2);
+
+    if (needsSubdivision && canSubdivide) {
+        // Subdivide into 4 quadrants
+        uint32_t halfW = width / 2;
+        uint32_t halfH = height / 2;
+
+        if (verbose) {
+            std::cout << "Subdividing tile at (" << offsetX << "," << offsetY
+                      << ") size " << width << "x" << height << " into 4 quadrants" << std::endl;
+        }
+
+        stats.subdivisions++;
+
+        // Render each quadrant recursively
+        renderTileRecursive(offsetX, offsetY, halfW, halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX + halfW, offsetY, width - halfW, halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX, offsetY + halfH, halfW, height - halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX + halfW, offsetY + halfH, width - halfW, height - halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+    } else {
+        // Render this tile directly
+        if (verbose) {
+            std::cout << "Rendering tile at (" << offsetX << "," << offsetY
+                      << ") size " << width << "x" << height << std::endl;
+        }
+
+        renderTileRegion(offsetX, offsetY, width, height, samplesPerPixel);
+
+        // Update statistics
+        stats.totalTiles++;
+        stats.minTileSize = std::min(stats.minTileSize, std::max(width, height));
+        stats.maxTileSize = std::max(stats.maxTileSize, std::max(width, height));
+    }
 }
 
 void PathTracer::saveImage(const std::string& filename) {
