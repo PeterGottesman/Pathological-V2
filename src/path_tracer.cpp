@@ -503,10 +503,20 @@ void PathTracer::createDescriptorSets() {
     std::cout << "Descriptor sets created" << std::endl;
 }
 
-void PathTracer::render(uint32_t samplesPerPixel) {
+void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbose) {
     std::cout << "Rendering " << m_width << "x" << m_height
               << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
 
+    // Render will be implemented in task 4
+    // For now, just call renderTileRegion for the full image
+    renderTileRegion(0, 0, m_width, m_height, samplesPerPixel);
+
+    std::cout << "Rendering complete" << std::endl;
+}
+
+void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY,
+                                   uint32_t width, uint32_t height,
+                                   uint32_t samplesPerPixel) {
     // Set up camera (looking at scene center)
     PushConstants pc{};
     pc.cameraPosition = glm::vec3(0.0f, 0.0f, 3.5f);
@@ -520,6 +530,8 @@ void PathTracer::render(uint32_t samplesPerPixel) {
     pc.samplesPerPixel = samplesPerPixel;
     pc.frameIndex = 0;
     pc.maxBounces = 8;
+    pc.tileOffset = glm::uvec2(offsetX, offsetY);
+    pc.imageSize = glm::uvec2(m_width, m_height);
 
     m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, **m_pipeline);
@@ -545,13 +557,11 @@ void PathTracer::render(uint32_t samplesPerPixel) {
             m_missRegion,
             m_hitRegion,
             m_callableRegion,
-            m_width,
-            m_height,
+            width,
+            height,
             1
         );
     });
-
-    std::cout << "Rendering complete" << std::endl;
 }
 
 void PathTracer::saveImage(const std::string& filename) {
