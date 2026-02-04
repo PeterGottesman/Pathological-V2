@@ -536,7 +536,18 @@ void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbos
             renderTileRegion(tx, ty, tileW, tileH, samplesPerPixel);
 
             tileIndex++;
+
+            // Show progress for multi-tile renders (even without verbose)
+            if (!verbose && totalTiles > 1) {
+                std::cout << "Progress: " << tileIndex << "/" << totalTiles
+                          << " tiles complete\r" << std::flush;
+            }
         }
+    }
+
+    // Clear progress line if it was used
+    if (!verbose && totalTiles > 1) {
+        std::cout << std::string(50, ' ') << "\r" << std::flush;
     }
 
     std::cout << "Rendering complete" << std::endl;
