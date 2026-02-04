@@ -6,7 +6,7 @@
 #include <iostream>
 
 void generateScene(uint32_t width, uint32_t height, uint32_t samples,
-    std::string gltfFile, std::string output, float time){
+    std::string gltfFile, std::string output, float time, uint32_t tileSize, bool verbose){
     try {
         std::cout << "Pathological - Vulkan Path Tracer" << std::endl;
         std::cout << "==================================" << std::endl;
@@ -14,6 +14,7 @@ void generateScene(uint32_t width, uint32_t height, uint32_t samples,
         std::cout << "Resolution: " << width << "x" << height << std::endl;
         std::cout << "Samples: " << samples << std::endl;
         std::cout << "Animation Time: " << time << "s" << std::endl;
+        std::cout << "Tile Size: " << tileSize << "x" << tileSize << std::endl;
         std::cout << "Output: " << output << std::endl;
         std::cout << std::endl;
 
@@ -24,7 +25,7 @@ void generateScene(uint32_t width, uint32_t height, uint32_t samples,
             Scene scene = sceneGraph.build(ctx);
             PathTracer tracer(ctx, scene, width, height);
 
-            tracer.render(samples);
+            tracer.render(samples, tileSize, verbose);
             tracer.saveImage(output);
 
             // Wait for all GPU work to complete before cleanup
