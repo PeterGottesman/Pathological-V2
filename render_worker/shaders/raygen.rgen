@@ -15,13 +15,18 @@ layout(push_constant) uniform PushConstants {
     uint frameIndex;
     vec3 cameraUp;
     uint maxBounces;
+    uvec2 tileOffset;      // Tile offset in pixels
+    uvec2 imageSize;       // Full image dimensions
 } pc;
 
 layout(location = 0) rayPayloadEXT RayPayload payload;
 
 void main() {
-    const uvec2 pixelCoord = gl_LaunchIDEXT.xy;
-    const uvec2 imageSize = gl_LaunchSizeEXT.xy;
+    // Local pixel coordinate within tile
+    const uvec2 localCoord = gl_LaunchIDEXT.xy;
+    // Global pixel coordinate in full image
+    const uvec2 pixelCoord = localCoord + pc.tileOffset;
+    const uvec2 imageSize = pc.imageSize;
 
     uint seed = pixelCoord.x + pixelCoord.y * imageSize.x + pc.frameIndex * imageSize.x * imageSize.y;
 

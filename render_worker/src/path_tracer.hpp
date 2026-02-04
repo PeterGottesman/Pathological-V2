@@ -18,6 +18,8 @@ struct PushConstants {
     uint32_t frameIndex;
     glm::vec3 cameraUp;
     uint32_t maxBounces;
+    glm::uvec2 tileOffset;      // Tile offset in pixels
+    glm::uvec2 imageSize;       // Full image dimensions
 };
 
 class PathTracer {
@@ -26,7 +28,7 @@ public:
                uint32_t width, uint32_t height);
     ~PathTracer();
 
-    void render(uint32_t samplesPerPixel);
+    void render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbose);
     void saveImage(const std::string& filename);
 
 private:
@@ -35,6 +37,10 @@ private:
     void createRayTracingPipeline();
     void createShaderBindingTable();
     void createDescriptorSets();
+
+    void renderTileRegion(uint32_t offsetX, uint32_t offsetY,
+                          uint32_t width, uint32_t height,
+                          uint32_t samplesPerPixel);
 
     std::vector<char> loadShader(const std::string& filename);
     vk::raii::ShaderModule createShaderModule(const std::vector<char>& code);
