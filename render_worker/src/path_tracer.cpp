@@ -4,6 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -519,6 +520,7 @@ void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbos
     }
 
     uint32_t tileIndex = 0;
+    size_t lastProgressLength = 0;
 
     // Iterate over tiles
     for (uint32_t ty = 0; ty < m_height; ty += tileSize) {
@@ -539,15 +541,19 @@ void PathTracer::render(uint32_t samplesPerPixel, uint32_t tileSize, bool verbos
 
             // Show progress for multi-tile renders (even without verbose)
             if (!verbose && totalTiles > 1) {
-                std::cout << "Progress: " << tileIndex << "/" << totalTiles
-                          << " tiles complete\r" << std::flush;
+                std::ostringstream progress;
+                progress << "Progress: " << tileIndex << "/" << totalTiles
+                         << " tiles complete";
+                std::string progressStr = progress.str();
+                lastProgressLength = progressStr.length();
+                std::cout << progressStr << "\r" << std::flush;
             }
         }
     }
 
     // Clear progress line if it was used
-    if (!verbose && totalTiles > 1) {
-        std::cout << std::string(50, ' ') << "\r" << std::flush;
+    if (!verbose && totalTiles > 1 && lastProgressLength > 0) {
+        std::cout << std::string(lastProgressLength, ' ') << "\r" << std::flush;
     }
 
     std::cout << "Rendering complete" << std::endl;
