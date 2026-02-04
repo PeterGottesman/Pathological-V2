@@ -359,9 +359,10 @@ void PathTracer::createShaderBindingTable() {
     uint32_t baseAlignment = rtProps.shaderGroupBaseAlignment;
 
     uint32_t handleSizeAligned = (handleSize + handleAlignment - 1) & ~(handleAlignment - 1);
+    uint32_t handleSizeBaseAligned = (handleSize + baseAlignment - 1) & ~(baseAlignment - 1);
 
     uint32_t groupCount = 3; // raygen, miss, hit
-    uint32_t sbtSize = groupCount * handleSizeAligned;
+    uint32_t sbtSize = groupCount * handleSizeBaseAligned;
 
     // Get shader group handles
     auto handleData = m_pipeline->getRayTracingShaderGroupHandlesKHR<uint8_t>(
@@ -382,7 +383,7 @@ void PathTracer::createShaderBindingTable() {
     // Copy handles to SBT buffer with proper alignment
     uint8_t* sbtData = static_cast<uint8_t*>(m_sbtBuffer->map());
     for (uint32_t i = 0; i < groupCount; i++) {
-        std::memcpy(sbtData + i * handleSizeAligned,
+        std::memcpy(sbtData + i * handleSizeBaseAligned,
                     handles.data() + i * handleSize,
                     handleSize);
     }
@@ -394,11 +395,11 @@ void PathTracer::createShaderBindingTable() {
     m_raygenRegion.stride = handleSizeAligned;
     m_raygenRegion.size = handleSizeAligned;
 
-    m_missRegion.deviceAddress = sbtAddress + handleSizeAligned;
+    m_missRegion.deviceAddress = sbtAddress + handleSizeBaseAligned;
     m_missRegion.stride = handleSizeAligned;
     m_missRegion.size = handleSizeAligned;
 
-    m_hitRegion.deviceAddress = sbtAddress + 2 * handleSizeAligned;
+    m_hitRegion.deviceAddress = sbtAddress + 2 * handleSizeBaseAligned;
     m_hitRegion.stride = handleSizeAligned;
     m_hitRegion.size = handleSizeAligned;
 
