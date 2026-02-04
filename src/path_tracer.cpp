@@ -581,7 +581,6 @@ void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
                                       bool verbose,
                                       SubdivisionStats& stats) {
     const uint32_t MIN_TILE_SIZE = 64;
-    uint32_t tileArea = width * height;
 
     // Check if this tile is larger than max allowed size
     bool needsSubdivision = (width > maxTileSize || height > maxTileSize);
@@ -612,9 +611,17 @@ void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
                            samplesPerPixel, maxTileSize, verbose, stats);
     } else {
         // Render this tile directly
+        // Note: If subdivision is needed but not possible (tile would become < 64x64),
+        // we render the tile even if it exceeds maxTileSize. This prevents creating
+        // tiles smaller than MIN_TILE_SIZE, which is essential for GPU timeout management.
+        // Small overage (1-63 pixels) is acceptable on embedded platforms.
         if (verbose) {
             std::cout << "Rendering tile at (" << offsetX << "," << offsetY
-                      << ") size " << width << "x" << height << std::endl;
+                      << ") size " << width << "x" << height;
+            if (needsSubdivision) {
+                std::cout << " [exceeds maxTileSize=" << maxTileSize << ", cannot subdivide further]";
+            }
+            std::cout << std::endl;
         }
 
         renderTileRegion(offsetX, offsetY, width, height, samplesPerPixel);
