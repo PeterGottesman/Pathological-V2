@@ -7,6 +7,7 @@ Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 - Hardware-accelerated ray tracing via Vulkan RT extensions
 - Cornell box scene with emissive and Lambertian materials
 - Headless rendering (no window required)
+- Tiled rendering to prevent GPU timeouts on embedded platforms
 - PNG output
 
 ## Requirements
@@ -27,20 +28,36 @@ cmake --build build
 ## Usage
 
 ```bash
-./pathological [options]
+./pathological <gltf-file> [options]
 
 Options:
-  -W, --width   Image width (default: 1024)
-  -H, --height  Image height (default: 1024)
-  -s, --samples Samples per pixel (default: 256)
-  -o, --output  Output filename (default: output.png)
+  -W, --width      Image width (default: 1024)
+  -H, --height     Image height (default: 1024)
+  -s, --samples    Samples per pixel (default: 256)
+  -o, --output     Output filename (default: output.png)
+  -t, --time       Animation time in seconds (default: 0.0)
+  --tile-size      Tile size for tiled rendering (default: 512)
+  -v, --verbose    Enable verbose output
 ```
 
-## Example
+## Examples
 
+Basic rendering:
 ```bash
 cd build
-./pathological -W 1920 -H 1080 -s 16 -o render.png
+./pathological test_scenes/cornell_box.gltf -W 1920 -H 1080 -s 16 -o render.png
+```
+
+Jetson Orin Nano (prevent GPU timeout):
+```bash
+# Use smaller tiles to avoid TDR timeout on embedded platforms
+./pathological test_scenes/cornell_box.gltf --tile-size 256 -v
+```
+
+Verbose tiled rendering:
+```bash
+# Show detailed per-tile progress
+./pathological test_scenes/cornell_box.gltf -s 512 --tile-size 512 -v
 ```
 
 # Student Project Spring 2026

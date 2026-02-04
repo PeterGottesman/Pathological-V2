@@ -25,7 +25,9 @@ int main(int argc, char** argv) {
     app.add_option("-s,--samples", samples, "Samples per pixel")->default_val(256);
     app.add_option("-o,--output", output, "Output filename")->default_val("output.png");
     app.add_option("-t,--time", time, "Animation time in seconds")->default_val(0.0f);
-    app.add_option("--tile-size", tileSize, "Tile size for tiled rendering")->default_val(512);
+    app.add_option("--tile-size", tileSize, "Tile size for tiled rendering")
+        ->default_val(512)
+        ->check(CLI::Range(1u, 4096u));
     app.add_flag("-v,--verbose", verbose, "Enable verbose output");
 
     CLI11_PARSE(app, argc, argv);
