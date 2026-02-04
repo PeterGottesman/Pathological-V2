@@ -5,9 +5,10 @@ Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 ## Features
 
 - Hardware-accelerated ray tracing via Vulkan RT extensions
-- Cornell box scene with emissive and Lambertian materials
+- glTF scene loading with animation support
 - Headless rendering (no window required)
-- Tiled rendering to prevent GPU timeouts on embedded platforms
+- Adaptive recursive tiling to prevent GPU timeouts on embedded platforms
+- Automatic subdivision based on tile size threshold
 - PNG output
 
 ## Requirements
@@ -36,7 +37,7 @@ Options:
   -s, --samples    Samples per pixel (default: 256)
   -o, --output     Output filename (default: output.png)
   -t, --time       Animation time in seconds (default: 0.0)
-  --tile-size      Tile size for tiled rendering (default: 512)
+  --tile-size      Maximum tile size before subdivision (default: 512)
   -v, --verbose    Enable verbose output
 ```
 
@@ -50,15 +51,34 @@ cd build
 
 Jetson Orin Nano (prevent GPU timeout):
 ```bash
-# Use smaller tiles to avoid TDR timeout on embedded platforms
+# Smaller max tile size for platforms with strict GPU timeouts
 ./pathological test_scenes/cornell_box.gltf --tile-size 256 -v
 ```
 
-Verbose tiled rendering:
+Adaptive subdivision with verbose output:
 ```bash
-# Show detailed per-tile progress
+# Show subdivision decisions and statistics
 ./pathological test_scenes/cornell_box.gltf -s 512 --tile-size 512 -v
 ```
+
+## Adaptive Tiling
+
+The path tracer uses **adaptive recursive subdivision** to prevent GPU timeouts:
+
+- Images are subdivided into tiles based on the `--tile-size` threshold
+- Tiles larger than the threshold are automatically split into 4 quadrants
+- Subdivision continues recursively until tiles fit within the size limit
+- Minimum tile size is 64×64 pixels (prevents excessive subdivision)
+- Statistics show the range of tile sizes used during rendering
+
+**How it works:**
+1. Start with full image as one tile
+2. If tile dimensions exceed `--tile-size`, subdivide into quadrants
+3. Recursively process each quadrant
+4. Render tiles that fit within the threshold
+5. Display subdivision statistics at completion
+
+This ensures that individual GPU submissions complete within timeout limits on embedded platforms like the Jetson Orin Nano, while automatically adapting to any image size and complexity.
 
 # Student Project Spring 2026
 - Implement server/client architecture
