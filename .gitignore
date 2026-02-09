@@ -1,5 +1,5 @@
 /compile_commands.json
-/build/
+/render_worker/build/
 /CMakeFiles/
 /.worktrees/
 /.cache/
