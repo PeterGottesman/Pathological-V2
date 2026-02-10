@@ -504,10 +504,30 @@ void PathTracer::createDescriptorSets() {
     std::cout << "Descriptor sets created" << std::endl;
 }
 
-void PathTracer::render(uint32_t samplesPerPixel) {
+void PathTracer::render(uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose) {
     std::cout << "Rendering " << m_width << "x" << m_height
               << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
+    std::cout << "Max tile size: " << maxTileSize << "x" << maxTileSize << std::endl;
 
+    SubdivisionStats stats;
+
+    // Render entire image using recursive subdivision
+    renderTileRecursive(0, 0, m_width, m_height, samplesPerPixel, maxTileSize, verbose, stats);
+
+    // Display statistics
+    std::cout << "Rendering complete" << std::endl;
+    std::cout << "Subdivision statistics:" << std::endl;
+    std::cout << "  Total tiles rendered: " << stats.totalTiles << std::endl;
+    std::cout << "  Subdivisions performed: " << stats.subdivisions << std::endl;
+    if (stats.totalTiles > 0) {
+        std::cout << "  Tile size range: " << stats.minTileSize << " - "
+                  << stats.maxTileSize << " pixels" << std::endl;
+    }
+}
+
+void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY,
+                                   uint32_t width, uint32_t height,
+                                   uint32_t samplesPerPixel) {
     // Set up camera (looking at scene center)
     PushConstants pc{};
     pc.cameraPosition = glm::vec3(0.0f, 0.0f, 3.5f);
@@ -521,6 +541,8 @@ void PathTracer::render(uint32_t samplesPerPixel) {
     pc.samplesPerPixel = samplesPerPixel;
     pc.frameIndex = 0;
     pc.maxBounces = 8;
+    pc.tileOffset = glm::uvec2(offsetX, offsetY);
+    pc.imageSize = glm::uvec2(m_width, m_height);
 
     m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, **m_pipeline);
@@ -546,13 +568,70 @@ void PathTracer::render(uint32_t samplesPerPixel) {
             m_missRegion,
             m_hitRegion,
             m_callableRegion,
-            m_width,
-            m_height,
+            width,
+            height,
             1
         );
     });
+}
 
-    std::cout << "Rendering complete" << std::endl;
+void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
+                                      uint32_t width, uint32_t height,
+                                      uint32_t samplesPerPixel,
+                                      uint32_t maxTileSize,
+                                      bool verbose,
+                                      SubdivisionStats& stats) {
+    const uint32_t MIN_TILE_SIZE = 64;
+
+    // Check if this tile is larger than max allowed size
+    bool needsSubdivision = (width > maxTileSize || height > maxTileSize);
+
+    // Check if we've hit minimum tile size
+    bool canSubdivide = (width >= MIN_TILE_SIZE * 2 && height >= MIN_TILE_SIZE * 2);
+
+    if (needsSubdivision && canSubdivide) {
+        // Subdivide into 4 quadrants
+        uint32_t halfW = width / 2;
+        uint32_t halfH = height / 2;
+
+        if (verbose) {
+            std::cout << "Subdividing tile at (" << offsetX << "," << offsetY
+                      << ") size " << width << "x" << height << " into 4 quadrants" << std::endl;
+        }
+
+        stats.subdivisions++;
+
+        // Render each quadrant recursively
+        renderTileRecursive(offsetX, offsetY, halfW, halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX + halfW, offsetY, width - halfW, halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX, offsetY + halfH, halfW, height - halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX + halfW, offsetY + halfH, width - halfW, height - halfH,
+                           samplesPerPixel, maxTileSize, verbose, stats);
+    } else {
+        // Render this tile directly
+        // Note: If subdivision is needed but not possible (tile would become < 64x64),
+        // we render the tile even if it exceeds maxTileSize. This prevents creating
+        // tiles smaller than MIN_TILE_SIZE, which is essential for GPU timeout management.
+        // Small overage (1-63 pixels) is acceptable on embedded platforms.
+        if (verbose) {
+            std::cout << "Rendering tile at (" << offsetX << "," << offsetY
+                      << ") size " << width << "x" << height;
+            if (needsSubdivision) {
+                std::cout << " [exceeds maxTileSize=" << maxTileSize << ", cannot subdivide further]";
+            }
+            std::cout << std::endl;
+        }
+
+        renderTileRegion(offsetX, offsetY, width, height, samplesPerPixel);
+
+        // Update statistics
+        stats.totalTiles++;
+        stats.minTileSize = std::min(stats.minTileSize, std::max(width, height));
+        stats.maxTileSize = std::max(stats.maxTileSize, std::max(width, height));
+    }
 }
 
 void PathTracer::saveImage(const std::string& filename) {

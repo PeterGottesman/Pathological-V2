@@ -249,3 +249,25 @@ void VulkanContext::executeCommands(std::function<void(vk::raii::CommandBuffer&)
     m_queue->submit(submitInfo);
     m_queue->waitIdle();
 }
+
+void VulkanContext::recoverFromDeviceLost() {
+    std::cout << "Device lost detected, attempting recovery..." << std::endl;
+
+    // Destroy allocator first (depends on device)
+    if (m_allocator) {
+        vmaDestroyAllocator(m_allocator);
+        m_allocator = VK_NULL_HANDLE;
+    }
+
+    // Destroy device-dependent resources (RAII handles cleanup)
+    m_commandPool.reset();
+    m_queue.reset();
+    m_device.reset();
+
+    // Recreate device, queue, and command pool
+    createLogicalDevice();
+    createCommandPool();
+    createAllocator();
+
+    std::cout << "Device recovery complete" << std::endl;
+}
