@@ -1,7 +1,12 @@
 compile_commands.json
-/render_worker/build/
 CMakeFiles/
+.cache/
+
+/render_worker/build/
+/render_worker/debug-build/
+/scheduler/build/
+/scheduler/debug-build/
+
 /.worktrees/
-/.cache/
 /docs/
 /CLAUDE.md
