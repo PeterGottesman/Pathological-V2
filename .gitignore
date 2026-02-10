@@ -1,6 +1,6 @@
-/compile_commands.json
+compile_commands.json
 /render_worker/build/
-/CMakeFiles/
+CMakeFiles/
 /.worktrees/
 /.cache/
 /docs/
