@@ -37,6 +37,7 @@ export default function Home() {
     setSubmitting(true)
     setError(null)
 
+
   }
 
   return (
@@ -68,7 +69,7 @@ export default function Home() {
           <div className="space-y-5">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-red-300">
-                Scene file (.gltf / .glb / .obj)
+                Scene file (.gltf)
               </label>
 
               <input
