@@ -1,0 +1,25 @@
+syntax="proto3";
+
+message RenderSceneRequest {
+    string scene_location = 1;
+    uint32 seconds = 2;
+    uint32 frames = 3;
+}
+
+message RenderSceneResponse {
+    int32 frame_identifier = 1;
+}
+
+message RenderProgressRequest {
+    int32 frame_identifier = 1;
+}
+
+message RenderProgressResponse {
+    int32 scene_completed = 1;
+}
+
+service RenderWorkerCommunications {
+    rpc RenderWorkerConnection() returns () {}
+    rpc RenderScene(RenderSceneRequest) returns (RenderSceneResponse) {}
+    rpc RenderProgress(RenderProgressRequest) returns (RenderProgressResponse) {}
+}
