@@ -8,6 +8,7 @@ service WorkerConnection {
   rpc EstablishConnection(WorkerConncetion) returns (google.protobuf.Empty);
 }
 
+// Render worker sends the ip of its server so the scheduler can request from it
 message WorkerConncetion {
   string worker_ip = 1;
 }
