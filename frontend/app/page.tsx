@@ -14,7 +14,7 @@ export default function Home() {
     samplesPerPixel: 16,
   })
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [sceneURL, setSceneURL] = useState<string >('')
   const [submitting, setSubmitting] = useState(false)
   const [resp, setResp] = useState<RenderJob | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -24,9 +24,9 @@ export default function Home() {
     [form]
   )
 
-  function onFileChange(file: File | null) {
-    setSelectedFile(file)
-    setForm((prev) => ({ ...prev, fileName: file?.name ?? '' }))
+  function onSceneChange(value: string ) {
+    setSceneURL(value)
+    setForm((prev) => ({ ...prev, fileName: value ?? '' }))
   }
 
   function onNumberChange(key: keyof FormState, value: string) {
@@ -73,19 +73,11 @@ export default function Home() {
               </label>
 
               <input
-                type="file"
-                accept=".gltf,.glb,.obj"
-                onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm text-red-300
-                           file:mr-4 file:rounded-lg file:border file:border-red-700
-                           file:bg-black file:px-4 file:py-2 file:text-red-400
-                           hover:file:text-red-200 hover:file:drop-shadow-[0_0_8px_rgba(220,38,38,0.9)]
-                           file:transition-all"
+                placeholder="s3 link to gltf file"
+                value={sceneURL}
+                onChange={(e) => onSceneChange(e.target.value)}
+                className="block w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
               />
-
-              <div className="text-xs text-red-400">
-                Selected: <span className="text-red-300">{selectedFile?.name ?? 'None'}</span>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
