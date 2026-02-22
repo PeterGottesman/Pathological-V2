@@ -2,7 +2,6 @@
 
 #include <string>
 #include <optional>
-#include <chrono>
 #include <json/json.h>
 
 #include "renderStatus.hpp"
@@ -59,11 +58,13 @@ private:
     RenderStatus status;
     int width;
     int height;
-    int frameCount;
+    int framesPerSecond;
+    int animationRuntime;
+    int framesCompleted;
+    int executionTime;
+    int samplesPerPixel;
     std::string gltfFileUrl;
     std::string createdAt;
-    int executionTime;
     std::string outputFileName;
-    int samplesPerPixel;
     std::optional<std::string> downloadLink;
 };
