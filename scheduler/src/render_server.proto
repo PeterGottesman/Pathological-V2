@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package render_server;
+
+enum Status {
+  PENDING = 0;
+  RENDERING = 1;
+  DONE = 2;
+}
+
+service RenderWorker {
+  rpc RenderJob(RenderJobRequest) returns (RenderJobResponse) {}
+  rpc RenderStatus(RenderStatusRequest) returns (RenderStatusResponse) {}
+}
+
+// Scheduler sends the path to the scene along with how many seconds to render and the number of frames
+message RenderJobRequest {
+  string scene_location = 1;
+  uint32 seconds = 2;
+  uint32 frames = 3;
+}
+
+// Render worker returns a unique job identifier so that the Scheduler can refer back to the render
+message RenderJobResponse {
+  int32 job_identifier = 1;
+}
+
+// Scheduler asks for the status of a given render
+message RenderStatusRequest {
+  int32 job_identifier = 1;
+}
+
+// Render worker returns status of given render
+message RenderStatusResponse {
+  Status status = 1;
+}
