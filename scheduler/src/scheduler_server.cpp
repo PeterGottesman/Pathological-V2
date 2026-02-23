@@ -1,11 +1,20 @@
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include "../build/protos/scheduler_server.pb.h"
+#include "../build/protos/scheduler_server.grpc.pb.h"
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using scheduler_server::WorkerConnection;
 
-class SchedulerServer final : public Greeter::Service {
-    Status EstablishConnection(ServerContext *context, const WorkerConnection *request) override {
+#include <iostream>
+#include <string>
+
+
+class SchedulerServer final : public WorkerConnection::Service {
+    Status EstablishConnection(ServerContext *context, const WorkerConnection *request) {
         // Implementation goes here
         return Status::OK;
     }
@@ -16,7 +25,6 @@ void RunServer(uint16_t port) {
   SchedulerServer service;
 
   grpc::EnableDefaultHealthCheckService(true);
-  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
