@@ -58,3 +58,7 @@ target_link_libraries(scheduler-client PRIVATE protoscheduler)
 # Render worker server executable
 add_executable(render-server src/render_server.cpp)
 target_link_libraries(render-server PRIVATE protorender)
+
+# Scheduler client executable
+add_executable(render-client src/render_client.cpp)
+target_link_libraries(render-client PRIVATE protorender)
