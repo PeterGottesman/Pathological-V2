@@ -7,11 +7,11 @@ type FormState = SubmitRenderRequest
 
 export default function Home() {
   const [form, setForm] = useState<FormState>({
-    fileName: '',
-    frames: 1,
+    gltf_file_url: '',
+    frame_count: 1,
     width: 1920,
     height: 1080,
-    samplesPerPixel: 16,
+    samples_per_pixel: 16,
   })
 
   const [sceneURL, setSceneURL] = useState<string >('')
@@ -20,13 +20,13 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
 
   const canSubmit = useMemo(
-    () => !!form.fileName && form.frames > 0 && form.width > 0 && form.height > 0 && form.samplesPerPixel > 0,
+    () => !!form.gltf_file_url && form.frame_count > 0 && form.width > 0 && form.height > 0 && form.samples_per_pixel > 0,
     [form]
   )
 
   function onSceneChange(value: string ) {
     setSceneURL(value)
-    setForm((prev) => ({ ...prev, fileName: value ?? '' }))
+    setForm((prev) => ({ ...prev, sceneURL: value ?? '', fileName: value.split('/').pop() ?? '' }))
   }
 
   function onNumberChange(key: keyof FormState, value: string) {
@@ -34,10 +34,33 @@ export default function Home() {
   }
 
   async function onSubmit() {
+    if (!canSubmit) return
+  
     setSubmitting(true)
     setError(null)
-
-
+    setResp(null)
+  
+    try {
+      const res = await fetch('/api/renders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+      })
+  
+      const data = await res.json()
+  
+      if (!res.ok) {
+        throw new Error(data?.error || 'Request failed')
+      }
+  
+      setResp(data)
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -61,6 +84,17 @@ export default function Home() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center p-6 md:p-24">
+      {/* About Section */}
+        <div className="mb-6 w-full max-w-3xl rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)] center">
+          <h2 className="text-xl md:text-2xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)]">
+            About
+          </h2>
+          <p className="mt-3 text-sm md:text-base text-red-200 leading-relaxed">
+            Pathological V2 is a distributed render pipeline. You submit a scene (GLTF) to S3 plus render parameters
+            (resolution, frames, samples-per-pixel). The scheduler gets the job, dispatches work to render workers, and uploads
+            results back to S3.
+          </p>
+        </div>
         <div className="w-full max-w-3xl rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
           <h2 className="text-2xl md:text-3xl font-bold mb-2 text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)]">
             Submit Render Job
@@ -86,8 +120,8 @@ export default function Home() {
                 <input
                   type="number"
                   min={1}
-                  value={form.frames}
-                  onChange={(e) => onNumberChange('frames', e.target.value)}
+                  value={form.frame_count}
+                  onChange={(e) => onNumberChange('frame_count', e.target.value)}
                   className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200
                              placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                 />
@@ -98,8 +132,8 @@ export default function Home() {
                 <input
                   type="number"
                   min={1}
-                  value={form.samplesPerPixel}
-                  onChange={(e) => onNumberChange('samplesPerPixel', e.target.value)}
+                  value={form.samples_per_pixel}
+                  onChange={(e) => onNumberChange('samples_per_pixel', e.target.value)}
                   className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200
                              placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                 />
@@ -141,31 +175,12 @@ export default function Home() {
             >
               {submitting ? 'Submitting…' : 'Submit'}
             </button>
-
-            <div className="rounded-lg border border-red-900 bg-black/60 p-4">
-              <div className="text-sm font-semibold text-red-300 mb-2">Scheduler Response</div>
-
-              {!resp && !error && (
-                <div className="text-sm text-red-400">No response yet.</div>
-              )}
-
-              {error && (
-                <div className="text-sm text-red-200">
-                  <span className="font-semibold text-red-300">Error:</span> {error}
-                </div>
-              )}
-
-              {resp && (
-                <div className="text-sm text-red-200 space-y-1">
-                  <div>
-                    <span className="font-semibold text-red-300">renderName:</span> {resp.renderName}
-                  </div>
-                  <div>
-                    <span className="font-semibold text-red-300">status:</span> {resp.status}
-                  </div>
-                </div>
-              )}
+            {/* Renders Section */}
+            <div>
+              <h1>Renders</h1>
             </div>
+
+
 
           </div>
         </div>
