@@ -1,6 +1,4 @@
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include "../build/protos/scheduler_server.pb.h"
 #include "../build/protos/scheduler_server.grpc.pb.h"
 
 using grpc::Server;
@@ -8,14 +6,17 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 using scheduler_server::WorkerConnection;
+using scheduler_server::WorkerIP;
+using scheduler_server::ServerResponse;
 
 #include <iostream>
 #include <string>
 
 
 class SchedulerServer final : public WorkerConnection::Service {
-    Status EstablishConnection(ServerContext *context, const WorkerConnection *request) {
-        // Implementation goes here
+    Status EstablishConnection(ServerContext *context, const WorkerIP *request, ServerResponse *response) {
+        std::cout << request->worker_ip() << std::endl;
+        response->set_error(9999);
         return Status::OK;
     }
 };
@@ -26,17 +27,19 @@ void RunServer(uint16_t port) {
 
   grpc::EnableDefaultHealthCheckService(true);
   ServerBuilder builder;
+
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+
   // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
+  // clients.
   builder.RegisterService(&service);
+
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
 
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
+  // Wait for the server to shutdown
   server->Wait();
 }
 
