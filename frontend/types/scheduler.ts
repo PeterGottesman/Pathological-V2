@@ -1,15 +1,23 @@
-export interface SubmitRenderRequest { //Request sent from client
-  fileName: string
-  frames: number
-  height: number
+// Request sent from client -> scheduler
+export interface SubmitRenderRequest {
+  gltf_file_url: string
+  frame_count: number
   width: number
-  samplesPerPixel: number
+  height: number
+  samples_per_pixel: number
 }
 
-export interface RenderJob { //Response sent from server/scheduler
-  id: string
-  renderName: string
-  status: 'pending' | 'success' | 'error'
-  createdAt: string
-  executionTime: number
+// Response sent from scheduler -> client
+export interface RenderJob {
+  id: number 
+  status: 'Completed' | 'In Progress' | 'In Queue' | 'Error' 
+  width: number
+  height: number
+  frame_count: number
+  created_at: string
+  execution_time: number
+  output_filename: string
+  samples_per_pixel: number
+  download_link: string | null
 }
+
