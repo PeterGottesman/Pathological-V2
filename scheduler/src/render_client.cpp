@@ -31,16 +31,16 @@ class RenderWorkerClient {
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
-  int RenderJob(myData testStructure) {
+  int RenderJob(myData data) {
     // Data we are sending and getting back
     RenderJobRequest request;
     RenderJobResponse response;
     ClientContext context;
 
     // Adds data to request
-    request.set_scene_location(testStructure.scene_location);
-    request.set_seconds(testStructure.seconds);
-    request.set_frames(testStructure.frames);
+    request.set_scene_location(data.scene_location);
+    request.set_seconds(data.seconds);
+    request.set_frames(data.frames);
 
     // The actual RPC.
     Status status = stub_->RenderJob(&context, request, &response);
@@ -48,6 +48,28 @@ class RenderWorkerClient {
     // Act upon its status.
     if (status.ok()) {
       return response.job_identifier();
+    } else {
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
+      return -1;
+    }
+  }
+
+  int RenderStatus(int job) {
+    // Data we are sending and getting back
+    RenderStatusRequest request;
+    RenderStatusResponse response;
+    ClientContext context;
+
+    // Adds data to request
+    request.set_job_identifier(job);
+
+    // The actual RPC.
+    Status status = stub_->RenderStatus(&context, request, &response);
+
+    // Act upon its status.
+    if (status.ok()) {
+      return response.status();
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
@@ -66,6 +88,8 @@ int main(int argc, char** argv) {
   testStruct.frames = 60;
   testStruct.seconds = 2;
 
+  int job = 100;
+
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created.
   std::string target_str = "localhost:50051";
@@ -75,6 +99,8 @@ int main(int argc, char** argv) {
   RenderWorkerClient client(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   int response = client.RenderJob(testStruct);
+  int response2 = client.RenderStatus(job);
   std::cout << "Greeter received: " << response << std::endl;
+  std::cout << "Greeter received: " << response2 << std::endl;
   return 0;
 }
