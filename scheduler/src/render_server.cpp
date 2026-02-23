@@ -26,6 +26,7 @@ class SchedulerServer final : public RenderWorker::Service {
 
     Status RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response) {
         // Implementation here
+        response->set_status(render_server::DONE);
         return Status::OK;
     }
 };
