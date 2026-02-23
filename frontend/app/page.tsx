@@ -150,7 +150,6 @@ export default function Home() {
             results back to S3.
           </p>
         </div>
-
         <div className="w-full max-w-3xl rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
           <h2 className="text-2xl md:text-3xl font-bold mb-2 text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)]">
             Submit Render Job
