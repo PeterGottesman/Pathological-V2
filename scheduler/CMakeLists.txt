@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Find packages
-#find_package(CLI11 CONFIG REQUIRED)
-#find_package(Drogon CONFIG REQUIRED)
+find_package(CLI11 CONFIG REQUIRED)
+find_package(Drogon CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 
@@ -38,14 +38,14 @@ PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
 
 
 # Main executable
-#add_executable(pathological-sched
-#    src/main.cpp
-#)
+add_executable(pathological-sched
+    src/main.cpp
+)
 
-#target_link_libraries(pathological-sched PRIVATE
-#    CLI11::CLI11
-#    Drogon::Drogon
-#)
+target_link_libraries(pathological-sched PRIVATE
+    CLI11::CLI11
+    Drogon::Drogon
+)
 
 # Scheduler server executable
 add_executable(scheduler-server src/scheduler_server.cpp)
