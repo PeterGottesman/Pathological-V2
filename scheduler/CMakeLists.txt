@@ -44,6 +44,8 @@ PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
 # Main executable
 add_executable(pathological-sched
     src/main.cpp
+    src/renderRequest.cpp
+    src/requestController.cpp
 )
 
 target_link_libraries(pathological-sched PRIVATE
