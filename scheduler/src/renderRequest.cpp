@@ -3,132 +3,167 @@
 
 RenderRequest::RenderRequest()
     : id(0), status(RenderStatus::UNKNOWN), width(0), height(0),
-      frameCount(0), executionTime(0), samplesPerPixel(0) {}
+      framesPerSecond(0), animationRuntime(0), framesCompleted(0),
+      executionTime(0), samplesPerPixel(0) {}
 
-RenderRequest::RenderRequest(long long id,
-                             RenderStatus status,
-                             int width,
-                             int height,
-                             int frameCount,
-                             const std::string &uploadFileUrl,
+RenderRequest::RenderRequest(long long id, RenderStatus status, int width,
+                             int height, int framesPerSecond,
+                             int animationRuntime, int framesCompleted,
+                             int executionTime, int samplesPerPixel,
+                             const std::string &sceneFileUrl,
                              const std::string &createdAt,
-                             int executionTime,
-                             const std::string &outputFileName,
-                             int samplesPerPixel)
-    : id(id), status(status), width(width), height(height), frameCount(frameCount),
-      gltfFileUrl(uploadFileUrl), createdAt(createdAt), executionTime(executionTime),
-      outputFileName(outputFileName), samplesPerPixel(samplesPerPixel), downloadLink(std::nullopt) {}
+                             const std::string &outputFileName)
+    : id(id), status(status), width(width), height(height),
+      framesPerSecond(framesPerSecond), animationRuntime(animationRuntime),
+      sceneFileUrl(sceneFileUrl), executionTime(executionTime),
+      createdAt(createdAt), outputFileName(outputFileName),
+      samplesPerPixel(samplesPerPixel), downloadLink(std::nullopt) {}
 
 long long RenderRequest::getId() const { return this->id; }
 
-void RenderRequest::setId(long long id)
-{
-    if (id < 0)
-    {
-        throw std::invalid_argument("ID value must be set to nonnegative integer.");
-    }
-
-    this->id = id;
-}
-
 int RenderRequest::getWidth() const { return this->width; }
-
-void RenderRequest::setWidth(int w)
-{
-    if (w < 0)
-    {
-        throw std::invalid_argument("Width must be greater than or equal to zero.");
-    }
-
-    this->width = w;
-}
 
 int RenderRequest::getHeight() const { return this->height; }
 
-void RenderRequest::setHeight(int h)
-{
-    if (h < 0)
-    {
-        throw std::invalid_argument("Height must be greater than or equal to zero.");
-    }
-    this->height = h;
+int RenderRequest::getFramesPerSecond() const { return this->framesPerSecond; }
+
+int RenderRequest::getAnimationRuntimeInFrames() const {
+  return this->animationRuntime;
 }
 
-int RenderRequest::getFrameCount() const { return this->frameCount; }
-void RenderRequest::setFrameCount(int fc)
-{
-    if (fc < 0)
-    {
-        throw std::invalid_argument("Frame count must be greater than or equal to zero.");
-    }
+int RenderRequest::getFramesCompleted() const { return this->framesCompleted; }
 
-    this->frameCount = fc;
+const std::string &RenderRequest::getSceneFileUrl() const {
+  return this->sceneFileUrl;
 }
 
-const std::string &RenderRequest::getGLTFFileUrl() const { return this->gltfFileUrl; }
-
-void RenderRequest::setFileUrl(const std::string &url)
-{
-    this->gltfFileUrl = url;
-}
-
-const std::string &RenderRequest::getCreatedAtTimestamp() const { return this->createdAt; }
-
-void RenderRequest::setCreatedAtTimestamp(const std::string &time)
-{
-    this->createdAt = time;
+const std::string &RenderRequest::getCreatedAtTimestamp() const {
+  return this->createdAt;
 }
 
 int RenderRequest::getExecutionTime() const { return this->executionTime; }
-void RenderRequest::setExecutionTime(int seconds)
-{
-    if (seconds < 0)
-    {
-        throw std::invalid_argument("Seconds must be greater than or equal to zero.");
-    }
-    this->executionTime = seconds;
-}
 
-const std::string &RenderRequest::getOutputFileName() const { return this->outputFileName; }
-void RenderRequest::setOutputFileName(const std::string &name)
-{
-    this->outputFileName = name;
+const std::string &RenderRequest::getOutputFileName() const {
+  return this->outputFileName;
 }
 
 int RenderRequest::getSamplesPerPixel() const { return this->samplesPerPixel; }
-void RenderRequest::setSamplesPerPixel(int s)
-{
-    this->samplesPerPixel = s;
+
+const std::optional<std::string> &RenderRequest::getDownloadLink() const {
+  return this->downloadLink;
 }
 
-const std::optional<std::string> &RenderRequest::getDownloadLink() const { return this->downloadLink; }
-void RenderRequest::setDownloadLink(const std::optional<std::string> &link)
-{
-    this->downloadLink = link;
+RenderRequest &RenderRequest::setId(long long id) {
+  if (id < 0) {
+    throw std::invalid_argument("ID value must be set to nonnegative integer.");
+  }
+
+  this->id = id;
+  return *this;
 }
 
-Json::Value RenderRequest::toJson() const
-{
-    Json::Value ret;
+RenderRequest &RenderRequest::setStatus(RenderStatus status) {
+  this->status = status;
+  return *this;
+}
 
-    ret["id"] = (Json::Int64)this->id;
-    ret["status"] = renderStatusToString(this->status);
-    ret["width"] = this->width;
-    ret["height"] = this->height;
-    ret["frame_count"] = this->frameCount;
-    ret["created_at"] = this->createdAt;
-    ret["execution_time"] = this->executionTime;
-    ret["output_filename"] = this->outputFileName;
-    ret["samples_per_pixel"] = this->samplesPerPixel;
-    if (this->status == RenderStatus::COMPLETED && this->downloadLink)
-    {
-        // Uses * to reference value from std::optional
-        ret["download_link"] = *this->downloadLink;
-    }
-    else
-    {
-        ret["download_link"] = Json::nullValue;
-    }
+RenderRequest &RenderRequest::setWidth(int w) {
+  if (w < 0) {
+    throw std::invalid_argument("Width must be greater than or equal to zero.");
+  }
 
-    return ret;
+  this->width = w;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setHeight(int h) {
+  if (h < 0) {
+    throw std::invalid_argument(
+        "Height must be greater than or equal to zero.");
+  }
+  this->height = h;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setFramesPerSecond(int fps) {
+  if (fps < 0) {
+    throw std::invalid_argument("Frames per second must be greater than 0.");
+  }
+  this->framesPerSecond;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setAnimationRuntimeInFrames(int frames) {
+  if (frames < 0) {
+    throw std::invalid_argument("Frames must be greater than zero.");
+  }
+  this->animationRuntime = animationRuntime;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setFramesCompleted(int frames) {
+  if (frames < 0) {
+    throw std::invalid_argument("Frames must be greater than zero.");
+  }
+  this->framesCompleted = frames;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setSceneFileUrl(const std::string &url) {
+  this->sceneFileUrl = url;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setCreatedAtTimestamp(const std::string &time) {
+  this->createdAt = time;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setExecutionTime(int seconds) {
+  if (seconds < 0) {
+    throw std::invalid_argument(
+        "Seconds must be greater than or equal to zero.");
+  }
+  this->executionTime = seconds;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setOutputFileName(const std::string &name) {
+  this->outputFileName = name;
+  return *this;
+}
+
+RenderRequest &RenderRequest::setSamplesPerPixel(int s) {
+  this->samplesPerPixel = s;
+  return *this;
+}
+
+RenderRequest &
+RenderRequest::setDownloadLink(const std::optional<std::string> &link) {
+  this->downloadLink = link;
+  return *this;
+}
+
+Json::Value RenderRequest::toJson() const {
+  Json::Value ret;
+
+  ret["id"] = (Json::Int64)this->id;
+  ret["status"] = renderStatusToString(this->status);
+  ret["width"] = this->width;
+  ret["height"] = this->height;
+  ret["framesPerSecond"] = this->framesPerSecond;
+  ret["animation_runtime"] = this->animationRuntime;
+  ret["frames_completed"] = this->framesCompleted;
+  ret["execution_time"] = this->executionTime;
+  ret["samples_per_pixel"] = this->samplesPerPixel;
+  ret["created_at"] = this->createdAt;
+  ret["output_filename"] = this->outputFileName;
+  if (this->status == RenderStatus::COMPLETED && this->downloadLink) {
+    // Uses * to reference value from std::optional
+    ret["download_link"] = *this->downloadLink;
+  } else {
+    ret["download_link"] = Json::nullValue;
+  }
+
+  return ret;
 }

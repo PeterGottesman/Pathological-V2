@@ -1,70 +1,62 @@
 #pragma once
 
-#include <string>
-#include <optional>
 #include <json/json.h>
+#include <optional>
+#include <string>
 
 #include "renderStatus.hpp"
 
-class RenderRequest
-{
+class RenderRequest {
 public:
-    RenderRequest();
-    RenderRequest(long long id,
-                  RenderStatus status,
-                  int width,
-                  int height,
-                  int frameCount,
-                  const std::string &uploadFileUrl,
-                  const std::string &createdAt,
-                  int executionTime,
-                  const std::string &outputFileName,
-                  int samplesPerPixel);
+  RenderRequest();
 
-    long long getId() const;
-    void setId(long long id);
+  RenderRequest(long long id, RenderStatus status, int width, int height,
+                int framesPerSecond, int animationRuntime, int framesCompleted,
+                int executionTime, int samplesPerPixel,
+                const std::string &sceneFileUrl, const std::string &createdAt,
+                const std::string &outputFileName);
 
-    int getWidth() const;
-    void setWidth(int w);
+  long long getId() const;
+  int getWidth() const;
+  int getHeight() const;
+  int getFramesPerSecond() const;
+  int getAnimationRuntimeInFrames() const;
+  int getFramesCompleted() const;
+  int getExecutionTime() const;
+  int getSamplesPerPixel() const;
+  const std::string &getSceneFileUrl() const;
+  const std::string &getCreatedAtTimestamp() const;
+  const std::string &getOutputFileName() const;
+  const std::optional<std::string> &getDownloadLink() const;
 
-    int getHeight() const;
-    void setHeight(int h);
+  RenderRequest &setId(long long id);
+  RenderRequest &setStatus(RenderStatus status);
+  RenderRequest &setWidth(int w);
+  RenderRequest &setHeight(int h);
+  RenderRequest &setFramesPerSecond(int fps);
+  RenderRequest &setAnimationRuntimeInFrames(int frames);
+  RenderRequest &setFramesCompleted(int frames);
+  RenderRequest &setExecutionTime(int seconds);
+  RenderRequest &setSamplesPerPixel(int s);
+  RenderRequest &setSceneFileUrl(const std::string &url);
+  RenderRequest &setCreatedAtTimestamp(const std::string &time);
+  RenderRequest &setOutputFileName(const std::string &name);
+  RenderRequest &setDownloadLink(const std::optional<std::string> &link);
 
-    int getFrameCount() const;
-    void setFrameCount(int fc);
-
-    const std::string &getGLTFFileUrl() const;
-    void setFileUrl(const std::string &url);
-
-    const std::string &getCreatedAtTimestamp() const;
-    void setCreatedAtTimestamp(const std::string &time);
-
-    int getExecutionTime() const;
-    void setExecutionTime(int seconds);
-
-    const std::string &getOutputFileName() const;
-    void setOutputFileName(const std::string &name);
-
-    int getSamplesPerPixel() const;
-    void setSamplesPerPixel(int s);
-
-    const std::optional<std::string> &getDownloadLink() const;
-    void setDownloadLink(const std::optional<std::string> &link);
-
-    Json::Value toJson() const;
+  Json::Value toJson() const;
 
 private:
-    long long id;
-    RenderStatus status;
-    int width;
-    int height;
-    int framesPerSecond;
-    int animationRuntime;
-    int framesCompleted;
-    int executionTime;
-    int samplesPerPixel;
-    std::string gltfFileUrl;
-    std::string createdAt;
-    std::string outputFileName;
-    std::optional<std::string> downloadLink;
+  long long id;
+  RenderStatus status;
+  int width;
+  int height;
+  int framesPerSecond;
+  int animationRuntime;
+  int framesCompleted;
+  int executionTime;
+  int samplesPerPixel;
+  std::string sceneFileUrl;
+  std::string createdAt;
+  std::string outputFileName;
+  std::optional<std::string> downloadLink;
 };
