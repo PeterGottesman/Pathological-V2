@@ -17,6 +17,7 @@ using render_server::RenderStatusResponse;
 
 class SchedulerServer final : public RenderWorker::Service {
     Status RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response) {
+        // Sample implementation
         std::cout << "Scene location: " << request->scene_location() << std::endl;
         std::cout << "Frames: " << request->frames() << std::endl;
         std::cout << "Seconds: " << request->seconds() << std::endl;
@@ -25,7 +26,7 @@ class SchedulerServer final : public RenderWorker::Service {
     }
 
     Status RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response) {
-        // Implementation here
+        // Sample implementation
         response->set_status(render_server::DONE);
         return Status::OK;
     }

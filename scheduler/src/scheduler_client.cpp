@@ -53,8 +53,10 @@ int main(int argc, char** argv) {
   // InsecureChannelCredentials()).
   SchedulerClient client(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string connectionAddr = "127.0.0.1:50051";
-  int response = client.EstablishConnection(connectionAddr);
+
+  // Giving sample connection address
+  std::string connection_address = "127.0.0.1:50051";
+  int response = client.EstablishConnection(connection_address);
   std::cout << "Greeter received: " << response << std::endl;
   return 0;
 }

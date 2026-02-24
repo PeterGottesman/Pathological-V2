@@ -16,6 +16,8 @@ using scheduler_server::ServerResponse;
 class SchedulerServer final : public WorkerConnection::Service {
     Status EstablishConnection(ServerContext *context, const WorkerIP *request, ServerResponse *response) {
         std::cout << request->worker_ip() << std::endl;
+
+        // Setting sample error value
         response->set_error(9999);
         return Status::OK;
     }
