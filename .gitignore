@@ -1,6 +1,7 @@
 compile_commands.json
 CMakeFiles/
 .cache/
+.vscode/
 
 /render_worker/build/
 /render_worker/debug-build/
