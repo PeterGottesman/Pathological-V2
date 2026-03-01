@@ -13,29 +13,31 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 
 get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
+get_filename_component(PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../protos ABSOLUTE)
 
 # Generates protobuf files for the scheduler_server to use
-add_library(protoscheduler protos/scheduler_server.proto)
+add_library(protoscheduler STATIC ${PROTO_DIR}/scheduler_server.proto)
 target_link_libraries(protoscheduler gRPC::grpc++)
 target_include_directories(protoscheduler PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-protobuf_generate(TARGET protoscheduler LANGUAGE cpp)
+protobuf_generate(TARGET protoscheduler LANGUAGE cpp IMPORT_DIRS ${PROTO_DIR})
 protobuf_generate(
 TARGET protoscheduler
 LANGUAGE grpc
 GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
+PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
+IMPORT_DIRS ${PROTO_DIR})
 
 # Generates protobuf files for the render_server to use
-add_library(protorender protos/render_server.proto)
+add_library(protorender STATIC ${PROTO_DIR}/render_server.proto)
 target_link_libraries(protorender gRPC::grpc++)
 target_include_directories(protorender PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-protobuf_generate(TARGET protorender LANGUAGE cpp)
+protobuf_generate(TARGET protorender LANGUAGE cpp IMPORT_DIRS ${PROTO_DIR})
 protobuf_generate(
 TARGET protorender
 LANGUAGE grpc
 GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
-
+PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
+IMPORT_DIRS ${PROTO_DIR})
 
 # Main executable
 add_executable(pathological-sched
@@ -50,14 +52,6 @@ target_link_libraries(pathological-sched PRIVATE
 # Scheduler server executable
 add_executable(scheduler-server src/scheduler_server.cpp)
 target_link_libraries(scheduler-server PRIVATE protoscheduler)
-
-# Render worker client executable
-#add_executable(scheduler-client src/scheduler_client.cpp)
-#target_link_libraries(scheduler-client PRIVATE protoscheduler)
-
-# Render worker server executable
-#add_executable(render-server src/render_server.cpp)
-#target_link_libraries(render-server PRIVATE protorender)
 
 # Scheduler client executable
 add_executable(render-client src/render_client.cpp)
