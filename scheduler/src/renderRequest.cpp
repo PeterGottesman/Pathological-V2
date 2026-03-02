@@ -151,7 +151,7 @@ Json::Value RenderRequest::toJson() const {
   ret["status"] = renderStatusToString(this->status);
   ret["width"] = this->width;
   ret["height"] = this->height;
-  ret["framesPerSecond"] = this->framesPerSecond;
+  ret["frames_per_second"] = this->framesPerSecond;
   ret["animation_runtime"] = this->animationRuntime;
   ret["frames_completed"] = this->framesCompleted;
   ret["execution_time"] = this->executionTime;
