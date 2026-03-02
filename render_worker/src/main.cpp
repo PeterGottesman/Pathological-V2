@@ -3,6 +3,7 @@
 #include "path_tracer.hpp"
 
 #include "render_server.hpp"
+#include "scheduler_client.hpp"
 
 #include <CLI/CLI.hpp>
 
@@ -13,6 +14,15 @@ int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
     RunServer(50051);
+    std::string target_str = "localhost:50051";
+    // We indicate that the channel isn't authenticated (use of
+    // InsecureChannelCredentials()).
+    SchedulerClient client(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+
+    // Giving sample connection address
+    std::string connection_address = "127.0.0.1:50051";
+    int response = client.EstablishConnection(connection_address);
+    std::cout << "Greeter received: " << response << std::endl;
 
     std::string gltfFile;
     uint32_t width = 1024;
