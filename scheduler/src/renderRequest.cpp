@@ -157,6 +157,7 @@ Json::Value RenderRequest::toJson() const {
   ret["execution_time"] = this->executionTime;
   ret["samples_per_pixel"] = this->samplesPerPixel;
   ret["created_at"] = this->createdAt;
+  ret["scene_file_url"] = this->sceneFileUrl;
   ret["output_filename"] = this->outputFileName;
   if (this->status == RenderStatus::COMPLETED && this->downloadLink) {
     // Uses * to reference value from std::optional
