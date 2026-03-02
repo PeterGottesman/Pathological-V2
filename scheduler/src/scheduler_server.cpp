@@ -12,20 +12,26 @@ using scheduler_server::ServerResponse;
 #include <iostream>
 #include <string>
 
-
 class SchedulerServer final : public WorkerConnection::Service {
+public:
+SchedulerServer(const std::string& file_uri, const std::string& argument)
+        : file_uri_(file_uri), argument_(argument) {}
     Status EstablishConnection(ServerContext *context, const WorkerIP *request, ServerResponse *response) {
-        std::cout << request->worker_ip() << std::endl;
-
-        // Setting sample error value
-        response->set_error(9999);
+        std::cout << "Worker connected: " << request->worker_ip() << std::endl;
+        response->set_file_uri(file_uri_);
+        response->set_argument(argument_);
+        response->set_error(0);
         return Status::OK;
     }
+
+private:
+    std::string file_uri_;
+    std::string argument_;
 };
 
-void RunServer(uint16_t port) {
+void RunServer(uint16_t port, const std::string& file_uri, const std::string& argument) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
-  SchedulerServer service;
+  SchedulerServer service(file_uri, argument);
 
   grpc::EnableDefaultHealthCheckService(true);
   ServerBuilder builder;
@@ -46,6 +52,10 @@ void RunServer(uint16_t port) {
 }
 
 int main(int argc, char *argv[]) {
-    RunServer(50051);
+    if (argc < 3) {
+        std::cerr << "Usage: ./server <file_uri> <argument>" << std::endl;
+        return 1;
+    }
+    RunServer(50051, argv[1], argv[2]);
     return 0;
 }
