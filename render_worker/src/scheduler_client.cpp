@@ -1,27 +1,14 @@
-#include <grpcpp/grpcpp.h>
+#include "scheduler_client.hpp"
 
 #include <iostream>
 #include <memory>
 #include <string>
 
-#include "../build/protos/scheduler_server.grpc.pb.h"
-#include "protos/scheduler_server.pb.h"
-
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using scheduler_server::WorkerConnection;
-using scheduler_server::WorkerIP;
-using scheduler_server::ServerResponse;
-
-class SchedulerClient {
- public:
-  SchedulerClient(std::shared_ptr<Channel> channel)
-      : stub_(WorkerConnection::NewStub(channel)) {}
+SchedulerClient::SchedulerClient(std::shared_ptr<Channel> channel): stub_(WorkerConnection::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
-  int EstablishConnection(const std::string& workerIP) {
+int SchedulerClient::EstablishConnection(const std::string& workerIP) {
     // Data we are sending and getting back
     WorkerIP request;
     request.set_worker_ip(workerIP);
@@ -39,24 +26,4 @@ class SchedulerClient {
                 << std::endl;
       return response.error();
     }
-  }
-
- private:
-  std::unique_ptr<WorkerConnection::Stub> stub_;
-};
-
-int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created.
-  std::string target_str = "localhost:50051";
-  // We indicate that the channel isn't authenticated (use of
-  // InsecureChannelCredentials()).
-  SchedulerClient client(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
-  // Giving sample connection address
-  std::string connection_address = "127.0.0.1:50051";
-  int response = client.EstablishConnection(connection_address);
-  std::cout << "Greeter received: " << response << std::endl;
-  return 0;
 }
