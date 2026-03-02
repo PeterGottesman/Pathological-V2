@@ -2,6 +2,8 @@
 #include "scene_graph.hpp"
 #include "path_tracer.hpp"
 
+#include "render_server.hpp"
+
 #include <CLI/CLI.hpp>
 
 #include <iostream>
@@ -9,6 +11,8 @@
 
 int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
+
+    RunServer(50051);
 
     std::string gltfFile;
     uint32_t width = 1024;

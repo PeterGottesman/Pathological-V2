@@ -55,6 +55,7 @@ add_executable(pathological
     src/scene_builder.cpp
     src/scene_graph.cpp
     src/path_tracer.cpp
+    src/render_server.cpp
 )
 
 # Render worker client executable
@@ -62,14 +63,15 @@ add_executable(scheduler-client src/scheduler_client.cpp)
 target_link_libraries(scheduler-client PRIVATE protoscheduler)
 
 # Render worker server executable
-add_executable(render-server src/render_server.cpp)
-target_link_libraries(render-server PRIVATE protorender)
+#add_executable(render-server src/render_server.cpp)
+#target_link_libraries(render-server PRIVATE protorender)
 
 target_link_libraries(pathological PRIVATE
     Vulkan::Vulkan
     GPUOpen::VulkanMemoryAllocator
     glm::glm
     CLI11::CLI11
+    protorender
 )
 
 target_include_directories(pathological PRIVATE ${Stb_INCLUDE_DIR} ${TINYGLTF_INCLUDE_DIRS})
