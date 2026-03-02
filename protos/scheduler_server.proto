@@ -13,4 +13,6 @@ message WorkerIP {
 
 message ServerResponse {
   int32 error = 1;
+  string file_uri = 2;  // Scheduler sends location of .gltf file to the renderer
+  string argument = 3;  // Scheduler sends command line argument to the renderer
 }
