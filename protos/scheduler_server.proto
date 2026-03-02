@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package scheduler_server;
+
+service WorkerConnection {
+  rpc EstablishConnection(WorkerIP) returns (ServerResponse);
+}
+
+// Render worker sends the ip of its server so the scheduler can request from it
+message WorkerIP {
+  string worker_ip = 1;
+}
+
+message ServerResponse {
+  int32 error = 1;
+}

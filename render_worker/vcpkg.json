@@ -6,6 +6,7 @@
     "glm",
     "cli11",
     "stb",
-    "tinygltf"
+    "tinygltf",
+    "grpc"
   ]
 }

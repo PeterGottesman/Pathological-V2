@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "dependencies": [
     "drogon",
-    "cli11"
+    "cli11",
+    "grpc"
   ]
 }
