@@ -6,6 +6,7 @@ enum Status {
   PENDING = 0;
   RENDERING = 1;
   DONE = 2;
+  ERROR = 3;
 }
 
 service RenderWorker {
@@ -23,6 +24,7 @@ message RenderJobRequest {
 // Render worker returns a unique job identifier so that the Scheduler can refer back to the render
 message RenderJobResponse {
   int32 job_identifier = 1;
+  optional string error_message = 2;
 }
 
 // Scheduler asks for the status of a given render
