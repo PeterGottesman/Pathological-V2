@@ -1,5 +1,10 @@
-#include "requestController.hpp"
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+
 #include "renderRequest.hpp"
+#include "requestController.hpp"
 
 void RequestController::getStatus(
     const HttpRequestPtr &req,
@@ -44,14 +49,21 @@ void RequestController::createRenderRequest(
       return;
     }
 
+    auto utc_now = std::chrono::system_clock::now();
+    std::time_t t = std::chrono::system_clock::to_time_t(utc_now);
+    std::ostringstream oss;
+    oss << std::put_time(std::gmtime(&t), "%Y-%m-%dT%H:%M:%SZ");
+    auto timestamp = oss.str();
+
     RenderRequest render;
     render.setId((*payload)["id"].asInt64())
         .setWidth((*payload)["width"].asInt())
         .setHeight((*payload)["height"].asInt())
+        .setStatus(RenderStatus::IN_QUEUE)
         .setFramesPerSecond((*payload)["frames_per_second"].asInt())
         .setAnimationRuntimeInFrames((*payload)["animation_runtime"].asInt())
         .setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
-        .setCreatedAtTimestamp("2026-02-28T00:00:00Z")
+        .setCreatedAtTimestamp(timestamp)
         .setSceneFileUrl((*payload)["scene_file_url"].asString())
         .setOutputFileName((*payload)["output_file_name"].asString());
 
