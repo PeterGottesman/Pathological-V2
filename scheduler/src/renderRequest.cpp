@@ -89,7 +89,7 @@ RenderRequest &RenderRequest::setFramesPerSecond(int fps) {
   if (fps < 0) {
     throw std::invalid_argument("Frames per second must be greater than 0.");
   }
-  this->framesPerSecond;
+  this->framesPerSecond = fps;
   return *this;
 }
 
