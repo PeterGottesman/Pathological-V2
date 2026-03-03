@@ -7,7 +7,6 @@ enum class RenderStatus
     IN_PROGRESS,
     IN_QUEUE,
     ERROR,
-    UNKNOWN
 };
 
 inline std::string renderStatusToString(RenderStatus status)
