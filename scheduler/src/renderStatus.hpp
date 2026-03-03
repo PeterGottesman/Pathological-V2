@@ -21,8 +21,6 @@ inline std::string renderStatusToString(RenderStatus status)
         return "In Queue";
     case RenderStatus::ERROR:
         return "Error";
-    case RenderStatus::UNKNOWN:
-        return "Unknown";
     default:
         return "Unknown";
     }
