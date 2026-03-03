@@ -3,9 +3,9 @@ syntax = "proto3";
 package render_server;
 
 enum Status {
-  PENDING = 0;
-  RENDERING = 1;
-  DONE = 2;
+  COMPLETED = 0;
+  IN_PROGRESS = 1;
+  IN_QUEUE = 2;
   ERROR = 3;
 }
 
