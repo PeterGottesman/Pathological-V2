@@ -32,19 +32,28 @@ void RequestController::getStatus(
 // Eventually JSON will be replaced with DTO object to validate entry.
 void RequestController::createRenderRequest(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    Json::Value &&payload) {
+    std::function<void(const HttpResponsePtr &)> &&callback) {
   try {
+    auto payload = req->getJsonObject();
+    if (!payload) {
+      Json::Value err;
+      err["error"] = req->getJsonError();
+      auto resp = HttpResponse::newHttpJsonResponse(err);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
     RenderRequest render;
-    render.setId(payload["id"].asInt64())
-        .setWidth(payload["width"].asInt())
-        .setHeight(payload["height"].asInt())
-        .setFramesPerSecond(payload["frames_per_second"].asInt())
-        .setAnimationRuntimeInFrames(payload["animation_runtime"].asInt())
-        .setSamplesPerPixel(payload["samples_per_pixel"].asInt())
+    render.setId((*payload)["id"].asInt64())
+        .setWidth((*payload)["width"].asInt())
+        .setHeight((*payload)["height"].asInt())
+        .setFramesPerSecond((*payload)["frames_per_second"].asInt())
+        .setAnimationRuntimeInFrames((*payload)["animation_runtime"].asInt())
+        .setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
         .setCreatedAtTimestamp("2026-02-28T00:00:00Z")
-        .setSceneFileUrl(payload["scene_file_url"].asString())
-        .setOutputFileName(payload["output_file_name"].asString());
+        .setSceneFileUrl((*payload)["scene_file_url"].asString())
+        .setOutputFileName((*payload)["output_file_name"].asString());
 
     auto resp = HttpResponse::newHttpJsonResponse(render.toJson());
     resp->setStatusCode(k201Created);
