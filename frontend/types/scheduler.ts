@@ -1,23 +1,26 @@
-// Request sent from client -> scheduler
-export interface SubmitRenderRequest {
-  gltf_file_url: string
-  frame_count: number
+export type SubmitRenderRequest = {
+  id: number
   width: number
   height: number
+  frames_per_second: number
+  animation_runtime: number
   samples_per_pixel: number
+  scene_file_url: string
+  output_filename: string
 }
 
-// Response sent from scheduler -> client
-export interface RenderJob {
-  id: number 
-  status: 'Completed' | 'In Progress' | 'In Queue' | 'Error' 
+export type RenderJob = {
+  id: number
+  status: string
   width: number
   height: number
-  frame_count: number
-  created_at: string
+  frames_per_second: number
+  animation_runtime: number
+  frames_completed: number
   execution_time: number
-  output_filename: string
   samples_per_pixel: number
+  created_at: string
+  scene_file_url: string
+  output_filename: string
   download_link: string | null
 }
-
