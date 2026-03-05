@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 RenderRequest::RenderRequest()
-    : id(0), status(RenderStatus::UNKNOWN), width(0), height(0),
+    : id(0), status(RenderStatus::IN_QUEUE), width(0), height(0),
       framesPerSecond(0), animationRuntime(0), framesCompleted(0),
       executionTime(0), samplesPerPixel(0) {}
 
