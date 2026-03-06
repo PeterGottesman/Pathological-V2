@@ -19,6 +19,7 @@ public:
   ~S3Manager();
   bool validateFile(const std::string &s3Path);
   std::optional<std::string> requestSceneFile(const std::string &s3Path);
+  bool searchFiles(const std::string &s3Path);
   std::optional<std::string> requestOutputFile(const std::string &s3Path);
 
 private:
