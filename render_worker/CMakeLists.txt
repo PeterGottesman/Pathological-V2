@@ -55,6 +55,7 @@ add_executable(pathological
     src/scene_builder.cpp
     src/scene_graph.cpp
     src/path_tracer.cpp
+    src/render_worker.cpp
     src/render_server.cpp
     src/scheduler_client.cpp
 )
