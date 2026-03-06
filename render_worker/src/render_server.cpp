@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 
-
 Status SchedulerServer::RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response) {
     // Sample implementation
     std::cout << "Scene location: " << request->scene_location() << std::endl;
@@ -14,7 +13,7 @@ Status SchedulerServer::RenderJob(ServerContext *context, const RenderJobRequest
 
 Status SchedulerServer::RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response) {
     // Sample implementation
-    response->set_status(render_server::DONE);
+    response->set_status(render_server::COMPLETED);
     return Status::OK;
 }
 
