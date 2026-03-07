@@ -4,6 +4,10 @@
   "dependencies": [
     "drogon",
     "cli11",
-    "grpc"
+    "grpc",
+    {
+      "name": "aws-sdk-cpp",
+      "features": ["s3"]
+    }
   ]
 }
