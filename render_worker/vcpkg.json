@@ -7,6 +7,12 @@
     "cli11",
     "stb",
     "tinygltf",
-    "grpc"
+    "grpc",
+    {
+      "name": "aws-sdk-cpp",
+      "features": [
+        "s3"
+      ]
+    }
   ]
 }
