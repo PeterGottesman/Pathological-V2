@@ -17,8 +17,11 @@ service RenderWorker {
 // Scheduler sends the path to the scene along with how many seconds to render and the number of frames
 message RenderJobRequest {
   string scene_location = 1;
-  uint32 seconds = 2;
-  uint32 frames = 3;
+  string output_name = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  uint32 samples = 5;
+  float time = 6;
 }
 
 // Render worker returns a unique job identifier so that the Scheduler can refer back to the render
