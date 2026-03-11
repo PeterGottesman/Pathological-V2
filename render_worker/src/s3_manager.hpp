@@ -1,7 +1,7 @@
 #pragma once
 
 #include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
+#include <aws/core/utils/memory/stl/AWSAllocator.h>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -19,8 +19,9 @@ public:
 
   bool keyExists(const std::string &s3Key);
   bool getObject(const std::string &s3Key, const std::string &localPath);
-  bool putObject(const std::string &localPath, const std::string &s3Key);
-  std::string createLink(const std::string &outputKey);
+  bool putObject(const std::string &localPath, const std::string &s3Key,
+                 bool overwriteExisting);
+  std::string createLink(const std::string &s3Key);
 
   // Controls link expiration timer in seconds.
   static constexpr uint64_t kPresignedUrlTimeout = 1800;
@@ -32,6 +33,6 @@ private:
 
   bool writeFileToPath(const std::string &path, std::streambuf *data,
                        long long expectedLen);
-
-  void appendFileExtentsion(std::string &path);
+  std::shared_ptr<Aws::IOStream>
+  readFileToAWSStream(const std::string &localPath);
 };
