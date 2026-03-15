@@ -1,60 +1,41 @@
-#include "vulkan_context.hpp"
-#include "scene_graph.hpp"
-#include "path_tracer.hpp"
-
+#include "render_server.hpp"
+#include "render_worker.hpp"
+#include "scheduler_client.hpp"
 #include <CLI/CLI.hpp>
 
+#include <cstdint>
 #include <iostream>
 #include <string>
+
+Status SchedulerServer::RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response) {
+    // Sample implementation
+    generateScene(request->width(), request->height(), request->samples(),
+        request->scene_location(), request->output_name(), request->time());
+    response->set_job_identifier(rand() % 10000);
+    return Status::OK;
+}
 
 int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
-    std::string gltfFile;
-    uint32_t width = 1024;
-    uint32_t height = 1024;
-    uint32_t samples = 256;
-    std::string output = "output.png";
-    float time = 0.0f;
+    std::string schedulerAddress;
+    std::string renderServerAddress = "127.0.0.1";
+    uint32_t renderServerPort = 50051;
 
-    app.add_option("gltf", gltfFile, "glTF scene file")->required();
-    app.add_option("-W,--width", width, "Image width")->default_val(1024);
-    app.add_option("-H,--height", height, "Image height")->default_val(1024);
-    app.add_option("-s,--samples", samples, "Samples per pixel")->default_val(256);
-    app.add_option("-o,--output", output, "Output filename")->default_val("output.png");
-    app.add_option("-t,--time", time, "Animation time in seconds")->default_val(0.0f);
-
+    app.add_option("schedulerAddress", schedulerAddress, "Address and port to find scheduler at")->required();
+    app.add_option("-a,--render-address", renderServerAddress, "Address of current machine running program")->default_val("127.0.0.1");
+    app.add_option("-p,--port", renderServerPort, "Port to launch server")->default_val(50051);
     CLI11_PARSE(app, argc, argv);
 
-    try {
-        std::cout << "Pathological - Vulkan Path Tracer" << std::endl;
-        std::cout << "==================================" << std::endl;
-        std::cout << "glTF File: " << gltfFile << std::endl;
-        std::cout << "Resolution: " << width << "x" << height << std::endl;
-        std::cout << "Samples: " << samples << std::endl;
-        std::cout << "Animation Time: " << time << "s" << std::endl;
-        std::cout << "Output: " << output << std::endl;
-        std::cout << std::endl;
+    SchedulerClient client(grpc::CreateChannel(schedulerAddress, grpc::InsecureChannelCredentials()));
 
-        {
-            VulkanContext ctx;
-            SceneGraph sceneGraph = SceneGraph::fromGltf(ctx, gltfFile);
-            sceneGraph.updateAnimation(time);
-            Scene scene = sceneGraph.build(ctx);
-            PathTracer tracer(ctx, scene, width, height);
+    // Sends scheduler IP and port
+    int response = client.EstablishConnection(
+        renderServerAddress + ":" + std::to_string(renderServerPort)
+    );
+    std::cout << "Greeter received: " << response << std::endl;
 
-            tracer.render(samples);
-            tracer.saveImage(output);
+    RunServer(renderServerPort);
 
-            // Wait for all GPU work to complete before cleanup
-            ctx.device().waitIdle();
-        } // Explicit scope to ensure cleanup order
-
-        std::cout << std::endl;
-        std::cout << "Done!" << std::endl;
-        return 0;
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
-    }
+    return 0;
 }

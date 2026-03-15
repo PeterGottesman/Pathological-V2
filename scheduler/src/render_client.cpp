@@ -20,8 +20,11 @@ using render_server::RenderStatusResponse;
 // Sample struct for sending data
 struct MyData {
     std::string scene_location;
-    uint32_t seconds;
-    uint32_t frames;
+    std::string output_name;
+    uint32_t width;
+    uint32_t height;
+    uint32_t samples;
+    float time;
 };
 
 class RenderWorkerClient {
@@ -39,8 +42,11 @@ class RenderWorkerClient {
 
     // Adds data to request
     request.set_scene_location(data.scene_location);
-    request.set_seconds(data.seconds);
-    request.set_frames(data.frames);
+    request.set_output_name(data.output_name);
+    request.set_width(data.width);
+    request.set_height(data.height);
+    request.set_samples(data.samples);
+    request.set_time(data.time);
 
     // The actual RPC.
     Status status = stub_->RenderJob(&context, request, &response);
@@ -84,9 +90,13 @@ class RenderWorkerClient {
 int main(int argc, char** argv) {
   // Sample data
   struct MyData test_struct;
-  test_struct.scene_location = "testing";
-  test_struct.frames = 60;
-  test_struct.seconds = 2;
+  test_struct.scene_location = "../test_scenes/cornell_box.gltf";
+  test_struct.output_name = "output.png";
+  test_struct.width = 1024;
+  test_struct.height = 1024;
+  test_struct.samples = 256;
+  test_struct.time = 0.0;
+
 
   // Sample job id for testing
   int job = 100;
