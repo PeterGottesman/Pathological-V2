@@ -11,6 +11,7 @@ find_package(CLI11 CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
+find_package(AWSSDK REQUIRED COMPONENTS s3)
 
 get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
 get_filename_component(PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../protos ABSOLUTE)
@@ -51,6 +52,7 @@ add_executable(pathological-sched
 target_link_libraries(pathological-sched PRIVATE
     CLI11::CLI11
     Drogon::Drogon
+    ${AWSSDK_LINK_LIBRARIES}
 )
 
 # Scheduler server executable
