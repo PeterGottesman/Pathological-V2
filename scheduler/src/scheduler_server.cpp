@@ -4,16 +4,16 @@ Status SchedulerServer::EstablishConnection(ServerContext *context, const Worker
     std::lock_guard<std::mutex> lock(workers_mutex_);
     std::cout << "Worker connected: " << request->worker_ip() << std::endl;
     Worker* existing = findWorkerByID(request->worker_id());
-    
+
     // If a worker connects and is already part of the server's registration, its status is set to 'IDLE'.
-    
+
     if (existing != nullptr) {
         existing->status = WorkerStatus::IDLE;
         response->set_status(RegistrationStatus::RECONNECTED);
         response->set_assigned_id(existing->id);
 
     // If a worker connects and isn't part of the server's registration, a new entry will be made for it on the list.
-    
+
     } else {
         Worker worker;
         worker.ip = request->worker_ip();
@@ -106,4 +106,10 @@ void RunServer(uint16_t port) {
 
   // Wait for the server to shutdown
   server->Wait();
+}
+
+// Sample before being incorporated into main
+int main(int argc, char *argv[]){
+    RunServer(50051);
+    return 0;
 }
