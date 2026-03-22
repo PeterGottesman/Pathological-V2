@@ -3,7 +3,26 @@
 #include <CLI/CLI.hpp>
 
 #include <cstdint>
+#include <csignal>
+#include <iostream>
 #include <string>
+#include <thread>
+
+// Sets a flag depending on signal
+void signalHandler(int signal){
+    std::string sig;
+    if (signal == 1) {
+        sig = "SIGHUP";
+    } else if (signal == 2) {
+        sig = "SIGINT";
+    } else if (signal == 15) {
+        sig = "SIGTERM";
+    } else {
+        sig = "UNDEFINED";
+    }
+    std::cout << sig << " HIT" << std::endl;
+    exit(signal);
+}
 
 int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
@@ -32,7 +51,16 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    RunServer(renderServerPort, client, worker_id);
+    // Signal handling to alert scheduler that render worker is down
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+    signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
+                                    // but exits for now
 
+    std::thread gRPCThread(RunServer, renderServerPort);
+
+    std::cout << "test" << std::endl;
+
+    gRPCThread.join();
     return 0;
 }
