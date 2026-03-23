@@ -37,7 +37,9 @@ int main(int argc, char** argv) {
         renderServerPort
     );
 
-    client.EstablishConnection();
+    if(client.EstablishConnection() == 1){
+        return 1;
+    }
 
     RunServer(renderServerPort);
 
