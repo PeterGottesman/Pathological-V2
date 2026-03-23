@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
     );
 
     if(client.EstablishConnection() == 1){
+        std::cerr << "Could not establish connection with scheduler. Now exiting." << std::endl;
         return 1;
     }
 
