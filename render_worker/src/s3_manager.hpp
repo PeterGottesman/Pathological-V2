@@ -2,6 +2,7 @@
 
 #include <aws/core/Aws.h>
 #include <aws/core/utils/memory/stl/AWSAllocator.h>
+#include <aws/s3/S3Client.h>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -10,6 +11,7 @@
 struct S3Config {
   std::string bucketName;
   std::string region;
+  std::string profileName;
 };
 
 class S3Manager {

@@ -108,9 +108,10 @@ bool S3Manager::writeFileToPath(const std::string &path, std::streambuf *data,
               << std::endl;
     return false;
   }
-  std::copy(std::istreambuf_iterator<char>(data), // Read data stream
-            std::istreambuf_iterator<char>(),     // End of stream
-            std::ostreambuf_iterator<char>(out)); // Writing stream to file
+
+  out << data;
+  out.flush();
+  out.close();
 
   if (!out.good()) {
     std::cerr << "Failed to write file to local path: " << path << std::endl;

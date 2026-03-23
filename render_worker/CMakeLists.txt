@@ -59,6 +59,7 @@ add_executable(pathological
     src/render_worker.cpp
     src/render_server.cpp
     src/scheduler_client.cpp
+    src/s3_manager.cpp
 )
 
 target_link_libraries(pathological PRIVATE
