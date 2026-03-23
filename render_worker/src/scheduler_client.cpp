@@ -1,7 +1,6 @@
 #include "scheduler_client.hpp"
 
-void SchedulerClient::EstablishConnection() {
-  
+int SchedulerClient::EstablishConnection() {
   // This populates a request from the server with the worker's info.
 
   WorkerInfo request;
@@ -31,8 +30,10 @@ void SchedulerClient::EstablishConnection() {
     } else if (response.status() == RegistrationStatus::REJECTED) {
         std::cout << "Registration rejected by scheduler." << std::endl;
     }
+    return 0;
   } else {
     std::cerr << "EstablishConnection failed: " << status.error_message() << std::endl;
+    return 1;
   }
 }
 

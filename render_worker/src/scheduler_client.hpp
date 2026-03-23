@@ -29,7 +29,7 @@ public:
         worker_ip_(worker_ip),
         port_(port) {}
 
-    void EstablishConnection();
+    int EstablishConnection();
     void Heartbeat();
     void JobCompleted(int32_t job_id);
     void Disconnect();
