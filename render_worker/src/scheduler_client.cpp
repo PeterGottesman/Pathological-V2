@@ -29,6 +29,7 @@ int SchedulerClient::EstablishConnection() {
         }
     } else if (response.status() == RegistrationStatus::REJECTED) {
         std::cout << "Registration rejected by scheduler." << std::endl;
+        return 1;
     }
     return 0;
   } else {
