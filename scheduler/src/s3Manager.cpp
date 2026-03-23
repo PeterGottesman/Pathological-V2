@@ -3,24 +3,26 @@
 
 #include "s3Manager.hpp"
 
-S3Manager::S3Manager(const S3Config &config) : config(config) {
+S3Manager::S3Manager(const S3Config &config) : config_(config) {
+  Aws::SDKOptions options;
   Aws::InitAPI(options);
   Aws::Client::ClientConfiguration clientConfig;
   clientConfig.region = config.region;
-  client = std::make_unique<Aws::S3::S3Client>(clientConfig);
+  client_ = std::make_unique<Aws::S3::S3Client>(clientConfig);
 }
 
 S3Manager::~S3Manager() {
-  client.reset();
+  client_.reset();
   Aws::ShutdownAPI(options);
 }
 
 bool S3Manager::keyExists(const std::string &s3Key) {
+  std::cout << "Fetching key: " << s3Key << std::endl;
   Aws::S3::Model::HeadObjectRequest req;
-  req.SetBucket(config.bucketName);
+  req.SetBucket(config_.bucketName);
   req.SetKey(s3Key);
 
-  auto resp = client->HeadObject(req);
+  auto resp = client_->HeadObject(req);
   if (resp.IsSuccess()) {
     return true;
   }
@@ -32,8 +34,8 @@ bool S3Manager::keyExists(const std::string &s3Key) {
 }
 
 std::optional<std::string> S3Manager::requestFileUrl(const std::string &s3Key) {
-  auto url = client->GeneratePresignedUrl(config.bucketName, s3Key,
-                                          Aws::Http::HttpMethod::HTTP_GET,
-                                          kPresignedUrlTimeout);
+  auto url = client_->GeneratePresignedUrl(config_.bucketName, s3Key,
+                                           Aws::Http::HttpMethod::HTTP_GET,
+                                           kPresignedUrlTimeout);
   return url.empty() ? std::nullopt : std::optional<std::string>(url);
 }

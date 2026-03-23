@@ -47,6 +47,7 @@ add_executable(pathological-sched
     src/main.cpp
     src/renderRequest.cpp
     src/requestController.cpp
+    src/s3Manager.cpp
 )
 
 target_link_libraries(pathological-sched PRIVATE

@@ -10,6 +10,7 @@
 struct S3Config {
   std::string bucketName;
   std::string region;
+  std::string profileName = "default";
 };
 
 class S3Manager {
@@ -22,7 +23,7 @@ public:
   static constexpr uint64_t kPresignedUrlTimeout = 1200;
 
 private:
-  S3Config config;
+  S3Config config_;
   Aws::SDKOptions options;
-  std::unique_ptr<Aws::S3::S3Client> client;
+  std::unique_ptr<Aws::S3::S3Client> client_;
 };
