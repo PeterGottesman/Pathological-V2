@@ -1,16 +1,16 @@
 #pragma once
 
+class Scheduler;
+
 #include <grpcpp/grpcpp.h>
 
 #include <iostream>
 #include <string>
-#include <vector>
-#include <mutex>
 
 #include "../build/protos/scheduler_server.grpc.pb.h"
 #include "../build/protos/scheduler_server.pb.h"
 
-#include "worker.hpp"
+// #include "worker.hpp"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -27,6 +27,7 @@ using scheduler_server::JobCompletedRequest;
 
 class SchedulerServer final : public WorkerConnection::Service {
 public:
+    SchedulerServer(Scheduler& scheduler) : scheduler_(scheduler) {}
     Status EstablishConnection(ServerContext* context, const WorkerInfo* request, ServerResponse* response) override;
 
     // **** 'override' is used to match this function with the virtual method in the parent class made by gRPC. ****
@@ -38,9 +39,7 @@ public:
     Status Disconnect(ServerContext* context, const WorkerID* request, ServerResponse* response) override;
 
 private:
-    std::vector<Worker> workers_; // This is the list of all registered workers in the scheduler.
-    std::mutex workers_mutex_; // This is used to prevent issues caused by workers connecting simultaneously.
-    Worker* findWorkerByID(const std::string& id);
+    Scheduler& scheduler_;
 };
 
-void RunServer(uint16_t port);
+void RunServer(uint16_t port, Scheduler& scheduler);
