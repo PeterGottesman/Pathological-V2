@@ -5,16 +5,16 @@ Status SchedulerServer::EstablishConnection(ServerContext *context, const Worker
     std::cout << "Worker connected: " << request->worker_ip() << std::endl;
 
     // Check if worker is reconnecting by searching scheduler's worker list
-    Worker* existing = scheduler_.findWorkerByID(request->worker_id());
+    Worker* existing = Scheduler::getInstance().findWorkerByID(request->worker_id());
 
     if (existing != nullptr) {
         // Worker is reconnecting, reset its status
-        scheduler_.reconnectWorker(request->worker_id());
+        Scheduler::getInstance().reconnectWorker(request->worker_id());
         response->set_status(RegistrationStatus::RECONNECTED);
         response->set_assigned_id(existing->id);
     } else {
         // New worker registering
-        scheduler_.registerWorker(request->worker_id(), request->worker_ip(), request->port());
+        Scheduler::getInstance().registerWorker(request->worker_id(), request->worker_ip(), request->port());
         response->set_status(RegistrationStatus::OK);
         response->set_assigned_id(request->worker_id());
     }
@@ -22,7 +22,7 @@ Status SchedulerServer::EstablishConnection(ServerContext *context, const Worker
 }
 
 Status SchedulerServer::Heartbeat(ServerContext* context, const WorkerID* request, ServerResponse* response) {
-    Worker* worker = scheduler_.findWorkerByID(request->worker_id());
+    Worker* worker = Scheduler::getInstance().findWorkerByID(request->worker_id());
 
     // If a worker can be recognized by the scheduler, the connection is still active.
     if (worker != nullptr) {
@@ -35,11 +35,11 @@ Status SchedulerServer::Heartbeat(ServerContext* context, const WorkerID* reques
 }
 
 Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedRequest* request, ServerResponse* response) {
-    Worker* worker = scheduler_.findWorkerByID(request->worker_id());
+    Worker* worker = Scheduler::getInstance().findWorkerByID(request->worker_id());
 
     // A recognized worker will be set to idle once a job is completed.
     if (worker != nullptr) {
-        scheduler_.markWorkerIdle(request->worker_id());
+        Scheduler::getInstance().markWorkerIdle(request->worker_id());
         std::cout << "Job " << request->job_id() << " completed by worker: " << request->worker_id() << std::endl;
         response->set_status(RegistrationStatus::OK);
     } else {
@@ -49,11 +49,11 @@ Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedR
 }
 
 Status SchedulerServer::Disconnect(ServerContext* context, const WorkerID* request, ServerResponse* response) {
-    Worker* worker = scheduler_.findWorkerByID(request->worker_id());
+    Worker* worker = Scheduler::getInstance().findWorkerByID(request->worker_id());
 
     // A recognized worker will have its status set to 'OFFLINE' once disconnected.
     if (worker != nullptr) {
-        scheduler_.markWorkerOffline(request->worker_id());
+        Scheduler::getInstance().markWorkerOffline(request->worker_id());
         std::cout << "Worker disconnected: " << request->worker_id() << std::endl;
         response->set_status(RegistrationStatus::OK);
     } else {
@@ -62,9 +62,9 @@ Status SchedulerServer::Disconnect(ServerContext* context, const WorkerID* reque
     return Status::OK;
 }
 
-void RunServer(uint16_t port, Scheduler& scheduler) {
+void RunServer(uint16_t port) {
   std::string server_address = "0.0.0.0:" + std::to_string(port); // **** Used to be 'absl::' but VSCode HATES it. ****
-  SchedulerServer service(scheduler);
+  SchedulerServer service;
 
   grpc::EnableDefaultHealthCheckService(true);
   ServerBuilder builder;
