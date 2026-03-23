@@ -16,8 +16,13 @@
 
 class Scheduler {
 public:
-    Scheduler();
-    ~Scheduler();
+    static Scheduler& getInstance() {
+        static Scheduler instance;
+        return instance;
+    }
+
+	Scheduler(const Scheduler&) = delete;
+    Scheduler& operator=(const Scheduler&) = delete;
 
 	Worker* findWorkerByID(const std::string& id);
 
@@ -34,6 +39,10 @@ public:
     void stop();
 
 private:
+	// Constructor and destructor
+	Scheduler() : running_(false) {}
+    ~Scheduler() { stop(); }  
+
     // Job queue
     std::queue<RenderRequest> pending_jobs_;
     std::mutex queue_mutex_;
