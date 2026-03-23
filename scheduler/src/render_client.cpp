@@ -1,23 +1,7 @@
-#include <cstdint>
-#include <grpcpp/grpcpp.h>
+#include "render_client.hpp"
 
-#include <iostream>
-#include <memory>
-#include <string>
+/* Sample struct for sending data
 
-#include "../build/protos/render_server.grpc.pb.h"
-#include "protos/render_server.pb.h"
-
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using render_server::RenderWorker;
-using render_server::RenderJobRequest;
-using render_server::RenderJobResponse;
-using render_server::RenderStatusRequest;
-using render_server::RenderStatusResponse;
-
-// Sample struct for sending data
 struct MyData {
     std::string scene_location;
     std::string output_name;
@@ -27,65 +11,58 @@ struct MyData {
     float time;
 };
 
-class RenderWorkerClient {
- public:
-  RenderWorkerClient(std::shared_ptr<Channel> channel)
-      : stub_(RenderWorker::NewStub(channel)) {}
+*/
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  int RenderJob(MyData data) {
-    // Data we are sending and getting back
-    RenderJobRequest request;
-    RenderJobResponse response;
-    ClientContext context;
+// Assembles the client's payload, sends it and presents the response back
+// from the server.
+int RenderWorkerClient::RenderJob(const RenderRequest& render) {
+  // Data we are sending and getting back
+  RenderJobRequest request;
+  RenderJobResponse response;
+  ClientContext context;
 
-    // Adds data to request
-    request.set_scene_location(data.scene_location);
-    request.set_output_name(data.output_name);
-    request.set_width(data.width);
-    request.set_height(data.height);
-    request.set_samples(data.samples);
-    request.set_time(data.time);
+  // Adds data to request
+  request.set_scene_location(render.getSceneFileUrl());
+  request.set_output_name(render.getOutputFileName());
+  request.set_width(static_cast<uint32_t>(render.getWidth()));
+  request.set_height(static_cast<uint32_t>(render.getHeight()));
+  request.set_samples(static_cast<uint32_t>(render.getSamplesPerPixel()));
+  request.set_time(static_cast<float>(render.getAnimationRuntimeInFrames())); // ****I'm ASSUMING this is what is from the frontend
 
-    // The actual RPC.
-    Status status = stub_->RenderJob(&context, request, &response);
+  // The actual RPC.
+  Status status = stub_->RenderJob(&context, request, &response);
 
-    // Act upon its status.
-    if (status.ok()) {
-      return response.job_identifier();
-    } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
-      return -1;
-    }
+  // Act upon its status.
+  if (status.ok()) {
+    return response.job_identifier();
+  } else {
+    std::cout << status.error_code() << ": " << status.error_message() << std::endl;
+    return -1;
   }
+}
 
-  int RenderStatus(int job) {
-    // Data we are sending and getting back
-    RenderStatusRequest request;
-    RenderStatusResponse response;
-    ClientContext context;
+int RenderWorkerClient::RenderStatus(int job) {
+  // Data we are sending and getting back
+  RenderStatusRequest request;
+  RenderStatusResponse response;
+  ClientContext context;
 
-    // Adds data to request
-    request.set_job_identifier(job);
+  // Adds data to request
+  request.set_job_identifier(job);
 
-    // The actual RPC.
-    Status status = stub_->RenderStatus(&context, request, &response);
+  // The actual RPC.
+  Status status = stub_->RenderStatus(&context, request, &response);
 
-    // Act upon its status.
-    if (status.ok()) {
-      return response.status();
-    } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
-      return -1;
-    }
+  // Act upon its status.
+  if (status.ok()) {
+    return response.status();
+  } else {
+    std::cout << status.error_code() << ": " << status.error_message() << std::endl;
+    return -1;
   }
+}
 
- private:
-  std::unique_ptr<RenderWorker::Stub> stub_;
-};
+/*
 
 int main(int argc, char** argv) {
   // Sample data
@@ -117,3 +94,5 @@ int main(int argc, char** argv) {
   std::cout << "Greeter received: " << response_two << std::endl;
   return 0;
 }
+
+*/
