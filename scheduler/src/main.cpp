@@ -36,9 +36,15 @@ int main(int argc, char **argv) {
         .run();
 
     // Cleanup when Drogon shuts down
+    std::cout << "Stopping scheduler..." << std::endl;
     Scheduler::getInstance().stop();
+    std::cout << "Stopping gRPC server..." << std::endl;
+    StopServer();
+    std::cout << "Joining gRPC thread..." << std::endl;
     grpc_thread.join();
+    std::cout << "Joining scheduler thread..." << std::endl;
     scheduler_thread.join();
+    std::cout << "Cleanup complete." << std::endl;
 
     return 0;
 }

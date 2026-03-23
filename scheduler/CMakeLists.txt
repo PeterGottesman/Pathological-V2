@@ -21,12 +21,12 @@ target_link_libraries(protoscheduler gRPC::grpc++)
 target_include_directories(protoscheduler PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 protobuf_generate(TARGET protoscheduler LANGUAGE cpp IMPORT_DIRS ${PROTO_DIR} PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
 protobuf_generate(
-TARGET protoscheduler
-LANGUAGE grpc
-GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
-IMPORT_DIRS ${PROTO_DIR}
-PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
+    TARGET protoscheduler
+    LANGUAGE grpc
+    GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+    PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
+    IMPORT_DIRS ${PROTO_DIR}
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
 
 # Generates protobuf files for the render_server to use
 add_library(protorender STATIC ${PROTO_DIR}/render_server.proto)
@@ -34,29 +34,35 @@ target_link_libraries(protorender gRPC::grpc++)
 target_include_directories(protorender PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 protobuf_generate(TARGET protorender LANGUAGE cpp IMPORT_DIRS ${PROTO_DIR} PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
 protobuf_generate(
-TARGET protorender
-LANGUAGE grpc
-GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
-IMPORT_DIRS ${PROTO_DIR}
-PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
+    TARGET protorender
+    LANGUAGE grpc
+    GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+    PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
+    IMPORT_DIRS ${PROTO_DIR}
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
 
 # Main executable
 add_executable(pathological-sched
     src/main.cpp
     src/renderRequest.cpp
     src/requestController.cpp
+    src/scheduler.cpp
+    src/scheduler_server.cpp
+    src/render_client.cpp
 )
 
 target_link_libraries(pathological-sched PRIVATE
     CLI11::CLI11
     Drogon::Drogon
+    protoscheduler
+    protorender
+    gRPC::grpc++
 )
 
 # Scheduler server executable
-add_executable(scheduler-server src/scheduler_server.cpp)
-target_link_libraries(scheduler-server PRIVATE protoscheduler)
+# add_executable(scheduler-server src/scheduler_server.cpp)
+# target_link_libraries(scheduler-server PRIVATE protoscheduler)
 
 # Scheduler client executable
-add_executable(render-client src/render_client.cpp)
-target_link_libraries(render-client PRIVATE protorender)
+# add_executable(render-client src/render_client.cpp)
+# target_link_libraries(render-client PRIVATE protorender)

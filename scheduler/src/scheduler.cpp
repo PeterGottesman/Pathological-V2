@@ -1,11 +1,5 @@
 #include "scheduler.hpp"
 
-Scheduler::Scheduler() : running_(false) {}
-
-Scheduler::~Scheduler() {
-    stop();
-}
-
 void Scheduler::addJob(const RenderRequest& job) {
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);

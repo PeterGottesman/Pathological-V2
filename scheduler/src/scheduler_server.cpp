@@ -1,5 +1,6 @@
 #include "scheduler_server.hpp"
 #include "scheduler.hpp"
+#include <chrono>
 
 Status SchedulerServer::EstablishConnection(ServerContext *context, const WorkerInfo *request, ServerResponse *response) {
     std::cout << "Worker connected: " << request->worker_ip() << std::endl;
@@ -62,6 +63,8 @@ Status SchedulerServer::Disconnect(ServerContext* context, const WorkerID* reque
     return Status::OK;
 }
 
+static std::unique_ptr<Server> server;
+
 void RunServer(uint16_t port) {
   std::string server_address = "0.0.0.0:" + std::to_string(port); // **** Used to be 'absl::' but VSCode HATES it. ****
   SchedulerServer service;
@@ -77,11 +80,17 @@ void RunServer(uint16_t port) {
   builder.RegisterService(&service);
 
   // Builds and starts the server.
-  std::unique_ptr<Server> server(builder.BuildAndStart());
+  server = builder.BuildAndStart();
   std::cout << "Scheduler listening on " << server_address << std::endl;
 
   // Wait for the server to shutdown
   server->Wait();
+}
+
+void StopServer() {
+    if (server) {
+        server->Shutdown(std::chrono::system_clock::now() + std::chrono::seconds(1));
+    }
 }
 
 /* Sample before being incorporated into main
