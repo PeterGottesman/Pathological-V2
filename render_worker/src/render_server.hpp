@@ -3,6 +3,7 @@
 #include <grpcpp/grpcpp.h>
 #include "../build/protos/render_server.grpc.pb.h"
 #include "../build/protos/render_server.pb.h"
+#include "scheduler_client.hpp"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -14,9 +15,16 @@ using render_server::RenderJobResponse;
 using render_server::RenderStatusRequest;
 using render_server::RenderStatusResponse;
 
-class SchedulerServer final : public RenderWorker::Service {
-    Status RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response);
+class RenderServer final : public RenderWorker::Service {
+public:
+    RenderServer(SchedulerClient& client, std::string worker_id) : client(client), worker_id(worker_id){}
+    Status RenderJob(ServerContext *context, const RenderJobRequest *request,
+        RenderJobResponse *response);
     Status RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response);
+
+private:
+    SchedulerClient& client;
+    std::string worker_id;
 };
 
-void RunServer(uint16_t port);
+void RunServer(uint16_t port, SchedulerClient& client, std::string worker_id);
