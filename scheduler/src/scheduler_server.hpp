@@ -43,3 +43,4 @@ private:
 };
 
 void RunServer(uint16_t port);
+void StopServer();
