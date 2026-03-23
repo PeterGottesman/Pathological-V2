@@ -1,43 +1,33 @@
 #include "scheduler_server.hpp"
+#include "scheduler.hpp"
 
 Status SchedulerServer::EstablishConnection(ServerContext *context, const WorkerInfo *request, ServerResponse *response) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
     std::cout << "Worker connected: " << request->worker_ip() << std::endl;
-    Worker* existing = findWorkerByID(request->worker_id());
 
-    // If a worker connects and is already part of the server's registration, its status is set to 'IDLE'.
+    // Check if worker is reconnecting by searching scheduler's worker list
+    Worker* existing = scheduler_.findWorkerByID(request->worker_id());
 
     if (existing != nullptr) {
-        existing->status = WorkerStatus::IDLE;
+        // Worker is reconnecting, reset its status
+        scheduler_.reconnectWorker(request->worker_id());
         response->set_status(RegistrationStatus::RECONNECTED);
         response->set_assigned_id(existing->id);
-
-    // If a worker connects and isn't part of the server's registration, a new entry will be made for it on the list.
-
     } else {
-        Worker worker;
-        worker.ip = request->worker_ip();
-        worker.port = request->port();
-        worker.id = request->worker_id();
-        worker.status = WorkerStatus::IDLE;
-        workers_.push_back(worker);
+        // New worker registering
+        scheduler_.registerWorker(request->worker_id(), request->worker_ip(), request->port());
         response->set_status(RegistrationStatus::OK);
-        response->set_assigned_id(worker.id);
+        response->set_assigned_id(request->worker_id());
     }
     return Status::OK;
 }
 
 Status SchedulerServer::Heartbeat(ServerContext* context, const WorkerID* request, ServerResponse* response) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
-    Worker* worker = findWorkerByID(request->worker_id());
+    Worker* worker = scheduler_.findWorkerByID(request->worker_id());
 
-    // If a worker can be recognized by the scheduler through a pointer, then the connection is still active.
-
+    // If a worker can be recognized by the scheduler, the connection is still active.
     if (worker != nullptr) {
         response->set_status(RegistrationStatus::OK);
-
     // If a worker cannot be recognized, it must reconnect.
-
     } else {
         response->set_status(RegistrationStatus::UNKNOWN);
     }
@@ -45,15 +35,12 @@ Status SchedulerServer::Heartbeat(ServerContext* context, const WorkerID* reques
 }
 
 Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedRequest* request, ServerResponse* response) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
-    Worker* worker = findWorkerByID(request->worker_id());
+    Worker* worker = scheduler_.findWorkerByID(request->worker_id());
 
     // A recognized worker will be set to idle once a job is completed.
-
     if (worker != nullptr) {
-        worker->status = WorkerStatus::IDLE;
-        std::cout << "Job " << request->job_id()
-                    << " completed by worker: " << request->worker_id() << std::endl;
+        scheduler_.markWorkerIdle(request->worker_id());
+        std::cout << "Job " << request->job_id() << " completed by worker: " << request->worker_id() << std::endl;
         response->set_status(RegistrationStatus::OK);
     } else {
         response->set_status(RegistrationStatus::UNKNOWN);
@@ -62,13 +49,11 @@ Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedR
 }
 
 Status SchedulerServer::Disconnect(ServerContext* context, const WorkerID* request, ServerResponse* response) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
-    Worker* worker = findWorkerByID(request->worker_id());
+    Worker* worker = scheduler_.findWorkerByID(request->worker_id());
 
     // A recognized worker will have its status set to 'OFFLINE' once disconnected.
-
     if (worker != nullptr) {
-        worker->status = WorkerStatus::OFFLINE;
+        scheduler_.markWorkerOffline(request->worker_id());
         std::cout << "Worker disconnected: " << request->worker_id() << std::endl;
         response->set_status(RegistrationStatus::OK);
     } else {
@@ -77,18 +62,9 @@ Status SchedulerServer::Disconnect(ServerContext* context, const WorkerID* reque
     return Status::OK;
 }
 
-Worker* SchedulerServer::findWorkerByID(const std::string& id) { // This checks if a worker is recognized in the scheduler.
-    for (auto& worker : workers_) {
-        if (worker.id == id) {
-            return &worker;
-        }
-    }
-    return nullptr;
-}
-
-void RunServer(uint16_t port) {
+void RunServer(uint16_t port, Scheduler& scheduler) {
   std::string server_address = "0.0.0.0:" + std::to_string(port); // **** Used to be 'absl::' but VSCode HATES it. ****
-  SchedulerServer service;
+  SchedulerServer service(scheduler);
 
   grpc::EnableDefaultHealthCheckService(true);
   ServerBuilder builder;
@@ -108,8 +84,9 @@ void RunServer(uint16_t port) {
   server->Wait();
 }
 
-// Sample before being incorporated into main
+/* Sample before being incorporated into main
 int main(int argc, char *argv[]){
     RunServer(50051);
     return 0;
 }
+*/
