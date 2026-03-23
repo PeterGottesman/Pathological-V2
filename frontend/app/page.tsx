@@ -14,7 +14,7 @@ export default function Home() {
       frames_per_second: 30,
       animation_runtime: 10,
       samples_per_pixel: 16,
-      scene_file_url: 'https://example.com/scene.gltf',
+      scene_file_url: 'https://pathological-capstone-s3-bucket.s3.us-east-2.amazonaws.com/cornell_box_animated.gltf',
       output_file_name: 'frontend_render.png',
     },
   ])
