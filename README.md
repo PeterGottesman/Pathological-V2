@@ -1,5 +1,4 @@
 # Pathological
-foo bar
 
 Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 
