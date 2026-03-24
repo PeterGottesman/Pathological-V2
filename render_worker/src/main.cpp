@@ -13,6 +13,17 @@
 int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
+    RunServer(50051);
+    std::string target_str = "localhost:50051";
+    // We indicate that the channel isn't authenticated (use of
+    // InsecureChannelCredentials()).
+    SchedulerClient client(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+
+    // Giving sample connection address
+    std::string connection_address = "127.0.0.1:50051";
+    int response = client.EstablishConnection(connection_address);
+    std::cout << "Greeter received: " << response << std::endl;
+
     std::string gltfFile;
     uint32_t width = 1024;
     uint32_t height = 1024;
@@ -55,19 +66,6 @@ int main(int argc, char** argv) {
 
         std::cout << std::endl;
         std::cout << "Done!" << std::endl;
-
-        RunServer(50051);
-
-        std::string target_str = "localhost:50051";
-        // We indicate that the channel isn't authenticated (use of
-        // InsecureChannelCredentials()).
-        SchedulerClient client(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
-        // Giving sample connection address
-        std::string connection_address = "127.0.0.1:50051";
-        int response = client.EstablishConnection(connection_address);
-        std::cout << "Greeter received: " << response << std::endl;
-
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
