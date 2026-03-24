@@ -2,7 +2,6 @@
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
-#include <aws/s3/model/PutObjectRequest.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -30,6 +29,10 @@ bool S3Manager::keyExists(const std::string &s3Key) {
   if (resp.IsSuccess()) {
     return true;
   }
+
+  std::cerr << "Validation request failed for '" << s3Key
+            << "': " << resp.GetError().GetMessage() << std::endl;
+
   return false;
 }
 
@@ -59,42 +62,9 @@ bool S3Manager::getObject(const std::string &s3Key,
 }
 
 bool S3Manager::putObject(const std::string &localPath,
-                          const std::string &s3Key, bool overwriteExisting) {
+                          const std::string &s3Key) {}
 
-  if (!overwriteExisting && keyExists(s3Key)) {
-    std::cerr << "Key '" << s3Key
-              << "' already exists. You can overwrite it by setting "
-                 "overwriteExisting to true."
-              << std::endl;
-    return false;
-  }
-
-  Aws::S3::Model::PutObjectRequest req;
-  req.SetBucket(config.bucketName);
-  req.SetKey(s3Key);
-
-  req.SetBody(readFileToAWSStream(localPath));
-
-  auto outcome = client->PutObject(req);
-  if (!outcome.IsSuccess()) {
-    const Aws::S3::S3Error &err = outcome.GetError();
-    std::cerr << "Error during PUT object request for key: '" << s3Key << "'. "
-              << err.GetExceptionName() << ": " << err.GetMessage()
-              << std::endl;
-    return false;
-  } else {
-    std::cout << "Successfully uploaded '" << s3Key << "' to "
-              << config.bucketName << "." << std::endl;
-  }
-
-  return true;
-}
-
-std::string S3Manager::createLink(const std::string &s3Key) {
-  return client->GeneratePresignedUrl(config.bucketName, s3Key,
-                                      Aws::Http::HttpMethod::HTTP_GET,
-                                      kPresignedUrlTimeout);
-}
+std::string S3Manager::createLink(const std::string &outputKey) {}
 
 // Function that writes stream of data in binary mode. Designed to use for gltf
 // files and png files.
@@ -128,17 +98,4 @@ bool S3Manager::writeFileToPath(const std::string &path, std::streambuf *data,
   }
 
   return true;
-}
-
-std::shared_ptr<Aws::IOStream>
-S3Manager::readFileToAWSStream(const std::string &localPath) {
-  auto stream = Aws::MakeShared<Aws::FStream>(
-      "S3Upload", localPath.c_str(), std::ios_base::in | std::ios_base::binary);
-
-  if (!stream->good()) {
-    std::cerr << "Failed to read " << localPath << std::endl;
-    return nullptr;
-  }
-
-  return stream;
 }
