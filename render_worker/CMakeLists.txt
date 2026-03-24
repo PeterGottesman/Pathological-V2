@@ -14,7 +14,6 @@ find_package(CLI11 CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
-find_package(AWSSDK REQUIRED COMPONENTS s3)
 
 # tinygltf is header-only
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
@@ -66,7 +65,8 @@ target_link_libraries(pathological PRIVATE
     GPUOpen::VulkanMemoryAllocator
     glm::glm
     CLI11::CLI11
-    ${AWSSDK_LINK_LIBRARIES}
+    protorender
+    protoscheduler
 )
 
 target_include_directories(pathological PRIVATE ${Stb_INCLUDE_DIR} ${TINYGLTF_INCLUDE_DIRS})
