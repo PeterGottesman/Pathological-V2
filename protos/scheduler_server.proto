@@ -2,52 +2,17 @@ syntax = "proto3";
 
 package scheduler_server;
 
-// The scheduler establishes connectivity with a render worker.
-// The render worker sends activity (heartbeat) signals at intervals to the scheduler let it know that the connection is active.
-
 service WorkerConnection {
-  rpc EstablishConnection(WorkerInfo) returns (ServerResponse);
-  rpc Heartbeat(WorkerID) returns (ServerResponse);
+  rpc EstablishConnection(WorkerIP) returns (ServerResponse);
 }
 
-// When a render worker connects to the scheduler, it registers to be part of its client list.
-// A new render worker is given an 'OK' when it is successfully registered.
-// A reconnecting render worker may already be registered to the scheduler's client list. 
-// To prevent data duplication, a render worker can be given an 'RECONNECTED'.
-// A render worker may be actively rejected from registration by the scheduler. 
-// This could be due to cases such as the scheduler having a client list cap to avoid excessive RAM usage.
-
-enum RegistrationStatus {
-  UNKNOWN = 0; // Used to avoid implying successful connectivity due to '0' being the default value of enum.
-  OK = 1;
-  RECONNECTED = 2;
-  REJECTED = 3;
-}
-
-// The render worker presents its availability status to the scheduler.
-// This determines how the scheduler chooses which render worker to assign work to.
-
-// **** WorkerStatus is kept internally ATM, meaning it cannot be sent over the network ****
-
-enum WorkerStatus {
-  IDLE = 0;
-  BUSY = 1;
-  OFFLINE = 2;
-}
-
-message WorkerInfo {
+// Render worker sends the ip of its server so the scheduler can request from it
+message WorkerIP {
   string worker_ip = 1;
-  string worker_id = 2;
-  uint32 port = 3;
-}
-
-// WorkerID is used for the Heartbeat RPC.
-
-message WorkerID {
-  string worker_id = 1;
 }
 
 message ServerResponse {
-  RegistrationStatus status = 1;
-  string assigned_id = 2; // This enables the scheduler to confirm and assign a render worker ID.
+  int32 error = 1;
+  string file_uri = 2;  // Scheduler sends location of .gltf file to the renderer
+  string argument = 3;  // Scheduler sends command line argument to the renderer
 }
