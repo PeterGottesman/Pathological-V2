@@ -32,6 +32,4 @@ private:
 
   bool writeFileToPath(const std::string &path, std::streambuf *data,
                        long long expectedLen);
-
-  void appendFileExtentsion(std::string &path);
 };
