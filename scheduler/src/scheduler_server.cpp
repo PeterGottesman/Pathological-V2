@@ -6,10 +6,9 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-
 using scheduler_server::WorkerConnection;
 using scheduler_server::RegistrationStatus;
-using scheduler_server::WorkerStatus; // **** Used internally ****
+using scheduler_server::WorkerStatus;
 using scheduler_server::WorkerInfo;
 using scheduler_server::WorkerID;
 using scheduler_server::ServerResponse;
@@ -22,8 +21,6 @@ using scheduler_server::JobCompletedRequest;
 
 // The 'Worker' struct is used for the scheduler to store state information about a render worker.
 // The scheduler uses this to refer back to them later, like if it needs to update a specific worker's status.
-
-// **** THIS WILL PROBABLY BE MOVED TO A DIFFERENT SCHEDULER FILE EVENTUALLY ****
 
 struct Worker {
     std::string id;
