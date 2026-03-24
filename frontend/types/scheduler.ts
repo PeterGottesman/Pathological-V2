@@ -24,4 +24,3 @@ export type RenderJob = {
   output_filename: string
   download_link: string | null
 }
-
