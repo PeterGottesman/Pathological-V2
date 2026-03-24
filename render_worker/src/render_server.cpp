@@ -1,27 +1,26 @@
 #include "render_server.hpp"
+#include "render_worker.hpp"
+#include "scheduler_client.hpp"
 #include <iostream>
 #include <string>
 
-Status SchedulerServer::RenderJob(ServerContext *context,
-                                  const RenderJobRequest *request,
-                                  RenderJobResponse *response) {
-  // Sample implementation
-  std::cout << "Scene location: " << request->scene_location() << std::endl;
-  std::cout << "Frames: " << request->frames() << std::endl;
-  std::cout << "Seconds: " << request->seconds() << std::endl;
-  response->set_job_identifier(rand() % 10000);
-  return Status::OK;
+Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request,
+    RenderJobResponse *response) {
+    std::cout << "Render Recieved" << std::endl;
+    response->set_job_identifier(rand() % 10000);
+    generateScene(request->width(), request->height(), request->samples(),
+        request->scene_location(), request->output_name(), request->time());
+    this->client.JobCompleted(response->job_identifier());
+    return Status::OK;
 }
 
-Status SchedulerServer::RenderStatus(ServerContext *context,
-                                     const RenderStatusRequest *request,
-                                     RenderStatusResponse *response) {
-  // Sample implementation
-  response->set_status(render_server::DONE);
-  return Status::OK;
+Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response) {
+    // Sample implementation
+    response->set_status(render_server::COMPLETED);
+    return Status::OK;
 }
 
-void RunServer(uint16_t port, SchedulerClient &client, std::string worker_id) {
+void RunServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   RenderServer service(client, worker_id);
 
