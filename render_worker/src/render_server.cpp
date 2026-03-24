@@ -2,6 +2,15 @@
 #include <iostream>
 #include <string>
 
+Status SchedulerServer::RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response) {
+    // Sample implementation
+    std::cout << "Scene location: " << request->scene_location() << std::endl;
+    std::cout << "Frames: " << request->frames() << std::endl;
+    std::cout << "Seconds: " << request->seconds() << std::endl;
+    response->set_job_identifier(rand() % 10000);
+    return Status::OK;
+}
+
 Status SchedulerServer::RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response) {
     // Sample implementation
     response->set_status(render_server::COMPLETED);
