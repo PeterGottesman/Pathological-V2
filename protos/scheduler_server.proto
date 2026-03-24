@@ -8,8 +8,6 @@ package scheduler_server;
 service WorkerConnection {
   rpc EstablishConnection(WorkerInfo) returns (ServerResponse);
   rpc Heartbeat(WorkerID) returns (ServerResponse);
-  rpc JobCompleted(JobCompletedRequest) returns (ServerResponse);
-  rpc Disconnect(WorkerID) returns (ServerResponse);
 }
 
 // When a render worker connects to the scheduler, it registers to be part of its client list.
@@ -43,7 +41,7 @@ message WorkerInfo {
   uint32 port = 3;
 }
 
-// WorkerID is used for the Heartbeat RPC and Disconnect RPC.
+// WorkerID is used for the Heartbeat RPC.
 
 message WorkerID {
   string worker_id = 1;
@@ -52,9 +50,4 @@ message WorkerID {
 message ServerResponse {
   RegistrationStatus status = 1;
   string assigned_id = 2; // This enables the scheduler to confirm and assign a render worker ID.
-}
-
-message JobCompletedRequest {
-  string worker_id = 1;
-  int32 job_identifier = 2;
 }
