@@ -52,7 +52,7 @@ message WorkerID {
 
 message ServerResponse {
   RegistrationStatus status = 1;
-  optional string assigned_id = 2; // This enables the scheduler to confirm and assign a render worker ID.
+  string assigned_id = 2; // This enables the scheduler to confirm and assign a render worker ID.
 }
 
 message JobCompletedRequest {

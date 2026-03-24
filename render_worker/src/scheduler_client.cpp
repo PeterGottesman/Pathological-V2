@@ -48,17 +48,13 @@ public:
 
     if (status.ok()) {
       if (response.status() == RegistrationStatus::OK) {
-        if (response.has_assigned_id()) {
-          worker_id_ = response.assigned_id();
+        worker_id_ = response.assigned_id();
           std::cout << "Registered with scheduler, assigned ID: " << worker_id_ << std::endl;
-        }
-      } else if (response.status() == RegistrationStatus::RECONNECTED) {
-          if (response.has_assigned_id()) {
-            std::cout << "Reconnected to scheduler with ID: " << worker_id_ << std::endl;
-          }
-      } else if (response.status() == RegistrationStatus::REJECTED) {
+        } else if (response.status() == RegistrationStatus::RECONNECTED) {
+          std::cout << "Reconnected to scheduler with ID: " << worker_id_ << std::endl;
+        } else if (response.status() == RegistrationStatus::REJECTED) {
           std::cout << "Registration rejected by scheduler." << std::endl;
-      }
+        }
     } else {
       std::cerr << "EstablishConnection failed: " << status.error_message() << std::endl;
     }
