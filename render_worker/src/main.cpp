@@ -1,6 +1,10 @@
+#include "vulkan_context.hpp"
+#include "scene_graph.hpp"
+#include "path_tracer.hpp"
+
 #include "render_server.hpp"
-#include "render_worker.hpp"
 #include "scheduler_client.hpp"
+
 #include <CLI/CLI.hpp>
 
 #include <iostream>
@@ -9,14 +13,14 @@
 int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
-
+    /*
     std::string gltfFile;
     uint32_t width = 1024;
     uint32_t height = 1024;
     uint32_t samples = 256;
     std::string output = "output.png";
     float time = 0.0f;
-
+    */
 
     /*
     app.add_option("gltf", gltfFile, "glTF scene file")->required();
@@ -27,22 +31,53 @@ int main(int argc, char** argv) {
     app.add_option("-t,--time", time, "Animation time in seconds")->default_val(0.0f);
     */
 
-    generateScene(width, height, samples, "../test_scenes/cornell_box.gltf", "output.png", time);
-
     std::string schedulerAddress = "localhost:50051";
     app.add_option("address", schedulerAddress, "Address and port to find scheduler at")->required();
 
-    RunServer(50051);
+    CLI11_PARSE(app, argc, argv);
 
-    std::string target_str = "localhost:50051";
-    // We indicate that the channel isn't authenticated (use of
-    // InsecureChannelCredentials()).
-    SchedulerClient client(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+    try {
+        std::cout << "Pathological - Vulkan Path Tracer" << std::endl;
+        std::cout << "==================================" << std::endl;
+        std::cout << "glTF File: " << gltfFile << std::endl;
+        std::cout << "Resolution: " << width << "x" << height << std::endl;
+        std::cout << "Samples: " << samples << std::endl;
+        std::cout << "Animation Time: " << time << "s" << std::endl;
+        std::cout << "Output: " << output << std::endl;
+        std::cout << std::endl;
 
-    // Giving sample connection address
-    std::string connection_address = "127.0.0.1:50051";
-    int response = client.EstablishConnection(connection_address);
-    std::cout << "Greeter received: " << response << std::endl;
+        {
+            VulkanContext ctx;
+            SceneGraph sceneGraph = SceneGraph::fromGltf(ctx, gltfFile);
+            sceneGraph.updateAnimation(time);
+            Scene scene = sceneGraph.build(ctx);
+            PathTracer tracer(ctx, scene, width, height);
 
-    return 0;
+            tracer.render(samples);
+            tracer.saveImage(output);
+
+            // Wait for all GPU work to complete before cleanup
+            ctx.device().waitIdle();
+        } // Explicit scope to ensure cleanup order
+
+        std::cout << std::endl;
+        std::cout << "Done!" << std::endl;
+
+        RunServer(50051);
+
+        std::string target_str = "localhost:50051";
+        // We indicate that the channel isn't authenticated (use of
+        // InsecureChannelCredentials()).
+        SchedulerClient client(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+
+        // Giving sample connection address
+        std::string connection_address = "127.0.0.1:50051";
+        int response = client.EstablishConnection(connection_address);
+        std::cout << "Greeter received: " << response << std::endl;
+
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
 }
