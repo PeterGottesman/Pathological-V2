@@ -4,7 +4,6 @@ package scheduler_server;
 
 // The scheduler establishes connectivity with a render worker.
 // The render worker sends activity (heartbeat) signals at intervals to the scheduler let it know that the connection is active.
-// Job completion and disconnection are notified to the scheduler by the render worker.
 
 service WorkerConnection {
   rpc EstablishConnection(WorkerInfo) returns (ServerResponse);
@@ -57,5 +56,5 @@ message ServerResponse {
 
 message JobCompletedRequest {
   string worker_id = 1;
-  int32 job_id = 2;
+  int32 job_identifier = 2;
 }
