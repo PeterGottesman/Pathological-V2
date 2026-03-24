@@ -13,26 +13,19 @@
 int main(int argc, char** argv) {
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
-    /*
     std::string gltfFile;
     uint32_t width = 1024;
     uint32_t height = 1024;
     uint32_t samples = 256;
     std::string output = "output.png";
     float time = 0.0f;
-    */
 
-    /*
     app.add_option("gltf", gltfFile, "glTF scene file")->required();
     app.add_option("-W,--width", width, "Image width")->default_val(1024);
     app.add_option("-H,--height", height, "Image height")->default_val(1024);
     app.add_option("-s,--samples", samples, "Samples per pixel")->default_val(256);
     app.add_option("-o,--output", output, "Output filename")->default_val("output.png");
     app.add_option("-t,--time", time, "Animation time in seconds")->default_val(0.0f);
-    */
-
-    std::string schedulerAddress = "localhost:50051";
-    app.add_option("address", schedulerAddress, "Address and port to find scheduler at")->required();
 
     CLI11_PARSE(app, argc, argv);
 
