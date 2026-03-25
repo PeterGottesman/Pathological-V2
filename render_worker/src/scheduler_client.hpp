@@ -1,8 +1,6 @@
 #pragma once
 
 #include <grpcpp/grpcpp.h>
-
-#include <iostream>
 #include <string>
 
 #include "../build/protos/scheduler_server.grpc.pb.h"
@@ -24,17 +22,22 @@ using scheduler_server::JobCompletedRequest;
 
 class SchedulerClient {
 public:
-    SchedulerClient(std::shared_ptr<Channel> channel, const std::string& worker_id, const std::string& worker_ip, uint32_t port) : stub_(WorkerConnection::NewStub(channel)),
-        worker_id_(worker_id),
-        worker_ip_(worker_ip),
-        port_(port) {}
+    static SchedulerClient& getInstance(){
+        static SchedulerClient instance = SchedulerClient();
+        return instance;
+    }
 
     int EstablishConnection();
+    void SetMembers(std::shared_ptr<Channel> channel, const std::string& worker_id, const std::string& worker_ip, uint32_t port);
     void Heartbeat();
     void JobCompleted(int32_t job_id);
     void Disconnect();
 
 private:
+    SchedulerClient() = default;
+    SchedulerClient(const SchedulerClient&) = delete;
+    SchedulerClient& operator=(const SchedulerClient&) = delete;
+
     std::unique_ptr<WorkerConnection::Stub> stub_;
     std::string worker_id_;
     std::string worker_ip_;
