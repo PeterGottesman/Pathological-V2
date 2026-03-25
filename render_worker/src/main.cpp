@@ -24,7 +24,8 @@ void signalHandler(int signal){
     }
     std::cout << sig << " HIT" << std::endl;
     client.Disconnect();
-    exit(signal);
+    exit(signal); // mutex error triggered due to gRPC shenanigans
+                  // https://github.com/grpc/grpc/issues/24884
 }
 
 int main(int argc, char** argv) {
