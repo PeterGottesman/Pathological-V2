@@ -6,9 +6,11 @@
 #include <csignal>
 #include <iostream>
 #include <string>
-#include <thread>
 
-// Sets a flag depending on signal
+// Creating reference to client singleton
+SchedulerClient& client = SchedulerClient::getInstance();
+
+// Alerts scheduler that the render worker is disconnecting
 void signalHandler(int signal){
     std::string sig;
     if (signal == 1) {
@@ -21,6 +23,7 @@ void signalHandler(int signal){
         sig = "UNDEFINED";
     }
     std::cout << sig << " HIT" << std::endl;
+    client.Disconnect();
     exit(signal);
 }
 
@@ -38,8 +41,7 @@ int main(int argc, char** argv) {
     CLI11_PARSE(app, argc, argv);
 
     // Sends scheduler IP and port
-
-    SchedulerClient client(
+    client.SetMembers(
         grpc::CreateChannel(schedulerAddress, grpc::InsecureChannelCredentials()),
         worker_id,
         renderServerAddress,
@@ -57,10 +59,6 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    std::thread gRPCThread(RunServer, renderServerPort);
-
-    std::cout << "test" << std::endl;
-
-    gRPCThread.join();
+    RunServer(renderServerPort);
     return 0;
 }
