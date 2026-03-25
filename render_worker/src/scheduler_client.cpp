@@ -1,4 +1,13 @@
 #include "scheduler_client.hpp"
+#include "protos/scheduler_server.grpc.pb.h"
+
+// Sets members in SchedulerClient
+void SchedulerClient::SetMembers(std::shared_ptr<Channel> channel, const std::string& worker_id, const std::string& worker_ip, uint32_t port){
+    SchedulerClient::stub_ = WorkerConnection::NewStub(channel);
+    SchedulerClient::worker_id_ = worker_id;
+    SchedulerClient::worker_ip_ = worker_ip;
+    SchedulerClient::port_ = port;
+}
 
 int SchedulerClient::EstablishConnection() {
   // This populates a request from the server with the worker's info.
