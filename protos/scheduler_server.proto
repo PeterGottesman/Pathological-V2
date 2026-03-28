@@ -15,9 +15,9 @@ service WorkerConnection {
 
 // When a render worker connects to the scheduler, it registers to be part of its client list.
 // A new render worker is given an 'OK' when it is successfully registered.
-// A reconnecting render worker may already be registered to the scheduler's client list. 
+// A reconnecting render worker may already be registered to the scheduler's client list.
 // To prevent data duplication, a render worker can be given an 'RECONNECTED'.
-// A render worker may be actively rejected from registration by the scheduler. 
+// A render worker may be actively rejected from registration by the scheduler.
 // This could be due to cases such as the scheduler having a client list cap to avoid excessive RAM usage.
 
 enum RegistrationStatus {
@@ -49,5 +49,5 @@ message ServerResponse {
 
 message JobCompletedRequest {
   string worker_id = 1;
-  int32 job_id = 2;
+  string job_id = 2;
 }

@@ -26,7 +26,7 @@ message RenderJobRequest {
 
 // Render worker returns a unique job identifier so that the Scheduler can refer back to the render
 message RenderJobResponse {
-  int32 job_identifier = 1;
+  string job_identifier = 1;
   optional string error_message = 2;
 }
 
