@@ -14,6 +14,8 @@ find_package(CLI11 CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
+find_package(Boost REQUIRED COMPONENTS uuid)
+
 
 # tinygltf is header-only
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
@@ -67,6 +69,7 @@ target_link_libraries(pathological PRIVATE
     CLI11::CLI11
     protorender
     protoscheduler
+    Boost::uuid
 )
 
 target_include_directories(pathological PRIVATE ${Stb_INCLUDE_DIR} ${TINYGLTF_INCLUDE_DIRS})
