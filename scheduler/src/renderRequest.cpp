@@ -2,24 +2,24 @@
 #include <stdexcept>
 
 RenderRequest::RenderRequest()
-    : id(0), status(RenderStatus::IN_QUEUE), width(0), height(0),
+    : id(gen()), status(RenderStatus::IN_QUEUE), width(0), height(0),
       framesPerSecond(0), animationRuntime(0), framesCompleted(0),
       executionTime(0), samplesPerPixel(0) {}
 
-RenderRequest::RenderRequest(long long id, RenderStatus status, int width,
-                             int height, int framesPerSecond,
-                             int animationRuntime, int framesCompleted,
-                             int executionTime, int samplesPerPixel,
+RenderRequest::RenderRequest(RenderStatus status, int width, int height,
+                             int framesPerSecond, int animationRuntime,
+                             int framesCompleted, int executionTime,
+                             int samplesPerPixel,
                              const std::string &sceneFileUrl,
                              const std::string &createdAt,
                              const std::string &outputFileName)
-    : id(id), status(status), width(width), height(height),
+    : id(gen()), status(status), width(width), height(height),
       framesPerSecond(framesPerSecond), animationRuntime(animationRuntime),
       sceneFileUrl(sceneFileUrl), executionTime(executionTime),
       createdAt(createdAt), outputFileName(outputFileName),
       samplesPerPixel(samplesPerPixel), downloadLink(std::nullopt) {}
 
-long long RenderRequest::getId() const { return this->id; }
+const boost::uuids::uuid &RenderRequest::getId() const { return this->id; }
 
 int RenderRequest::getWidth() const { return this->width; }
 
@@ -51,15 +51,6 @@ int RenderRequest::getSamplesPerPixel() const { return this->samplesPerPixel; }
 
 const std::optional<std::string> &RenderRequest::getDownloadLink() const {
   return this->downloadLink;
-}
-
-RenderRequest &RenderRequest::setId(long long id) {
-  if (id < 0) {
-    throw std::invalid_argument("ID value must be set to nonnegative integer.");
-  }
-
-  this->id = id;
-  return *this;
 }
 
 RenderRequest &RenderRequest::setStatus(RenderStatus status) {
@@ -147,7 +138,7 @@ RenderRequest::setDownloadLink(const std::optional<std::string> &link) {
 Json::Value RenderRequest::toJson() const {
   Json::Value ret;
 
-  ret["id"] = (Json::Int64)this->id;
+  ret["id"] = boost::uuids::to_string(this->id);
   ret["status"] = renderStatusToString(this->status);
   ret["width"] = this->width;
   ret["height"] = this->height;
