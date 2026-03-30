@@ -14,7 +14,7 @@ find_package(CLI11 CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS uuid)
+find_package(Boost CONFIG REQUIRED COMPONENTS uuid)
 
 
 # tinygltf is header-only
@@ -60,6 +60,7 @@ add_executable(pathological
     src/render_worker.cpp
     src/render_server.cpp
     src/scheduler_client.cpp
+    src/jobs.cpp
 )
 
 target_link_libraries(pathological PRIVATE
