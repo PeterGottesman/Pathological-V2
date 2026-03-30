@@ -60,7 +60,7 @@ add_executable(pathological
     src/render_worker.cpp
     src/render_server.cpp
     src/scheduler_client.cpp
-    src/jobs.cpp
+    src/render_jobs.cpp
 )
 
 target_link_libraries(pathological PRIVATE
