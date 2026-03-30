@@ -10,25 +10,29 @@ void Scheduler::addJob(const RenderRequest& job) {
 }
 
 void Scheduler::registerWorker(const std::string& id, const std::string& ip, uint32_t port) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
-    Worker worker;
-    worker.id = id;
-    worker.ip = ip;
-    worker.port = port;
-    worker.status = WorkerStatus::IDLE;
-    workers_.push_back(worker);
-    std::cout << "Worker registered: " << id << " at " << ip << std::endl;
+    {
+        std::lock_guard<std::mutex> lock(workers_mutex_);
+        Worker worker;
+        worker.id = id;
+        worker.ip = ip;
+        worker.port = port;
+        worker.status = WorkerStatus::IDLE;
+        workers_.push_back(worker);
+        std::cout << "Worker registered: " << id << " at " << ip << std::endl;
+    }
     job_available_.notify_one();
 }
 
 void Scheduler::reconnectWorker(const std::string& id) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
-    Worker* worker = findWorkerByID(id);
-    if (worker != nullptr) {
-        worker->status = WorkerStatus::IDLE;
-        std::cout << "Worker reconnected: " << id << std::endl;
-        job_available_.notify_one();
+    {
+        std::lock_guard<std::mutex> lock(workers_mutex_);
+        Worker* worker = findWorkerByID(id);
+        if (worker != nullptr) {
+            worker->status = WorkerStatus::IDLE;
+            std::cout << "Worker reconnected: " << id << std::endl;
+        }
     }
+    job_available_.notify_one();
 }
 
 void Scheduler::markWorkerOffline(const std::string& id) {
@@ -41,13 +45,15 @@ void Scheduler::markWorkerOffline(const std::string& id) {
 }
 
 void Scheduler::markWorkerIdle(const std::string& id) {
-    std::lock_guard<std::mutex> lock(workers_mutex_);
-    Worker* worker = findWorkerByID(id);
-    if (worker != nullptr) {
-        worker->status = WorkerStatus::IDLE;
-        std::cout << "Worker is idle: " << id << std::endl;
-        job_available_.notify_one();
+    {
+        std::lock_guard<std::mutex> lock(workers_mutex_);
+        Worker* worker = findWorkerByID(id);
+        if (worker != nullptr) {
+            worker->status = WorkerStatus::IDLE;
+            std::cout << "Worker is idle: " << id << std::endl;
+        }
     }
+    job_available_.notify_one();
 }
 
 void Scheduler::run() {
@@ -73,10 +79,11 @@ void Scheduler::stop() {
 
 void Scheduler::assignJobs() {
     std::lock_guard<std::mutex> lock(workers_mutex_);
+    std::cout << "Assigning jobs. Queue size: " << pending_jobs_.size()  << " | Connected workers: " << workers_.size() << std::endl;
     while (!pending_jobs_.empty()) {
         Worker* worker = findIdleWorker();
         if (worker == nullptr) {
-            std::cout << "No idle workers available, job waiting in queue." << std::endl;
+            std::cout << "No idle workers available, job in queue: " << pending_jobs_.size() << std::endl;
             break;
         }
         RenderRequest job = pending_jobs_.front();
