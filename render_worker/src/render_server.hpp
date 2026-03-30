@@ -8,7 +8,7 @@
 #include "../build/protos/render_server.grpc.pb.h"
 #include "../build/protos/render_server.pb.h"
 #include "scheduler_client.hpp"
-#include "jobs.hpp"
+#include "render_jobs.hpp"
 
 using grpc::Server;
 using grpc::ServerBuilder;
