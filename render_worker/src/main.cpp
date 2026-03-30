@@ -1,8 +1,8 @@
 #include "render_server.hpp"
 #include "scheduler_client.hpp"
-#include <CLI/CLI.hpp>
 
 #include <condition_variable>
+#include <CLI/CLI.hpp>
 #include <cstdint>
 #include <csignal>
 #include <iostream>
@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
     std::string schedulerAddress;
     std::string renderServerAddress = "127.0.0.1";
     uint32_t renderServerPort = 50051;
+    boost::uuids::random_generator random_gen;
 
     app.add_option("schedulerAddress", schedulerAddress, "Address and port to find scheduler at")->required();
     app.add_option("-a,--render-address", renderServerAddress, "Address of current machine running program")->default_val("127.0.0.1");
@@ -75,7 +76,7 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    server = BuildServer(renderServerPort, client, worker_id);
+    server = BuildServer(renderServerPort, client, worker_id, random_gen);
     std::thread shutdown_thread(shutdownServer);
     server->Wait();
     shutdown_thread.join();
