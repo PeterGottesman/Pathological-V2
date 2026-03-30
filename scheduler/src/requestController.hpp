@@ -21,7 +21,7 @@ public:
 
   void getStatus(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 int id) const;
+                 std::string id) const;
 
   void
   createRenderRequest(const HttpRequestPtr &req,

@@ -1,3 +1,4 @@
+#include <boost/uuid.hpp>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -9,26 +10,16 @@
 
 void RequestController::getStatus(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback, int id) const {
-  // Search scheduler queue/s3 bucket by ID
-  // Return
-  // If ID exists return json else 404
-  RenderRequest render;
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    std::string id) const {
 
-  render.setId(1234567)
-      .setStatus(RenderStatus::IN_QUEUE)
-      .setWidth(1024)
-      .setHeight(1024)
-      .setFramesPerSecond(1)
-      .setAnimationRuntimeInFrames(1)
-      .setFramesCompleted(0)
-      .setExecutionTime(0)
-      .setSamplesPerPixel(128)
-      .setSceneFileUrl("https://example.com/scene.gltf")
-      .setCreatedAtTimestamp("2026-02-28T00:00:00Z")
-      .setOutputFileName("output.png");
+  boost::uuids::string_generator stringGen;
+  boost::uuids::uuid uuid = stringGen(id);
 
-  auto ret = render.toJson();
+  // Add ID search function
+
+  // JSON placeholder
+  Json::Value ret;
 
   auto resp = HttpResponse::newHttpJsonResponse(ret);
   callback(resp);
@@ -57,8 +48,7 @@ void RequestController::createRenderRequest(
     auto timestamp = oss.str();
 
     RenderRequest render;
-    render.setId((*payload)["id"].asInt64())
-        .setWidth((*payload)["width"].asInt())
+    render.setWidth((*payload)["width"].asInt())
         .setHeight((*payload)["height"].asInt())
         .setStatus(RenderStatus::IN_QUEUE)
         .setFramesPerSecond((*payload)["frames_per_second"].asInt())
