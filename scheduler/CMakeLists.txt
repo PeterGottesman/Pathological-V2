@@ -58,11 +58,3 @@ target_link_libraries(pathological-sched PRIVATE
     protorender
     gRPC::grpc++
 )
-
-# Scheduler server executable
-# add_executable(scheduler-server src/scheduler_server.cpp)
-# target_link_libraries(scheduler-server PRIVATE protoscheduler)
-
-# Scheduler client executable
-# add_executable(render-client src/render_client.cpp)
-# target_link_libraries(render-client PRIVATE protorender)

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <grpcpp/grpcpp.h>
-#include <iostream>
-#include <string>
 
 #include "../build/protos/render_server.grpc.pb.h"
 #include "../build/protos/render_server.pb.h"
