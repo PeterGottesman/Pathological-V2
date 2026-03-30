@@ -64,7 +64,7 @@ void SchedulerClient::Heartbeat() {
   }
 }
 
-void SchedulerClient::JobCompleted(int32_t job_id) {
+void SchedulerClient::JobCompleted(std::string job_id) {
   JobCompletedRequest request;
   request.set_worker_id(worker_id_);
   request.set_job_id(job_id);
