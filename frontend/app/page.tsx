@@ -1,10 +1,6 @@
 'use client'
 
-<<<<<<< Updated upstream
-import { useState } from 'react'
-=======
 import { useEffect, useState } from 'react'
->>>>>>> Stashed changes
 import type { SubmitRenderRequest, RenderJob } from '@/types/scheduler'
 
 type FormState = SubmitRenderRequest
@@ -12,24 +8,14 @@ type FormState = SubmitRenderRequest
 export default function Home() {
   const [forms, setForms] = useState<FormState[]>([
     {
-<<<<<<< Updated upstream
-      id: 1,
-=======
->>>>>>> Stashed changes
       width: 1920,
       height: 1080,
       frames_per_second: 30,
       animation_runtime: 10,
       samples_per_pixel: 16,
-<<<<<<< Updated upstream
-      scene_file_url: 'https://pathological-capstone-s3-bucket.s3.us-east-2.amazonaws.com/cornell_box_animated.gltf',
-      output_file_name: 'frontend_render.png',
-    },
-=======
       scene_file_url: '/home/dtre/Pathological-V2/render_worker/test_scenes/cornell_box.gltf',
       output_file_name: 'frontend_render.png',
     } as FormState,
->>>>>>> Stashed changes
   ])
 
   const [submitting, setSubmitting] = useState(false)
@@ -58,11 +44,7 @@ export default function Home() {
   function onTextChange(index: number, key: keyof FormState, value: string) {
     setForms((prev) => {
       const next = [...prev]
-<<<<<<< Updated upstream
-      next[index] = { ...next[index], [key]: value as any }
-=======
       next[index] = { ...next[index], [key]: value as never }
->>>>>>> Stashed changes
       return next
     })
   }
@@ -70,11 +52,7 @@ export default function Home() {
   function onNumberChange(index: number, key: keyof FormState, value: string) {
     setForms((prev) => {
       const next = [...prev]
-<<<<<<< Updated upstream
-      next[index] = { ...next[index], [key]: Number(value) as any }
-=======
       next[index] = { ...next[index], [key]: Number(value) as never }
->>>>>>> Stashed changes
       return next
     })
   }
@@ -83,10 +61,6 @@ export default function Home() {
     setForms((prev) => [
       ...prev,
       {
-<<<<<<< Updated upstream
-        id: prev.length + 1,
-=======
->>>>>>> Stashed changes
         width: 1920,
         height: 1080,
         frames_per_second: 30,
@@ -94,11 +68,7 @@ export default function Home() {
         samples_per_pixel: 16,
         scene_file_url: '',
         output_file_name: 'frontend_render.png',
-<<<<<<< Updated upstream
-      },
-=======
       } as FormState,
->>>>>>> Stashed changes
     ])
   }
 
@@ -107,35 +77,6 @@ export default function Home() {
     setStatusMsg(null)
     setResp(null)
 
-<<<<<<< Updated upstream
-    try {
-      const results: RenderJob[] = []
-
-      for (const form of forms) {
-        const res = await fetch('/api/renders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          setStatusMsg({ type: 'error', text: data?.error || 'Request failed' })
-          return
-        }
-
-        results.push(data)
-      }
-
-      setResp(results)
-      setStatusMsg({ type: 'success', text: 'Render jobs submitted.' })
-    } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err?.message || 'Something went wrong' })
-    } finally {
-      setSubmitting(false)
-    }
-=======
     const results = await Promise.all(
       forms.map(async (form) => {
         const { id: _id, output_file_name, ...rest } = form as FormState & {
@@ -162,7 +103,6 @@ export default function Home() {
     setResp(results)
     setStatusMsg({ type: 'success', text: 'Render jobs submitted.' })
     setSubmitting(false)
->>>>>>> Stashed changes
   }
   
 
@@ -425,11 +365,6 @@ export default function Home() {
               <div className="font-semibold text-red-300">Rendered Images</div>
 
               <div className="mt-4 grid grid-cols-1 gap-4">
-<<<<<<< Updated upstream
-                <div className="flex min-h-[180px] items-center justify-center rounded-lg border border-red-900/60 bg-black/40 text-sm text-red-300/70">
-                  No rendered images yet.
-                </div>
-=======
                 {jobs.length === 0 ? (
                   <div className="flex min-h-[180px] items-center justify-center rounded-lg border border-red-900/60 bg-black/40 text-sm text-red-300/70">
                     No rendered images yet.
@@ -448,7 +383,6 @@ export default function Home() {
                     </div>
                   ))
                 )}
->>>>>>> Stashed changes
               </div>
             </div>
           </div>
