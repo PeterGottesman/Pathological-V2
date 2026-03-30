@@ -27,8 +27,4 @@ export async function GET(req: NextRequest) {
 
   const data = (await schedulerRes.json()) as RenderJob
   return NextResponse.json(data, { status: schedulerRes.status })
-<<<<<<< Updated upstream
 }
-=======
-}
->>>>>>> Stashed changes
