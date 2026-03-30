@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/uuid.hpp>
 #include <json/json.h>
 #include <optional>
 #include <string>
@@ -7,16 +8,18 @@
 #include "renderStatus.hpp"
 
 class RenderRequest {
+  static inline boost::uuids::random_generator_mt19937 gen{};
+
 public:
   RenderRequest();
 
-  RenderRequest(long long id, RenderStatus status, int width, int height,
-                int framesPerSecond, int animationRuntime, int framesCompleted,
-                int executionTime, int samplesPerPixel,
-                const std::string &sceneFileUrl, const std::string &createdAt,
+  RenderRequest(RenderStatus status, int width, int height, int framesPerSecond,
+                int animationRuntime, int framesCompleted, int executionTime,
+                int samplesPerPixel, const std::string &sceneFileUrl,
+                const std::string &createdAt,
                 const std::string &outputFileName);
 
-  long long getId() const;
+  const boost::uuids::uuid &getId() const;
   int getWidth() const;
   int getHeight() const;
   int getFramesPerSecond() const;
@@ -29,7 +32,6 @@ public:
   const std::string &getOutputFileName() const;
   const std::optional<std::string> &getDownloadLink() const;
 
-  RenderRequest &setId(long long id);
   RenderRequest &setStatus(RenderStatus status);
   RenderRequest &setWidth(int w);
   RenderRequest &setHeight(int h);
@@ -46,7 +48,7 @@ public:
   Json::Value toJson() const;
 
 private:
-  long long id;
+  boost::uuids::uuid id;
   RenderStatus status;
   int width;
   int height;
