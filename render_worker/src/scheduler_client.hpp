@@ -30,7 +30,7 @@ public:
     int EstablishConnection();
     void SetMembers(std::shared_ptr<Channel> channel, const std::string& worker_id, const std::string& worker_ip, uint32_t port);
     void Heartbeat();
-    void JobCompleted(int32_t job_id);
+    void JobCompleted(std::string job_id);
     void Disconnect();
 
 private:
