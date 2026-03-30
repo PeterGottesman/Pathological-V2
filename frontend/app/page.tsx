@@ -1,6 +1,10 @@
 'use client'
 
+<<<<<<< Updated upstream
 import { useState } from 'react'
+=======
+import { useEffect, useState } from 'react'
+>>>>>>> Stashed changes
 import type { SubmitRenderRequest, RenderJob } from '@/types/scheduler'
 
 type FormState = SubmitRenderRequest
@@ -8,21 +12,31 @@ type FormState = SubmitRenderRequest
 export default function Home() {
   const [forms, setForms] = useState<FormState[]>([
     {
+<<<<<<< Updated upstream
       id: 1,
+=======
+>>>>>>> Stashed changes
       width: 1920,
       height: 1080,
       frames_per_second: 30,
       animation_runtime: 10,
       samples_per_pixel: 16,
+<<<<<<< Updated upstream
       scene_file_url: 'https://pathological-capstone-s3-bucket.s3.us-east-2.amazonaws.com/cornell_box_animated.gltf',
       output_file_name: 'frontend_render.png',
     },
+=======
+      scene_file_url: '/home/dtre/Pathological-V2/render_worker/test_scenes/cornell_box.gltf',
+      output_file_name: 'frontend_render.png',
+    } as FormState,
+>>>>>>> Stashed changes
   ])
 
   const [submitting, setSubmitting] = useState(false)
   const [resp, setResp] = useState<RenderJob | RenderJob[] | null>(null)
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [getId, setGetId] = useState<string>('')
+  const [jobs, setJobs] = useState<RenderJob[]>([])
 
   function onSceneChange(index: number, value: string) {
     const v = value ?? ''
@@ -44,7 +58,11 @@ export default function Home() {
   function onTextChange(index: number, key: keyof FormState, value: string) {
     setForms((prev) => {
       const next = [...prev]
+<<<<<<< Updated upstream
       next[index] = { ...next[index], [key]: value as any }
+=======
+      next[index] = { ...next[index], [key]: value as never }
+>>>>>>> Stashed changes
       return next
     })
   }
@@ -52,7 +70,11 @@ export default function Home() {
   function onNumberChange(index: number, key: keyof FormState, value: string) {
     setForms((prev) => {
       const next = [...prev]
+<<<<<<< Updated upstream
       next[index] = { ...next[index], [key]: Number(value) as any }
+=======
+      next[index] = { ...next[index], [key]: Number(value) as never }
+>>>>>>> Stashed changes
       return next
     })
   }
@@ -61,7 +83,10 @@ export default function Home() {
     setForms((prev) => [
       ...prev,
       {
+<<<<<<< Updated upstream
         id: prev.length + 1,
+=======
+>>>>>>> Stashed changes
         width: 1920,
         height: 1080,
         frames_per_second: 30,
@@ -69,7 +94,11 @@ export default function Home() {
         samples_per_pixel: 16,
         scene_file_url: '',
         output_file_name: 'frontend_render.png',
+<<<<<<< Updated upstream
       },
+=======
+      } as FormState,
+>>>>>>> Stashed changes
     ])
   }
 
@@ -78,6 +107,7 @@ export default function Home() {
     setStatusMsg(null)
     setResp(null)
 
+<<<<<<< Updated upstream
     try {
       const results: RenderJob[] = []
 
@@ -105,6 +135,34 @@ export default function Home() {
     } finally {
       setSubmitting(false)
     }
+=======
+    const results = await Promise.all(
+      forms.map(async (form) => {
+        const { id: _id, output_file_name, ...rest } = form as FormState & {
+          id?: number
+          output_file_name?: string
+        }
+
+        const payload = {
+          ...rest,
+          output_filename: output_file_name ?? '',
+        }
+
+        const res = await fetch('/api/renders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        return (await res.json()) as RenderJob
+      })
+    )
+
+    setJobs(results)
+    setResp(results)
+    setStatusMsg({ type: 'success', text: 'Render jobs submitted.' })
+    setSubmitting(false)
+>>>>>>> Stashed changes
   }
   
 
@@ -113,24 +171,34 @@ export default function Home() {
     const id = getId.trim()
     if (!id) return
 
-    setStatusMsg(null)
-    setResp(null)
+    const res = await fetch(`/api/renders?id=${encodeURIComponent(id)}`, { method: 'GET' })
+    const data = (await res.json()) as RenderJob
 
-    try {
-      const res = await fetch(`/api/renders?id=${encodeURIComponent(id)}`, { method: 'GET' })
-      const data = await res.json()
-
-      if (!res.ok) {
-        setStatusMsg({ type: 'error', text: data?.error || 'Request failed' })
-        return
-      }
-
-      setResp(data)
-      setStatusMsg({ type: 'success', text: `Fetched render status for id=${id}.` })
-    } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err?.message || 'Something went wrong' })
-    }
+    setResp(data)
+    setStatusMsg({ type: 'success', text: `Fetched render status for id=${id}.` })
   }
+
+  useEffect(() => {
+    if (jobs.length === 0) return
+
+    const interval = setInterval(async () => {
+      const updated = await Promise.all(
+        jobs.map(async (job) => {
+          const res = await fetch(`/api/renders?id=${encodeURIComponent(String(job.id))}`, {
+            method: 'GET',
+            cache: 'no-store',
+          })
+
+          return (await res.json()) as RenderJob
+        })
+      )
+
+      setJobs(updated)
+      setResp(updated)
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [jobs])
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-red-500 font-mono">
@@ -166,7 +234,7 @@ export default function Home() {
             About
           </h2>
           <p className="mt-3 text-sm md:text-base text-red-200 leading-relaxed">
-            Pathological V2 is a distributed render pipeline. You submit a scene (GLTF) to S3 plus render parameters
+            Pathological V2 is a distributed render pipeline. You submit a scene (GLTF) to scheduler with render parameters
             (resolution, frames, samples-per-pixel). The scheduler gets the job, dispatches work to render workers, and uploads
             results back to S3.
           </p>
@@ -184,7 +252,11 @@ export default function Home() {
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-red-300">Scene file (.gltf)</label>
                     <input
+<<<<<<< Updated upstream
                       placeholder="s3 link to gltf file"
+=======
+                      placeholder="Absolute path to gltf file"
+>>>>>>> Stashed changes
                       value={form.scene_file_url}
                       onChange={(e) => onSceneChange(i, e.target.value)}
                       className="block w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
@@ -195,8 +267,13 @@ export default function Home() {
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-red-300">Output filename</label>
                       <input
+<<<<<<< Updated upstream
                         value={form.output_file_name}
                         onChange={(e) => onTextChange(i, 'output_file_name', e.target.value)}
+=======
+                        value={(form as FormState & { output_file_name?: string }).output_file_name ?? ''}
+                        onChange={(e) => onTextChange(i, 'output_file_name' as keyof FormState, e.target.value)}
+>>>>>>> Stashed changes
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
@@ -206,8 +283,13 @@ export default function Home() {
                       <input
                         type="number"
                         min={0}
+<<<<<<< Updated upstream
                         value={form.id}
                         onChange={(e) => onNumberChange(i, 'id', e.target.value)}
+=======
+                        value=""
+                        readOnly
+>>>>>>> Stashed changes
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
@@ -343,9 +425,30 @@ export default function Home() {
               <div className="font-semibold text-red-300">Rendered Images</div>
 
               <div className="mt-4 grid grid-cols-1 gap-4">
+<<<<<<< Updated upstream
                 <div className="flex min-h-[180px] items-center justify-center rounded-lg border border-red-900/60 bg-black/40 text-sm text-red-300/70">
                   No rendered images yet.
                 </div>
+=======
+                {jobs.length === 0 ? (
+                  <div className="flex min-h-[180px] items-center justify-center rounded-lg border border-red-900/60 bg-black/40 text-sm text-red-300/70">
+                    No rendered images yet.
+                  </div>
+                ) : (
+                  jobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="rounded-lg border border-red-900/60 bg-black/40 p-4 text-sm text-red-200"
+                    >
+                      <div>ID: {job.id}</div>
+                      <div>Status: {job.status}</div>
+                      <div>Scene: {job.scene_file_url}</div>
+                      <div>Output: {job.output_filename}</div>
+                      <div>Frames Completed: {job.frames_completed}</div>
+                    </div>
+                  ))
+                )}
+>>>>>>> Stashed changes
               </div>
             </div>
           </div>
