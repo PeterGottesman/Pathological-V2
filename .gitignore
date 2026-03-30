@@ -11,8 +11,3 @@ CMakeFiles/
 /.worktrees/
 /docs/
 /CLAUDE.md
-
-# Credential related
-.env
-.aws/
-*.key
