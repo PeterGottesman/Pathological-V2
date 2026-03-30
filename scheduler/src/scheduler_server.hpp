@@ -1,7 +1,5 @@
 #pragma once
 
-class Scheduler;
-
 #include <grpcpp/grpcpp.h>
 
 #include <iostream>
@@ -37,9 +35,6 @@ public:
     Status JobCompleted(ServerContext* context, const JobCompletedRequest* request, ServerResponse* response) override;
 
     Status Disconnect(ServerContext* context, const WorkerID* request, ServerResponse* response) override;
-
-private:
-    // Scheduler& scheduler_;
 };
 
 void RunServer(uint16_t port);

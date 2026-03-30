@@ -1,19 +1,6 @@
 #include "render_client.hpp"
 
-/* Sample struct for sending data
-
-struct MyData {
-    std::string scene_location;
-    std::string output_name;
-    uint32_t width;
-    uint32_t height;
-    uint32_t samples;
-    float time;
-};
-
-*/
-
-// Assembles the client's payload, sends it and presents the response back
+// Assembles the client's payload using getter functions from renderRequest.cpp, sends it and presents the response back
 // from the server.
 int RenderWorkerClient::RenderJob(const RenderRequest& render) {
   // Data we are sending and getting back
@@ -61,38 +48,3 @@ int RenderWorkerClient::RenderStatus(int job) {
     return -1;
   }
 }
-
-/*
-
-int main(int argc, char** argv) {
-  // Sample data
-  struct MyData test_struct;
-  test_struct.scene_location = "../test_scenes/cornell_box.gltf";
-  test_struct.output_name = "output.png";
-  test_struct.width = 1024;
-  test_struct.height = 1024;
-  test_struct.samples = 256;
-  test_struct.time = 0.0;
-
-
-  // Sample job id for testing
-  int job = 100;
-
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created.
-  std::string target_str = "localhost:50051";
-
-  // We indicate that the channel isn't authenticated (use of
-  // InsecureChannelCredentials()).
-  RenderWorkerClient client(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
-  // Sample server invocations
-  int response = client.RenderJob(test_struct);
-  int response_two = client.RenderStatus(job);
-  std::cout << "Greeter received: " << response << std::endl;
-  std::cout << "Greeter received: " << response_two << std::endl;
-  return 0;
-}
-
-*/
