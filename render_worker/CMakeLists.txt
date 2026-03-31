@@ -60,6 +60,7 @@ add_executable(pathological
     src/render_worker.cpp
     src/render_server.cpp
     src/scheduler_client.cpp
+    src/job.cpp
     src/render_jobs.cpp
 )
 
