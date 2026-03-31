@@ -28,7 +28,7 @@ float Job::getTime(){
 }
 
 void Job::setStatus(render_server::Status status){
-    this->setStatus(status);
+    this->status = status;
 }
 
 render_server::Status Job::getStatus(){
