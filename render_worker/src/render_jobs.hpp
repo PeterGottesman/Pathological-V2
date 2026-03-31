@@ -8,5 +8,5 @@ public:
     render_server::Status FetchJobStatus(std::string uuid);
 
 private:
-    std::map<std::string, render_server::Status> jobMap;
+    std::unordered_map<std::string, render_server::Status> jobMap;
 };
