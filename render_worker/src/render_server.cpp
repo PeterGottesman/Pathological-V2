@@ -10,15 +10,18 @@
 Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request,
     RenderJobResponse *response) {
     std::cout << "Render Recieved" << std::endl;
+    std::shared_ptr<Job> job = std::make_shared<Job>(request->width(), request->height(), request->samples(),
+        request->scene_location(), request->output_name(), request->time(), render_server::Status::IN_PROGRESS);
     std::string job_id = boost::uuids::to_string(random_gen());
-    response->set_job_identifier(job_id);
-    this->jobs.AddJob(job_id, render_server::Status::IN_PROGRESS);
 
-    generateScene(request->width(), request->height(), request->samples(),
-        request->scene_location(), request->output_name(), request->time());
+    response->set_job_identifier(job_id);
+    this->jobs.AddJob(job_id, job);
+
+    generateScene(job->getWidth(), job->getHeight(), job->getSamples(),
+        job->getGLTF(), job->getOutput(), job->getTime());
 
     this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
-    this->client.JobCompleted(response->job_identifier());
+    this->client.JobCompleted(job_id);
     return Status::OK;
 }
 
