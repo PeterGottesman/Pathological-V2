@@ -3,9 +3,9 @@
 #include <string>
 #include "protos/render_server.pb.h"
 
-class RenderJob {
+class Job {
 public:
-    RenderJob(uint32_t width, uint32_t height, uint32_t samples,
+    Job(uint32_t width, uint32_t height, uint32_t samples,
         std::string gltfFile, std::string output, float time, render_server::Status status) :
         width(width), height(height), samples(samples),
         gltfFile(gltfFile), output(output), time(time), status(status) {}
@@ -15,6 +15,7 @@ public:
     std::string getGLTF();
     std::string getOutput();
     float getTime();
+    void setStatus(render_server::Status status);
     render_server::Status getStatus();
 
 
