@@ -23,7 +23,6 @@ Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequ
 
 std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
-  RenderServer service(client, worker_id);
 
   grpc::EnableDefaultHealthCheckService(true);
   ServerBuilder builder;
@@ -33,7 +32,7 @@ std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std:
 
   // Register "service" as the instance through which we'll communicate with
   // clients.
-  builder.RegisterService(&service);
+  builder.RegisterService(new RenderServer(client, worker_id));
 
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
