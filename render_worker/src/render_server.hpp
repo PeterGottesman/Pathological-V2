@@ -1,6 +1,7 @@
 #pragma once
 
 #include <grpcpp/grpcpp.h>
+#include <memory>
 #include "../build/protos/render_server.grpc.pb.h"
 #include "../build/protos/render_server.pb.h"
 #include "scheduler_client.hpp"
@@ -27,4 +28,4 @@ private:
     std::string worker_id;
 };
 
-void RunServer(uint16_t port, SchedulerClient& client, std::string worker_id);
+std::shared_ptr<Server> BuildServer(uint16_t port);

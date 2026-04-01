@@ -2,6 +2,7 @@
 #include "render_worker.hpp"
 #include "scheduler_client.hpp"
 #include <iostream>
+#include <memory>
 #include <string>
 
 Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request,
@@ -20,7 +21,7 @@ Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequ
     return Status::OK;
 }
 
-void RunServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
+std::shared_ptr<Server> BuildServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   RenderServer service(client, worker_id);
 
@@ -35,9 +36,7 @@ void RunServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
   builder.RegisterService(&service);
 
   // Finally assemble the server.
-  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::shared_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-
-  // Wait for the server to shutdown
-  server->Wait();
+  return server;
 }
