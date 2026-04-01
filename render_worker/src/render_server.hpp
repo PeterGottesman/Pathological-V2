@@ -28,4 +28,4 @@ private:
     std::string worker_id;
 };
 
-std::shared_ptr<Server> BuildServer(uint16_t port);
+std::shared_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id);
