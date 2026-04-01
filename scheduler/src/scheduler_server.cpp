@@ -36,6 +36,7 @@ Status SchedulerServer::Heartbeat(ServerContext* context, const WorkerID* reques
 }
 
 Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedRequest* request, ServerResponse* response) {
+    std::cout << "JobCompleted RPC received." << std::endl;
     Worker* worker = Scheduler::getInstance().findWorkerByID(request->worker_id());
 
     // A recognized worker will be set to idle once a job is completed.
@@ -92,10 +93,3 @@ void StopServer() {
         server->Shutdown(std::chrono::system_clock::now() + std::chrono::seconds(1));
     }
 }
-
-/* Sample before being incorporated into main
-int main(int argc, char *argv[]){
-    RunServer(50051);
-    return 0;
-}
-*/
