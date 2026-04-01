@@ -30,14 +30,6 @@ enum RegistrationStatus {
 // The render worker presents its availability status to the scheduler.
 // This determines how the scheduler chooses which render worker to assign work to.
 
-// **** WorkerStatus is kept internally ATM, meaning it cannot be sent over the network ****
-
-enum WorkerStatus {
-  IDLE = 0;
-  BUSY = 1;
-  OFFLINE = 2;
-}
-
 message WorkerInfo {
   string worker_ip = 1;
   string worker_id = 2;

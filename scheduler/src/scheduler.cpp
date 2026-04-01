@@ -83,7 +83,7 @@ void Scheduler::assignJobs() {
     while (!pending_jobs_.empty()) {
         Worker* worker = findIdleWorker();
         if (worker == nullptr) {
-            std::cout << "No idle workers available, job in queue: " << pending_jobs_.size() << std::endl;
+            std::cout << "No idle workers available, jobs in queue: " << pending_jobs_.size() << std::endl;
             break;
         }
         RenderRequest job = pending_jobs_.front();
@@ -115,6 +115,7 @@ Worker* Scheduler::findIdleWorker() {
     for (auto& worker : workers_) {
         if (worker.status == WorkerStatus::IDLE) {
             least_busy = &worker;
+            std::cout << "Worker found: " << worker.id << " | Status: " << static_cast<int>(worker.status) << std::endl;
             break;
         }
     }
