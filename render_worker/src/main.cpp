@@ -13,6 +13,7 @@
 
 // Creating reference to client singleton
 SchedulerClient& client = SchedulerClient::getInstance();
+std::unique_ptr<Server> server;
 
 bool shutdownSig = false;
 std::mutex mutex;
@@ -35,7 +36,7 @@ void signalHandler(int signal){
     shutdownNow.notify_one();
 }
 
-void shutdownServer(std::shared_ptr<Server> server){
+void shutdownServer(){
     std::unique_lock<std::mutex> lock(mutex);
     shutdownNow.wait(lock, [] {return shutdownSig;});
     client.Disconnect();
@@ -63,7 +64,7 @@ int main(int argc, char** argv) {
         renderServerPort
     );
 
-    if(client.EstablishConnection() == 1){
+    if(client.EstablishConnection() != 1){
         std::cerr << "Could not establish connection with scheduler. Now exiting." << std::endl;
         return 1;
     }
@@ -74,8 +75,8 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    std::shared_ptr<Server> server = BuildServer(renderServerPort, client, worker_id);
-    std::thread shutdown_thread(shutdownServer, server);
+    server = BuildServer(renderServerPort, client, worker_id);
+    std::thread shutdown_thread(shutdownServer);
     server->Wait();
     shutdown_thread.join();
 

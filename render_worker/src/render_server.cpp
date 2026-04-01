@@ -21,7 +21,7 @@ Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequ
     return Status::OK;
 }
 
-std::shared_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
+std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   RenderServer service(client, worker_id);
 
@@ -36,7 +36,7 @@ std::shared_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std:
   builder.RegisterService(&service);
 
   // Finally assemble the server.
-  std::shared_ptr<Server> server(builder.BuildAndStart());
+  std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
   return server;
 }
