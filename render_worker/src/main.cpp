@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    std::shared_ptr<Server> server = BuildServer(renderServerPort);
+    std::shared_ptr<Server> server = BuildServer(renderServerPort, client, worker_id);
     std::thread shutdown_thread(shutdownServer, server);
     server->Wait();
     shutdown_thread.join();

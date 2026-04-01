@@ -21,7 +21,7 @@ Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequ
     return Status::OK;
 }
 
-std::shared_ptr<Server> BuildServer(uint16_t port) {
+std::shared_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   RenderServer service(client, worker_id);
 
