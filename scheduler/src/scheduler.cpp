@@ -97,8 +97,8 @@ void Scheduler::assignJobs() {
             )
         );
 
-        int job_id = client.RenderJob(job);
-        if (job_id != -1) {
+        std::string job_id = client.RenderJob(job);
+        if (job_id != "ERROR") {
             worker->status = WorkerStatus::BUSY;
             std::cout << "Job assigned to worker: " << worker->id << " with job ID: " << job_id << std::endl;
         } else {

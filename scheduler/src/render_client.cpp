@@ -2,7 +2,7 @@
 
 // Assembles the client's payload using getter functions from renderRequest.cpp, sends it and presents the response back
 // from the server.
-int RenderWorkerClient::RenderJob(const RenderRequest& render) {
+std::string RenderWorkerClient::RenderJob(const RenderRequest& render) {
   // Data we are sending and getting back
   RenderJobRequest request;
   RenderJobResponse response;
@@ -24,7 +24,7 @@ int RenderWorkerClient::RenderJob(const RenderRequest& render) {
     return response.job_identifier();
   } else {
     std::cout << status.error_code() << ": " << status.error_message() << std::endl;
-    return -1;
+    return "ERROR";
   }
 }
 

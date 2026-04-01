@@ -20,7 +20,7 @@ class RenderWorkerClient {
 public:
     RenderWorkerClient(std::shared_ptr<Channel> channel) : stub_(RenderWorker::NewStub(channel)) {}
 
-    int RenderJob(const RenderRequest& render);
+    std::string RenderJob(const RenderRequest& render);
     int RenderStatus(int job);
 
 private:
