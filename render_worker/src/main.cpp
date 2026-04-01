@@ -2,13 +2,21 @@
 #include "scheduler_client.hpp"
 #include <CLI/CLI.hpp>
 
+#include <condition_variable>
 #include <cstdint>
 #include <csignal>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 
 // Creating reference to client singleton
 SchedulerClient& client = SchedulerClient::getInstance();
+
+bool shutdownSig = false;
+std::mutex mutex;
+std::condition_variable shutdownNow;
 
 // Alerts scheduler that the render worker is disconnecting
 void signalHandler(int signal){
@@ -23,9 +31,15 @@ void signalHandler(int signal){
         sig = "UNDEFINED";
     }
     std::cout << sig << " HIT" << std::endl;
+    shutdownSig = true;
+    shutdownNow.notify_one();
+}
+
+void shutdownServer(std::shared_ptr<Server> server){
+    std::unique_lock<std::mutex> lock(mutex);
+    shutdownNow.wait(lock, [] {return shutdownSig;});
     client.Disconnect();
-    exit(signal); // mutex error triggered due to gRPC shenanigans
-                  // https://github.com/grpc/grpc/issues/24884
+    server->Shutdown();
 }
 
 int main(int argc, char** argv) {
@@ -60,6 +74,10 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    RunServer(renderServerPort);
+    std::shared_ptr<Server> server = BuildServer(renderServerPort);
+    std::thread shutdown_thread(shutdownServer, server);
+    server->Wait();
+    shutdown_thread.join();
+
     return 0;
 }
