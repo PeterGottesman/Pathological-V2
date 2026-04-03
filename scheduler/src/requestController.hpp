@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "renderRequest.hpp"
+#include "render_history.hpp"
 
 using namespace drogon;
 
@@ -26,4 +27,7 @@ public:
   void
   createRenderRequest(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
+
+private:
+  RenderHistory history;
 };
