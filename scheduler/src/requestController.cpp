@@ -16,12 +16,9 @@ void RequestController::getStatus(
   boost::uuids::string_generator stringGen;
   boost::uuids::uuid uuid = stringGen(id);
 
-  // Add ID search function
+  auto render = history.getRenderRequest(uuid);
 
-  // JSON placeholder
-  Json::Value ret;
-
-  auto resp = HttpResponse::newHttpJsonResponse(ret);
+  auto resp = HttpResponse::newHttpJsonResponse(render->toJson());
   callback(resp);
 }
 
@@ -47,20 +44,22 @@ void RequestController::createRenderRequest(
     oss << std::put_time(std::gmtime(&t), "%Y-%m-%dT%H:%M:%SZ");
     auto timestamp = oss.str();
 
-    RenderRequest render;
-    render.setWidth((*payload)["width"].asInt())
-        .setHeight((*payload)["height"].asInt())
-        .setStatus(RenderStatus::IN_QUEUE)
-        .setFramesPerSecond((*payload)["frames_per_second"].asInt())
-        .setAnimationRuntimeInFrames((*payload)["animation_runtime"].asInt())
-        .setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
-        .setCreatedAtTimestamp(timestamp)
-        .setSceneFileUrl((*payload)["scene_file_url"].asString())
-        .setOutputFileName((*payload)["output_filename"].asString());
+    auto render = std::make_shared<RenderRequest>();
+    render->setWidth((*payload)["width"].asInt())
+        ->setHeight((*payload)["height"].asInt())
+        ->setStatus(RenderStatus::IN_QUEUE)
+        ->setFramesPerSecond((*payload)["frames_per_second"].asInt())
+        ->setAnimationRuntimeInFrames((*payload)["animation_runtime"].asInt())
+        ->setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
+        ->setCreatedAtTimestamp(timestamp)
+        ->setSceneFileUrl((*payload)["scene_file_url"].asString())
+        ->setOutputFileName((*payload)["output_filename"].asString());
+
+    history.addRender(render);
 
     Scheduler::getInstance().addJob(render);
 
-    auto resp = HttpResponse::newHttpJsonResponse(render.toJson());
+    auto resp = HttpResponse::newHttpJsonResponse(render->toJson());
     resp->setStatusCode(k201Created);
     callback(resp);
   } catch (const std::exception &e) {
