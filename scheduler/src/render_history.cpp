@@ -1,7 +1,5 @@
 #include "render_history.hpp"
 
-RenderHistory::RenderHistory() = default;
-
 bool RenderHistory::addRender(std::shared_ptr<RenderRequest> req) {
   if (!req)
     return false;
