@@ -16,7 +16,7 @@ void RequestController::getStatus(
   boost::uuids::string_generator stringGen;
   boost::uuids::uuid uuid = stringGen(id);
 
-  auto render = history.getRenderRequest(uuid);
+  auto render = RenderHistory::getInstance().getRenderRequest(uuid);
 
   auto resp = HttpResponse::newHttpJsonResponse(render->toJson());
   callback(resp);
@@ -46,16 +46,16 @@ void RequestController::createRenderRequest(
 
     auto render = std::make_shared<RenderRequest>();
     render->setWidth((*payload)["width"].asInt())
-        ->setHeight((*payload)["height"].asInt())
-        ->setStatus(RenderStatus::IN_QUEUE)
-        ->setFramesPerSecond((*payload)["frames_per_second"].asInt())
-        ->setAnimationRuntimeInFrames((*payload)["animation_runtime"].asInt())
-        ->setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
-        ->setCreatedAtTimestamp(timestamp)
-        ->setSceneFileUrl((*payload)["scene_file_url"].asString())
-        ->setOutputFileName((*payload)["output_filename"].asString());
+        .setHeight((*payload)["height"].asInt())
+        .setStatus(RenderStatus::IN_QUEUE)
+        .setFramesPerSecond((*payload)["frames_per_second"].asInt())
+        .setAnimationRuntimeInFrames((*payload)["animation_runtime"].asInt())
+        .setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
+        .setCreatedAtTimestamp(timestamp)
+        .setSceneFileUrl((*payload)["scene_file_url"].asString())
+        .setOutputFileName((*payload)["output_filename"].asString());
 
-    history.addRender(render);
+    RenderHistory::getInstance().addRender(render);
 
     Scheduler::getInstance().addJob(render);
 
