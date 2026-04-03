@@ -34,3 +34,13 @@ void Job::setStatus(render_server::Status status){
 render_server::Status Job::getStatus(){
     return this->status;
 }
+
+void Job::print(){
+    std::cout << width << std::endl;
+    std::cout << height << std::endl;
+    std::cout << samples << std::endl;
+    std::cout << gltfFile << std::endl;
+    std::cout << output << std::endl;
+    std::cout << time << std::endl;
+    std::cout << status << std::endl;
+}
