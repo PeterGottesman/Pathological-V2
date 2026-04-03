@@ -1,6 +1,6 @@
 #include "scheduler.hpp"
 
-void Scheduler::addJob(const RenderRequest& job) {
+void Scheduler::addJob(std::shared_ptr<RenderRequest> job) {
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
         pending_jobs_.push(job);
@@ -101,7 +101,7 @@ void Scheduler::assignJobs() {
             std::cout << "No idle workers available, jobs in queue: " << pending_jobs_.size() << std::endl;
             break;
         }
-        RenderRequest job = pending_jobs_.front();
+        std::shared_ptr<RenderRequest> job = pending_jobs_.front();
         pending_jobs_.pop();
 
         std::string worker_id = worker->id;

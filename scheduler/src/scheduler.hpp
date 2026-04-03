@@ -27,7 +27,7 @@ public:
 	Worker* findWorkerByID(const std::string& id);
 
     // Adds job to queue
-    void addJob(const RenderRequest& job);
+    void addJob(std::shared_ptr<RenderRequest> job);
 
     // Worker list management
     void registerWorker(const std::string& id, const std::string& ip, uint32_t port);
@@ -44,7 +44,7 @@ private:
     ~Scheduler() { stop(); }  
 
     // Job queue
-    std::queue<RenderRequest> pending_jobs_;
+    std::queue<std::shared_ptr<RenderRequest>> pending_jobs_;
     std::mutex queue_mutex_;
     std::condition_variable job_available_;
 
