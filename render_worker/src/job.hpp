@@ -17,6 +17,7 @@ public:
     float getTime();
     void setStatus(render_server::Status status);
     render_server::Status getStatus();
+    void print();
 
 
 private:
