@@ -27,7 +27,4 @@ public:
   void
   createRenderRequest(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
-
-private:
-  RenderHistory history;
 };
