@@ -192,11 +192,7 @@ export default function Home() {
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-red-300">Scene file (.gltf)</label>
                     <input
-<<<<<<< Updated upstream
-                      placeholder="s3 link to gltf file"
-=======
                       placeholder="Absolute path to gltf file"
->>>>>>> Stashed changes
                       value={form.scene_file_url}
                       onChange={(e) => onSceneChange(i, e.target.value)}
                       className="block w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
@@ -207,13 +203,8 @@ export default function Home() {
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-red-300">Output filename</label>
                       <input
-<<<<<<< Updated upstream
-                        value={form.output_file_name}
-                        onChange={(e) => onTextChange(i, 'output_file_name', e.target.value)}
-=======
                         value={(form as FormState & { output_file_name?: string }).output_file_name ?? ''}
                         onChange={(e) => onTextChange(i, 'output_file_name' as keyof FormState, e.target.value)}
->>>>>>> Stashed changes
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
@@ -223,13 +214,8 @@ export default function Home() {
                       <input
                         type="number"
                         min={0}
-<<<<<<< Updated upstream
-                        value={form.id}
-                        onChange={(e) => onNumberChange(i, 'id', e.target.value)}
-=======
                         value=""
                         readOnly
->>>>>>> Stashed changes
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
