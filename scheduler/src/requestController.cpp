@@ -5,6 +5,7 @@
 
 #include "renderRequest.hpp"
 #include "requestController.hpp"
+#include "scheduler.hpp"
 
 void RequestController::getStatus(
     const HttpRequestPtr &req,
@@ -65,7 +66,9 @@ void RequestController::createRenderRequest(
         .setSamplesPerPixel((*payload)["samples_per_pixel"].asInt())
         .setCreatedAtTimestamp(timestamp)
         .setSceneFileUrl((*payload)["scene_file_url"].asString())
-        .setOutputFileName((*payload)["output_file_name"].asString());
+        .setOutputFileName((*payload)["output_filename"].asString());
+
+    Scheduler::getInstance().addJob(render);
 
     auto resp = HttpResponse::newHttpJsonResponse(render.toJson());
     resp->setStatusCode(k201Created);
