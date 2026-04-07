@@ -15,6 +15,7 @@ find_package(Stb REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED COMPONENTS uuid)
+find_package(AWSSDK REQUIRED COMPONENTS s3)
 
 
 # tinygltf is header-only
@@ -62,6 +63,7 @@ add_executable(pathological
     src/scheduler_client.cpp
     src/job.cpp
     src/render_jobs.cpp
+    src/s3_manager.cpp
 )
 
 target_link_libraries(pathological PRIVATE
@@ -69,6 +71,7 @@ target_link_libraries(pathological PRIVATE
     GPUOpen::VulkanMemoryAllocator
     glm::glm
     CLI11::CLI11
+    ${AWSSDK_LINK_LIBRARIES}
     protorender
     protoscheduler
     Boost::uuid

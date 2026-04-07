@@ -1,5 +1,5 @@
 {
-  "name": "pathological",
+  "name": "pathological-sched",
   "version": "0.1.0",
   "dependencies": [
     "vulkan-memory-allocator",
@@ -7,7 +7,14 @@
     "cli11",
     "stb",
     "tinygltf",
-    "grpc",
-    "boost-uuid"
+    "boost-uuid",
+    {
+      "name": "aws-sdk-cpp",
+      "features": [
+        "s3"
+      ]
+    },
+    "protobuf",
+    "grpc"
   ]
 }
