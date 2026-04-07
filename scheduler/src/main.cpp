@@ -9,11 +9,11 @@
 int main(int argc, char **argv) {
     CLI::App app{"Pathological Scheduler"};
 
-    uint16_t grpc_port = 50051;
+    uint16_t grpc_port = 50052;
     std::string listen_address = "0.0.0.0";
     uint16_t http_port = 8080;
 
-    app.add_option("-p,--grpc-port", grpc_port, "Port for gRPC server")->default_val(50051);
+    app.add_option("-p,--grpc-port", grpc_port, "Port for gRPC server")->default_val(50052);
     app.add_option("-a,--address", listen_address, "Address to listen on")->default_val("0.0.0.0");
     app.add_option("--http-port", http_port, "Port for HTTP server")->default_val(8080);
 

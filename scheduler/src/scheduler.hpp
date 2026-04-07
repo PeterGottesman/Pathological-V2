@@ -54,6 +54,7 @@ private:
 
     // Used to prevent multiple threads from doing shenanigans
     std::atomic<bool> running_{false};
+    std::atomic<bool> assigning_{false};
 
     void assignJobs();
     Worker* findIdleWorker();
