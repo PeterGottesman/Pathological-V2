@@ -97,7 +97,7 @@ RenderRequest &RenderRequest::setAnimationRuntimeInFrames(int frames) {
   if (frames < 0) {
     throw std::invalid_argument("Frames must be greater than zero.");
   }
-  this->animationRuntime = animationRuntime;
+  this->animationRuntime = frames; // initially was animationRuntime. 
   return *this;
 }
 
