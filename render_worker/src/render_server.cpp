@@ -18,7 +18,7 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
     this->jobs.AddJob(job_id, job);
 
     generateScene(job->getWidth(), job->getHeight(), job->getSamples(),
-        job->getGLTF(), job->getOutput(), job->getTime());
+        job->getGLTF(), job->getOutput(), job->getTime(), 512, false);
 
     this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
     this->client.JobCompleted(job_id);
