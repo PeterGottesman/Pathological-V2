@@ -7,6 +7,7 @@
 #include <boost/uuid.hpp>
 #include "../build/protos/render_server.grpc.pb.h"
 #include "../build/protos/render_server.pb.h"
+#include "s3_manager.hpp"
 #include "scheduler_client.hpp"
 #include "render_jobs.hpp"
 
@@ -25,8 +26,8 @@ using boost::uuids::to_string;
 
 class RenderServer final : public RenderWorker::Service {
 public:
-    RenderServer(SchedulerClient& client, std::string worker_id, random_generator random_gen) :
-        client(client), worker_id(worker_id), random_gen(random_gen){}
+    RenderServer(SchedulerClient& client, std::string worker_id, random_generator random_gen, S3Manager& manager) :
+        client(client), worker_id(worker_id), random_gen(random_gen), manager(manager){}
     Status RenderJob(ServerContext *context, const RenderJobRequest *request,
         RenderJobResponse *response);
     Status RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response);
@@ -36,6 +37,8 @@ private:
     std::string worker_id;
     random_generator random_gen;
     RenderJobs jobs;
+    S3Manager& manager;
 };
 
-std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id, random_generator random_gen);
+std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client,
+        std::string worker_id, random_generator random_gen, S3Manager& manager);
