@@ -32,7 +32,7 @@ message RenderJobResponse {
 
 // Scheduler asks for the status of a given render
 message RenderStatusRequest {
-  int32 job_identifier = 1;
+  string job_identifier = 1;
 }
 
 // Render worker returns status of given render

@@ -28,7 +28,7 @@ std::string RenderWorkerClient::RenderJob(std::shared_ptr<RenderRequest> render)
   }
 }
 
-int RenderWorkerClient::RenderStatus(int job) {
+int RenderWorkerClient::RenderStatus(std::string job) {
   // Data we are sending and getting back
   RenderStatusRequest request;
   RenderStatusResponse response;

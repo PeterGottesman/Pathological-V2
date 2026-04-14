@@ -21,7 +21,7 @@ public:
     RenderWorkerClient(std::shared_ptr<Channel> channel) : stub_(RenderWorker::NewStub(channel)) {}
 
     std::string RenderJob(std::shared_ptr<RenderRequest> render);
-    int RenderStatus(int job);
+    int RenderStatus(std::string job);
 
 private:
     std::unique_ptr<RenderWorker::Stub> stub_;

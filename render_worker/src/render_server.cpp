@@ -26,8 +26,7 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
 }
 
 Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response) {
-    // Sample implementation
-    response->set_status(render_server::COMPLETED);
+    response->set_status(this->jobs.FetchJobStatus(request->job_identifier()));
     return Status::OK;
 }
 
