@@ -1,5 +1,6 @@
 #include "render_server.hpp"
 #include "render_worker.hpp"
+#include "s3_manager.hpp"
 #include "scheduler_client.hpp"
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -10,6 +11,9 @@
 Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request,
     RenderJobResponse *response) {
     std::cout << "Render Recieved" << std::endl;
+    //bool test = this->manager.keyExists("cornell_box_animated.gltf");
+    //std::cout << test << std::endl;
+
     std::shared_ptr<Job> job = std::make_shared<Job>(request->width(), request->height(), request->samples(),
         request->scene_location(), request->output_name(), request->time(), render_server::Status::IN_PROGRESS);
     std::string job_id = boost::uuids::to_string(random_gen());
@@ -30,7 +34,8 @@ Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequ
     return Status::OK;
 }
 
-std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id, random_generator rand) {
+std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client,
+    std::string worker_id, random_generator rand, S3Manager& manager) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
 
   grpc::EnableDefaultHealthCheckService(true);
@@ -41,7 +46,7 @@ std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std:
 
   // Register "service" as the instance through which we'll communicate with
   // clients.
-  builder.RegisterService(new RenderServer(client, worker_id, rand));
+  builder.RegisterService(new RenderServer(client, worker_id, rand, manager));
 
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
