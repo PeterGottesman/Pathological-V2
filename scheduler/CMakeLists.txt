@@ -12,6 +12,7 @@ find_package(Drogon CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(AWSSDK REQUIRED COMPONENTS s3)
+find_package(Boost REQUIRED)
 
 get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
 get_filename_component(PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../protos ABSOLUTE)
@@ -60,4 +61,6 @@ target_link_libraries(pathological-sched PRIVATE
     protorender
     ${AWSSDK_LINK_LIBRARIES}
     gRPC::grpc++
+    ${AWSSDK_LINK_LIBRARIES}
+    Boost::boost
 )
