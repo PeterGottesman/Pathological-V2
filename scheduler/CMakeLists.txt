@@ -52,6 +52,7 @@ add_executable(pathological-sched
     src/scheduler_server.cpp
     src/render_client.cpp
     src/s3Manager.cpp
+    src/render_history.cpp
 )
 
 target_link_libraries(pathological-sched PRIVATE
