@@ -62,6 +62,5 @@ target_link_libraries(pathological-sched PRIVATE
     protorender
     ${AWSSDK_LINK_LIBRARIES}
     gRPC::grpc++
-    ${AWSSDK_LINK_LIBRARIES}
     Boost::boost
 )
