@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <filesystem>
 
 S3Config config {
     .bucketName = "pathological-capstone-s3-bucket",
@@ -37,6 +38,12 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
     std::cout << job_name << std::endl;
 
     this->manager.putObject(job->getOutput(), job_name, false);
+    if(std::filesystem::remove(job->getOutput())){
+        std::cout << "Removed: " << job->getOutput() << " locally." << std::endl;
+    }else{
+        std::cout << "Could not find render to delete" << std::endl;
+    }
+
     this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
     this->client.JobCompleted(job_id);
     return Status::OK;
