@@ -1,11 +1,46 @@
 'use client'
-
-import { useEffect, useState } from 'react'
-import type { SubmitRenderRequest, RenderJob } from '@/types/scheduler'
-
+//Main and only page for the frontend, contains the form to submit render jobs to the scheduler and a section to display rendered images with options to download or delete them. It also implements polling to update the status of submitted jobs and their rendered images.
+import { useEffect, useRef, useState } from 'react'
+import type { SubmitRenderRequest, SubmitRenderPayload, RenderJob } from '@/types/scheduler'
+// Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderRequest
+type JobView = RenderJob & {
+  requestedFileName: string
+  imageUrl: string | null
+}
+type SelectedImage = {
+  src: string
+  name: string
+}
+//Constants for polling interval
+const POLL_INTERVAL_SECONDS = 10
+const POLL_INTERVAL_MS = POLL_INTERVAL_SECONDS * 1000
+// Helper function to build a local image URL for fetching the rendered image from the render worker's build directory based on the output filename.
+function buildLocalImageUrl(outputFilename: string) {
+  return `/api/render-image?image=${encodeURIComponent(outputFilename)}&ts=${Date.now()}`
+}
+//Helper function to resolve the local image URL for a rendered image by checking if the requested file name or the output filename exists in the render worker's build directory. It makes GET requests to the /api/render-image endpoint with the 'exists' query parameter set to '1' to check for the existence.
+async function resolveLocalImageUrl(requestedFileName: string, outputFilename: string) {
+  const candidates = [requestedFileName, outputFilename].filter(
+    (name, index, arr) => name && arr.indexOf(name) === index
+  )
 
+  for (const fileName of candidates) {
+    const res = await fetch(`/api/render-image?image=${encodeURIComponent(fileName)}&exists=1`, {
+      method: 'GET',
+      cache: 'no-store',
+    })
+
+    if (res.ok) {
+      return buildLocalImageUrl(fileName)
+    }
+  }
+
+  return null
+}
+// The main React component for the home page, holds most UI state and logic 
 export default function Home() {
+    //State for managing form inputs
   const [forms, setForms] = useState<FormState[]>([
     {
       width: 1920,
@@ -14,16 +49,22 @@ export default function Home() {
       animation_runtime: 10,
       samples_per_pixel: 16,
       scene_file_url: '/home/dtre/Pathological-V2/render_worker/test_scenes/cornell_box.gltf',
-      output_file_name: 'frontend_render.png',
-    } as FormState,
+      output_file_name: 'cornell_box.png',
+    },
   ])
-
+  //States for managing submission status, list of render jobs, countdown for next poll, and currently selected image for viewing
   const [submitting, setSubmitting] = useState(false)
-  const [resp, setResp] = useState<RenderJob | RenderJob[] | null>(null)
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [getId, setGetId] = useState<string>('')
-  const [jobs, setJobs] = useState<RenderJob[]>([])
+  const [jobs, setJobs] = useState<JobView[]>([])
+  const [secondsUntilNextPoll, setSecondsUntilNextPoll] = useState(POLL_INTERVAL_SECONDS)
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null)
 
+  const jobsRef = useRef<JobView[]>([])
+  const pollingStartedRef = useRef(false)
+
+  useEffect(() => {
+    jobsRef.current = jobs
+  }, [jobs])
+  
   function onSceneChange(index: number, value: string) {
     const v = value ?? ''
     const last = v.split('/').pop() || ''
@@ -67,79 +108,182 @@ export default function Home() {
         animation_runtime: 10,
         samples_per_pixel: 16,
         scene_file_url: '',
-        output_file_name: 'frontend_render.png',
-      } as FormState,
+        output_file_name: '',
+      },
     ])
   }
 
+  function onDownload(outputFilename: string) {
+    const href = `/api/render-image?image=${encodeURIComponent(outputFilename)}`
+    const anchor = document.createElement('a')
+    anchor.href = href
+    anchor.download = outputFilename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+  }
+
+  async function onDelete(index: number, outputFilename: string) {
+    const res = await fetch(`/api/render-image?image=${encodeURIComponent(outputFilename)}`, {
+      method: 'DELETE',
+    })
+
+    if (!res.ok) {
+      return
+    }
+
+    setJobs((prev) => prev.filter((_, i) => i !== index))
+    setSelectedImage((prev) => (prev?.name === outputFilename ? null : prev))
+  }
+
   async function onSubmit() {
-    setSubmitting(true)
-    setStatusMsg(null)
-    setResp(null)
+    try {
+      setSubmitting(true)
 
-    const results = await Promise.all(
-      forms.map(async (form) => {
-        const { id: _id, output_file_name, ...rest } = form as FormState & {
-          id?: number
-          output_file_name?: string
-        }
+      const results = await Promise.all(
+        forms.map(async (form) => {
+          const { output_file_name, ...rest } = form
 
-        const payload = {
-          ...rest,
-          output_filename: output_file_name ?? '',
-        }
+          const payload: SubmitRenderPayload = {
+            ...rest,
+            output_filename: output_file_name,
+          }
 
-        const res = await fetch('/api/renders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-
-        return (await res.json()) as RenderJob
-      })
-    )
-
-    setJobs(results)
-    setResp(results)
-    setStatusMsg({ type: 'success', text: 'Render jobs submitted.' })
-    setSubmitting(false)
-  }
-  
-
-
-  async function onGetById() {
-    const id = getId.trim()
-    if (!id) return
-
-    const res = await fetch(`/api/renders?id=${encodeURIComponent(id)}`, { method: 'GET' })
-    const data = (await res.json()) as RenderJob
-
-    setResp(data)
-    setStatusMsg({ type: 'success', text: `Fetched render status for id=${id}.` })
-  }
-
-  useEffect(() => {
-    if (jobs.length === 0) return
-
-    const interval = setInterval(async () => {
-      const updated = await Promise.all(
-        jobs.map(async (job) => {
-          const res = await fetch(`/api/renders?id=${encodeURIComponent(String(job.id))}`, {
-            method: 'GET',
-            cache: 'no-store',
+          const res = await fetch('/api/renders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
           })
 
-          return (await res.json()) as RenderJob
+          if (!res.ok) {
+            throw new Error(`Submit failed with status ${res.status}`)
+          }
+
+          const data = (await res.json()) as RenderJob
+          const imageUrl = await resolveLocalImageUrl(form.output_file_name, data.output_filename)
+
+          return {
+            ...data,
+            requestedFileName: form.output_file_name,
+            imageUrl,
+          } as JobView
         })
       )
 
-      setJobs(updated)
-      setResp(updated)
-    }, 3000)
+      setJobs(results)
+      setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
+      pollingStartedRef.current = false
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
-    return () => clearInterval(interval)
-  }, [jobs])
+  useEffect(() => {
+    if (jobs.length === 0) {
+      setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
+      pollingStartedRef.current = false
+      return
+    }
 
+    if (pollingStartedRef.current) return
+    pollingStartedRef.current = true
+
+    let isCancelled = false
+    let countdownInterval: ReturnType<typeof setInterval> | null = null
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null
+
+    const clearTimers = () => {
+      if (countdownInterval) clearInterval(countdownInterval)
+      if (pollTimeout) clearTimeout(pollTimeout)
+    }
+
+    const runPollCycle = () => {
+      if (isCancelled) return
+
+      setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
+
+      let remaining = POLL_INTERVAL_SECONDS
+
+      countdownInterval = setInterval(() => {
+        remaining -= 1
+
+        if (remaining >= 0 && !isCancelled) {
+          setSecondsUntilNextPoll(remaining)
+        }
+
+        if (remaining <= 0 && countdownInterval) {
+          clearInterval(countdownInterval)
+        }
+      }, 1000)
+
+      pollTimeout = setTimeout(async () => {
+        try {
+          const currentJobs = jobsRef.current
+          const hasPollableJobs = currentJobs.some((job) => {
+            const id = String(job.id ?? '').trim()
+            const isTerminal = job.status === 'Completed' || job.status === 'Error'
+            const isLocalComplete = job.status !== 'Error' && job.imageUrl !== null
+            return id !== '' && !isTerminal && !isLocalComplete
+          })
+
+          if (hasPollableJobs) {
+            const updated = await Promise.all(
+              currentJobs.map(async (job) => {
+                const isTerminal = job.status === 'Completed' || job.status === 'Error'
+                const isLocalComplete = job.status !== 'Error' && job.imageUrl !== null
+                if (isTerminal || isLocalComplete) return job
+
+                const res = await fetch(`/api/renders/${encodeURIComponent(String(job.id))}`, {
+                  method: 'GET',
+                  cache: 'no-store',
+                })
+
+                if (!res.ok) {
+                  throw new Error(`Polling failed for id=${String(job.id)} with status ${res.status}`)
+                }
+
+                const data = (await res.json()) as RenderJob
+                const imageUrl = job.imageUrl ?? (await resolveLocalImageUrl(job.requestedFileName, data.output_filename))
+
+                return {
+                  ...data,
+                  requestedFileName: job.requestedFileName,
+                  imageUrl,
+                } as JobView
+              })
+            )
+
+            if (!isCancelled) {
+              setJobs(updated)
+            }
+          }
+        } catch (error) {
+          console.error(error)
+        } finally {
+          if (!isCancelled) {
+            runPollCycle()
+          }
+        }
+      }, POLL_INTERVAL_MS)
+    }
+
+    runPollCycle()
+
+    return () => {
+      isCancelled = true
+      pollingStartedRef.current = false
+      clearTimers()
+    }
+  }, [jobs.length])
+
+  const activeJobCount = jobs.filter((job) => {
+    const isTerminal = job.status === 'Completed' || job.status === 'Error'
+    const isLocalComplete = job.status !== 'Error' && job.imageUrl !== null
+    return !isTerminal && !isLocalComplete
+  }).length
+//UI rendering logic
   return (
     <div className="flex min-h-screen flex-col bg-black text-red-500 font-mono">
       <header className="w-full border-b border-red-800 bg-black p-6 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
@@ -152,16 +296,16 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm text-red-400">
-            <span className="hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)] transition-all cursor-default">
+            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
               Dontre Quarles
             </span>
-            <span className="hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)] transition-all cursor-default">
+            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
               Kobie Morales
             </span>
-            <span className="hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)] transition-all cursor-default">
+            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
               Hunter Ellenberger
             </span>
-            <span className="hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)] transition-all cursor-default">
+            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
               Austin Johnson
             </span>
           </div>
@@ -170,10 +314,10 @@ export default function Home() {
 
       <main className="flex flex-1 flex-col items-center justify-center p-6 md:p-24">
         <div className="mb-6 w-full max-w-6xl rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
-          <h2 className="text-xl md:text-2xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)]">
+          <h2 className="text-xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)] md:text-2xl">
             About
           </h2>
-          <p className="mt-3 text-sm md:text-base text-red-200 leading-relaxed">
+          <p className="mt-3 text-sm leading-relaxed text-red-200 md:text-base">
             Pathological V2 is a distributed render pipeline. You submit a scene (GLTF) to scheduler with render parameters
             (resolution, frames, samples-per-pixel). The scheduler gets the job, dispatches work to render workers, and uploads
             results back to S3.
@@ -182,7 +326,7 @@ export default function Home() {
 
         <div className="grid w-full max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)]">
+            <h2 className="mb-2 text-2xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)] md:text-3xl">
               Submit Render Job
             </h2>
 
@@ -199,23 +343,12 @@ export default function Home() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-red-300">Output filename</label>
                       <input
-                        value={(form as FormState & { output_file_name?: string }).output_file_name ?? ''}
-                        onChange={(e) => onTextChange(i, 'output_file_name' as keyof FormState, e.target.value)}
-                        className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-red-300">Request ID</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value=""
-                        readOnly
+                        value={form.output_file_name}
+                        onChange={(e) => onTextChange(i, 'output_file_name', e.target.value)}
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
@@ -296,54 +429,29 @@ export default function Home() {
               >
                 Add
               </button>
-
-              <div className="rounded-lg border border-red-800 bg-black/50 p-4 text-sm text-red-200">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="font-semibold text-red-300">Latest Response</div>
-                  {statusMsg ? (
-                    <span
-                      className={`text-xs font-semibold ${
-                        statusMsg.type === 'success' ? 'text-green-300' : 'text-red-300'
-                      }`}
-                    >
-                      {statusMsg.type === 'success' ? 'SUCCESS' : 'ERROR'}
-                    </span>
-                  ) : null}
-                </div>
-
-                {statusMsg ? <div className="mt-2 text-sm">{statusMsg.text}</div> : <div className="mt-2 text-red-300/70">No response yet.</div>}
-
-                {resp ? (
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded border border-red-900/60 bg-black/40 p-3">
-                    {JSON.stringify(resp, null, 2)}
-                  </pre>
-                ) : null}
-              </div>
             </div>
           </div>
 
           <div className="rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)]">
+            <h2 className="mb-4 text-2xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)] md:text-3xl">
               Renders
             </h2>
 
             <div className="rounded-lg border border-red-800 bg-black/50 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="font-semibold text-red-300">Get Status</div>
-              </div>
-              <div className="mt-3 flex gap-3">
-                <input
-                  placeholder="render id"
-                  value={getId}
-                  onChange={(e) => setGetId(e.target.value)}
-                  className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
-                />
-                <button
-                  onClick={onGetById}
-                  className="shrink-0 rounded-lg border border-red-600 px-4 py-2 font-semibold hover:text-red-200 hover:drop-shadow-[0_0_10px_rgba(220,38,38,0.9)]"
-                >
-                  Get
-                </button>
+              <div className="flex items-center gap-3 rounded-lg border border-red-900/60 bg-black/40 px-3 py-2 text-sm text-red-200">
+                <div className="relative flex h-10 w-10 items-center justify-center">
+                  {activeJobCount > 0 ? (
+                    <div className="absolute inset-0 animate-spin rounded-full border-2 border-red-900 border-t-red-400" />
+                  ) : (
+                    <div className="absolute inset-0 rounded-full border-2 border-red-900" />
+                  )}
+                  <span className="relative z-10 text-xs font-semibold">{secondsUntilNextPoll}</span>
+                </div>
+                <span>
+                  {activeJobCount > 0
+                    ? `Next poll in ${secondsUntilNextPoll}s`
+                    : 'No active jobs to poll'}
+                </span>
               </div>
             </div>
 
@@ -356,16 +464,54 @@ export default function Home() {
                     No rendered images yet.
                   </div>
                 ) : (
-                  jobs.map((job) => (
+                  jobs.map((job, idx) => (
                     <div
-                      key={job.id}
+                      key={`${String(job.id)}-${idx}`}
                       className="rounded-lg border border-red-900/60 bg-black/40 p-4 text-sm text-red-200"
                     >
-                      <div>ID: {job.id}</div>
-                      <div>Status: {job.status}</div>
-                      <div>Scene: {job.scene_file_url}</div>
-                      <div>Output: {job.output_filename}</div>
-                      <div>Frames Completed: {job.frames_completed}</div>
+                      <div className="grid grid-cols-3 items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onDownload(job.output_filename)}
+                          disabled={!job.imageUrl}
+                          className={`justify-self-start rounded border border-red-800 px-2 py-1 text-xs font-semibold transition-all ${
+                            job.imageUrl
+                              ? 'hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,0.9)]'
+                              : 'cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          Download
+                        </button>
+
+                        <div className="text-center text-sm font-semibold text-red-300">{job.output_filename}</div>
+
+                        <button
+                          type="button"
+                          onClick={() => onDelete(idx, job.output_filename)}
+                          className="justify-self-end rounded border border-red-800 px-2 py-1 text-xs font-semibold transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,0.9)]"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      {job.imageUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedImage({ src: job.imageUrl as string, name: job.output_filename })}
+                          className="mt-3 block w-full"
+                        >
+                          <div className="flex h-56 w-full items-center justify-center overflow-hidden rounded-md border border-red-900/60 bg-black/40">
+                            <img
+                              src={job.imageUrl}
+                              alt={job.requestedFileName}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="mt-3 flex h-56 w-full items-center justify-center rounded-md border border-red-900/60 bg-black/40 text-xs text-red-300/70">
+                          Rendering preview unavailable
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
@@ -374,6 +520,23 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {selectedImage ? (
+        <button
+          type="button"
+          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <div className="w-full max-w-5xl rounded-lg border border-red-800 bg-black p-4">
+            <div className="mb-3 text-center text-sm font-semibold text-red-300">{selectedImage.name}</div>
+            <img
+              src={selectedImage.src}
+              alt={selectedImage.name}
+              className="max-h-[80vh] w-full rounded-md border border-red-900/60 object-contain"
+            />
+          </div>
+        </button>
+      ) : null}
     </div>
   )
 }
