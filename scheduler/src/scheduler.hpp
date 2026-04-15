@@ -1,5 +1,6 @@
 #pragma once
 
+#include <thread>
 #include <queue>
 #include <vector>
 #include <mutex>
@@ -52,10 +53,15 @@ private:
     std::vector<Worker> workers_;
     std::mutex workers_mutex_;
 
+    // Dispatch thread tracking
+    std::vector<std::thread> dispatch_threads_;
+    std::mutex threads_mutex_;
+
     // Used to prevent multiple threads from doing shenanigans
     std::atomic<bool> running_{false};
     std::atomic<bool> assigning_{false};
 
     void assignJobs();
+    void joinThreads();
     Worker* findIdleWorker();
 };

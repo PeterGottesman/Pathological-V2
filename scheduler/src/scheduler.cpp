@@ -89,6 +89,17 @@ void Scheduler::run() {
 void Scheduler::stop() {
     running_ = false;
     job_available_.notify_all();
+    joinThreads();
+}
+
+void Scheduler::joinThreads() {
+    std::lock_guard<std::mutex> lock(threads_mutex_);
+    for (auto& t : dispatch_threads_) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    dispatch_threads_.clear();
 }
 
 void Scheduler::assignJobs() {
@@ -108,29 +119,27 @@ void Scheduler::assignJobs() {
         std::string worker_address = worker->ip + ":" + std::to_string(worker->port);
         worker->status = WorkerStatus::BUSY;
 
-        workers_lock.unlock();
-        queue_lock.unlock();
-
-        // This connects to the renderer's gRPC server to send job
-        std::cout << "Dispatching to: " << worker_address << std::endl;
-        RenderWorkerClient client(
-            grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials())
-        );
-
-        std::string job_id = client.RenderJob(job);
-        if (job_id == "ERROR") {
-            queue_lock.lock();
-            pending_jobs_.push(job);
-            queue_lock.unlock();
-
-            workers_lock.lock();
-            Worker* worker_ = findWorkerByID(worker_id);
-            if (worker_) worker_->status = WorkerStatus::OFFLINE;
-            workers_lock.unlock();
-            break;
-        }
-        workers_lock.lock();
-        queue_lock.lock();
+        // Spin up a thread per dispatch so gRPC calls don't block the loop
+        std::lock_guard<std::mutex> tlock(threads_mutex_);
+        dispatch_threads_.emplace_back([this, worker_id, worker_address, job]() {
+            std::cout << "Dispatching to: " << worker_address << std::endl;
+            RenderWorkerClient client(
+                grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials())
+            );
+ 
+            std::string job_id = client.RenderJob(job);
+            if (job_id == "ERROR") {
+                {
+                    std::lock_guard<std::mutex> qlock(queue_mutex_);
+                    pending_jobs_.push(job);
+                }
+                {
+                    std::lock_guard<std::mutex> wlock(workers_mutex_);
+                    Worker* w = findWorkerByID(worker_id);
+                    if (w) w->status = WorkerStatus::OFFLINE;
+                }
+            }
+        });
     }
 }
 
