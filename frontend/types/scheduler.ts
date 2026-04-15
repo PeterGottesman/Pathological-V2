@@ -8,10 +8,20 @@ export type SubmitRenderRequest = {
   output_file_name: string
 }
 
+export type SubmitRenderPayload = {
+  width: number
+  height: number
+  frames_per_second: number
+  animation_runtime: number
+  samples_per_pixel: number
+  scene_file_url: string
+  output_filename: string
+}
+
 export type RenderStatus = 'Completed' | 'In Progress' | 'In Queue' | 'Error'
 
 export type RenderJob = {
-  id: number
+  id: string | number
   status: RenderStatus
   width: number
   height: number
