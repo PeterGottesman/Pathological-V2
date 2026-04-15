@@ -8,6 +8,12 @@
 #include <memory>
 #include <string>
 
+S3Config config {
+    .bucketName = "pathological-capstone-s3-bucket",
+    .region = "us-east-2",  // can't use other servers in same region. region must match.
+    .profileName = "default",
+};
+
 Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request,
     RenderJobResponse *response) {
     std::cout << "Render Recieved" << std::endl;
@@ -24,6 +30,7 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
     generateScene(job->getWidth(), job->getHeight(), job->getSamples(),
         job->getGLTF(), job->getOutput(), job->getTime());
 
+    this->manager.putObject("cube.bin", "cube.bin3", false);
     this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
     this->client.JobCompleted(job_id);
     return Status::OK;
@@ -35,8 +42,7 @@ Status RenderServer::RenderStatus(ServerContext *context, const RenderStatusRequ
     return Status::OK;
 }
 
-std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client,
-    std::string worker_id, random_generator rand, S3Manager& manager) {
+std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client, std::string worker_id, random_generator rand) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
 
   grpc::EnableDefaultHealthCheckService(true);
@@ -47,7 +53,7 @@ std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client,
 
   // Register "service" as the instance through which we'll communicate with
   // clients.
-  builder.RegisterService(new RenderServer(client, worker_id, rand, manager));
+  builder.RegisterService(new RenderServer(client, worker_id, rand));
 
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
