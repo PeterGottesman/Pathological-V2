@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <sstream>
 
 S3Config config {
     .bucketName = "pathological-capstone-s3-bucket",
@@ -17,8 +18,6 @@ S3Config config {
 Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request,
     RenderJobResponse *response) {
     std::cout << "Render Recieved" << std::endl;
-    //bool test = this->manager.keyExists("cornell_box_animated.gltf");
-    //std::cout << test << std::endl;
 
     std::shared_ptr<Job> job = std::make_shared<Job>(request->width(), request->height(), request->samples(),
         request->scene_location(), request->output_name(), request->time(), render_server::Status::IN_PROGRESS);
@@ -30,7 +29,14 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
     generateScene(job->getWidth(), job->getHeight(), job->getSamples(),
         job->getGLTF(), job->getOutput(), job->getTime(), 512, false);
 
-    this->manager.putObject("cube.bin", "cube.bin3", false);
+    std::stringstream stream;
+    std::string string_time;
+    stream << job->getTime();
+    stream >> string_time;
+    std::string job_name = job->getOutput() + "_" + string_time;
+    std::cout << job_name << std::endl;
+
+    this->manager.putObject(job->getOutput(), job_name, false);
     this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
     this->client.JobCompleted(job_id);
     return Status::OK;
