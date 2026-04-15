@@ -1,5 +1,4 @@
 #include "render_server.hpp"
-#include "s3_manager.hpp"
 #include "scheduler_client.hpp"
 
 #include <condition_variable>
@@ -11,12 +10,6 @@
 #include <mutex>
 #include <string>
 #include <thread>
-
-S3Config cfg {
-    .bucketName = "pathological-capstone-s3-bucket",
-    .region = "us-east-2",  // can't use other servers in same region. region must match.
-    .profileName = "default",
-};
 
 // Creating reference to client singleton
 SchedulerClient& client = SchedulerClient::getInstance();
@@ -84,8 +77,7 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    S3Manager manager(cfg);
-    server = BuildServer(renderServerPort, client, worker_id, random_gen, manager);
+    server = BuildServer(renderServerPort, client, worker_id, random_gen);
     std::thread shutdown_thread(shutdownServer);
     server->Wait();
     shutdown_thread.join();

@@ -24,10 +24,12 @@ using boost::uuids::random_generator;
 using boost::uuids::uuid;
 using boost::uuids::to_string;
 
+extern S3Config config;
+
 class RenderServer final : public RenderWorker::Service {
 public:
-    RenderServer(SchedulerClient& client, std::string worker_id, random_generator random_gen, S3Manager& manager) :
-        client(client), worker_id(worker_id), random_gen(random_gen), manager(manager){}
+    RenderServer(SchedulerClient& client, std::string worker_id, random_generator random_gen) :
+        client(client), worker_id(worker_id), random_gen(random_gen), manager(S3Manager(config)){}
     Status RenderJob(ServerContext *context, const RenderJobRequest *request,
         RenderJobResponse *response);
     Status RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response);
@@ -37,8 +39,8 @@ private:
     std::string worker_id;
     random_generator random_gen;
     RenderJobs jobs;
-    S3Manager& manager;
+    S3Manager manager;
 };
 
 std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client,
-        std::string worker_id, random_generator random_gen, S3Manager& manager);
+        std::string worker_id, random_generator random_gen);
