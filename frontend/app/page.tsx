@@ -1,13 +1,11 @@
 'use client'
 //Main and only page for the frontend, contains the form to submit render jobs to the scheduler and a section to display rendered images with options to download or delete them. It also implements polling to update the status of submitted jobs and their rendered images.
 import { useEffect, useRef, useState } from 'react'
-import type { SubmitRenderRequest, SubmitRenderPayload, RenderJob } from '@/types/scheduler'
+import Image from 'next/image'
+import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
-type FormState = SubmitRenderRequest
-type JobView = RenderJob & {
-  requestedFileName: string
-  imageUrl: string | null
-}
+type FormState = SubmitRenderPayload
+type JobView = RenderJob & { imageUrl: string | null }
 type SelectedImage = {
   src: string
   name: string
@@ -15,28 +13,62 @@ type SelectedImage = {
 //Constants for polling interval
 const POLL_INTERVAL_SECONDS = 10
 const POLL_INTERVAL_MS = POLL_INTERVAL_SECONDS * 1000
-// Helper function to build a local image URL for fetching the rendered image from the render worker's build directory based on the output filename.
-function buildLocalImageUrl(outputFilename: string) {
+const DEFAULT_FPS = 30
+const DEFAULT_RUNTIME = 10
+// Helper function to build an API image URL from an object key.
+function buildImageApiUrl(outputFilename: string) {
   return `/api/render-image?image=${encodeURIComponent(outputFilename)}&ts=${Date.now()}`
 }
-//Helper function to resolve the local image URL for a rendered image by checking if the requested file name or the output filename exists in the render worker's build directory. It makes GET requests to the /api/render-image endpoint with the 'exists' query parameter set to '1' to check for the existence.
-async function resolveLocalImageUrl(requestedFileName: string, outputFilename: string) {
-  const candidates = [requestedFileName, outputFilename].filter(
-    (name, index, arr) => name && arr.indexOf(name) === index
-  )
-
-  for (const fileName of candidates) {
-    const res = await fetch(`/api/render-image?image=${encodeURIComponent(fileName)}&exists=1`, {
-      method: 'GET',
-      cache: 'no-store',
-    })
-
-    if (res.ok) {
-      return buildLocalImageUrl(fileName)
-    }
+//Helper function to resolve an image URL by checking object-key candidates through the /api/render-image endpoint.
+function resolveApiImageUrl(
+  outputFilename: string,
+  downloadLink: string | null,
+  animationRuntime: number
+) {
+  if (downloadLink) {
+    const key = normalizeDownloadKey(downloadLink)
+    if (key) return key
   }
 
-  return null
+  const base = toFileName(outputFilename).trim()
+  if (!base) return null
+  return `${base}_${Math.trunc(animationRuntime)}`
+}
+//Function to extract the file name from a path, used to help generate output file names and resolve image URLs.
+function toFileName(value: string) {
+  return value.split('/').pop() ?? value
+}
+//Ensure file ends in .png, return a default name if result is empty after trimming
+function ensurePngName(name: string) {
+  const trimmed = toFileName(name).trim()
+  if (!trimmed) return 'render.png'
+  return /\.png$/i.test(trimmed) ? trimmed : `${trimmed}.png`
+}
+//Normarilize download link by handling both s3:// and object key
+function normalizeDownloadKey(downloadLink: string) {
+  const raw = downloadLink.trim()
+
+  if (raw.startsWith('s3://')) {
+    const withoutScheme = raw.slice('s3://'.length)
+    const slashIndex = withoutScheme.indexOf('/')
+    if (slashIndex < 0) return null
+    return withoutScheme.slice(slashIndex + 1)
+  }
+
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return raw
+  }
+
+  return raw
+}
+//Resolve the image URL for a render job by checking the download link and output filename, returning a local API URL if possible
+function resolveImageUrl(
+  outputFilename: string,
+  downloadLink: string | null,
+  animationRuntime: number
+) {
+  const key = resolveApiImageUrl(outputFilename, downloadLink, animationRuntime)
+  return key ? buildImageApiUrl(key) : null
 }
 // The main React component for the home page, holds most UI state and logic 
 export default function Home() {
@@ -45,11 +77,11 @@ export default function Home() {
     {
       width: 1920,
       height: 1080,
-      frames_per_second: 30,
-      animation_runtime: 10,
+      frames_per_second: DEFAULT_FPS,
+      animation_runtime: DEFAULT_RUNTIME,
       samples_per_pixel: 16,
       scene_file_url: '/home/dtre/Pathological-V2/render_worker/test_scenes/cornell_box.gltf',
-      output_file_name: 'cornell_box.png',
+      output_filename: 'cornell_box.png',
     },
   ])
   //States for managing submission status, list of render jobs, countdown for next poll, and currently selected image for viewing
@@ -59,7 +91,6 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null)
 
   const jobsRef = useRef<JobView[]>([])
-  const pollingStartedRef = useRef(false)
 
   useEffect(() => {
     jobsRef.current = jobs
@@ -76,7 +107,7 @@ export default function Home() {
       next[index] = {
         ...next[index],
         scene_file_url: v,
-        output_file_name: filename,
+        output_filename: filename,
       }
       return next
     })
@@ -104,49 +135,56 @@ export default function Home() {
       {
         width: 1920,
         height: 1080,
-        frames_per_second: 30,
-        animation_runtime: 10,
+        frames_per_second: DEFAULT_FPS,
+        animation_runtime: DEFAULT_RUNTIME,
         samples_per_pixel: 16,
         scene_file_url: '',
-        output_file_name: '',
+        output_filename: '',
       },
     ])
   }
 
-  function onDownload(outputFilename: string) {
-    const href = `/api/render-image?image=${encodeURIComponent(outputFilename)}`
+  function onRemove(index: number) {
+    setForms((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function onDownload(job: JobView) {
+    const key = resolveApiImageUrl(job.output_filename, job.download_link, job.animation_runtime)
+    if (!key) return
+
+    const downloadName = ensurePngName(job.output_filename)
+
+    const localDownloadUrl = `/api/render-image?image=${encodeURIComponent(key)}&download=${encodeURIComponent(downloadName)}`
     const anchor = document.createElement('a')
-    anchor.href = href
-    anchor.download = outputFilename
+    anchor.href = localDownloadUrl
+    anchor.download = downloadName
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
   }
+//Handler for when a user clicks on a rendered image to view it, sets the selected image state to open the image viewer modal
+  async function onOpenImage(job: JobView) {
+    const src = resolveImageUrl(job.output_filename, job.download_link, job.animation_runtime)
 
-  async function onDelete(index: number, outputFilename: string) {
-    const res = await fetch(`/api/render-image?image=${encodeURIComponent(outputFilename)}`, {
-      method: 'DELETE',
-    })
+    if (!src) return
+    setSelectedImage({ src, name: job.output_filename })
+  }
 
-    if (!res.ok) {
-      return
-    }
-
+  function onDelete(index: number, outputFilename: string) {
     setJobs((prev) => prev.filter((_, i) => i !== index))
     setSelectedImage((prev) => (prev?.name === outputFilename ? null : prev))
   }
-
+//Handler for submitting the render job form; sends a POST request to the /api/renders endpoint for each form, then updates the jobs state with the responses and starts the polling countdown
   async function onSubmit() {
     try {
       setSubmitting(true)
 
       const results = await Promise.all(
         forms.map(async (form) => {
-          const { output_file_name, ...rest } = form
-
           const payload: SubmitRenderPayload = {
-            ...rest,
-            output_filename: output_file_name,
+            ...form,
+            frames_per_second: DEFAULT_FPS,
+            animation_runtime: DEFAULT_RUNTIME,
           }
 
           const res = await fetch('/api/renders', {
@@ -160,11 +198,10 @@ export default function Home() {
           }
 
           const data = (await res.json()) as RenderJob
-          const imageUrl = await resolveLocalImageUrl(form.output_file_name, data.output_filename)
+          const imageUrl = resolveImageUrl(data.output_filename, data.download_link, data.animation_runtime)
 
           return {
             ...data,
-            requestedFileName: form.output_file_name,
             imageUrl,
           } as JobView
         })
@@ -172,117 +209,110 @@ export default function Home() {
 
       setJobs(results)
       setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
-      pollingStartedRef.current = false
     } catch (error) {
       console.error(error)
     } finally {
       setSubmitting(false)
     }
   }
-
+//useEffect hook to implement polling for job status updates and image URL resolution, with a countdown timer for the next poll
   useEffect(() => {
     if (jobs.length === 0) {
       setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
-      pollingStartedRef.current = false
       return
     }
 
-    if (pollingStartedRef.current) return
-    pollingStartedRef.current = true
-
     let isCancelled = false
-    let countdownInterval: ReturnType<typeof setInterval> | null = null
-    let pollTimeout: ReturnType<typeof setTimeout> | null = null
+    let remaining = POLL_INTERVAL_SECONDS
 
-    const clearTimers = () => {
-      if (countdownInterval) clearInterval(countdownInterval)
-      if (pollTimeout) clearTimeout(pollTimeout)
-    }
+    setSecondsUntilNextPoll(remaining)
 
-    const runPollCycle = () => {
-      if (isCancelled) return
+    const countdownInterval = setInterval(() => {
+      remaining = remaining > 1 ? remaining - 1 : POLL_INTERVAL_SECONDS
+      if (!isCancelled) {
+        setSecondsUntilNextPoll(remaining)
+      }
+    }, 1000)
 
-      setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
+    const pollInterval = setInterval(async () => {
+      try {
+        const currentJobs = jobsRef.current
+        const hasPollableJobs = currentJobs.some((job) => {
+          const id = String(job.id ?? '').trim()
+          const shouldRefreshStatus = job.status !== 'Completed' && job.status !== 'Error'
+          const shouldResolveImage = job.status !== 'Error' && job.imageUrl === null
+          return id !== '' && (shouldRefreshStatus || shouldResolveImage)
+        })
 
-      let remaining = POLL_INTERVAL_SECONDS
+        if (!hasPollableJobs) return
 
-      countdownInterval = setInterval(() => {
-        remaining -= 1
+        const updated = await Promise.all(
+          currentJobs.map(async (job) => {
+            if (job.status === 'Error') return job
 
-        if (remaining >= 0 && !isCancelled) {
-          setSecondsUntilNextPoll(remaining)
-        }
-
-        if (remaining <= 0 && countdownInterval) {
-          clearInterval(countdownInterval)
-        }
-      }, 1000)
-
-      pollTimeout = setTimeout(async () => {
-        try {
-          const currentJobs = jobsRef.current
-          const hasPollableJobs = currentJobs.some((job) => {
             const id = String(job.id ?? '').trim()
-            const isTerminal = job.status === 'Completed' || job.status === 'Error'
-            const isLocalComplete = job.status !== 'Error' && job.imageUrl !== null
-            return id !== '' && !isTerminal && !isLocalComplete
-          })
+            if (!id) return job
 
-          if (hasPollableJobs) {
-            const updated = await Promise.all(
-              currentJobs.map(async (job) => {
-                const isTerminal = job.status === 'Completed' || job.status === 'Error'
-                const isLocalComplete = job.status !== 'Error' && job.imageUrl !== null
-                if (isTerminal || isLocalComplete) return job
+            const currentImageUrl = resolveImageUrl(job.output_filename, job.download_link, job.animation_runtime)
 
-                const res = await fetch(`/api/renders/${encodeURIComponent(String(job.id))}`, {
-                  method: 'GET',
-                  cache: 'no-store',
-                })
-
-                if (!res.ok) {
-                  throw new Error(`Polling failed for id=${String(job.id)} with status ${res.status}`)
-                }
-
-                const data = (await res.json()) as RenderJob
-                const imageUrl = job.imageUrl ?? (await resolveLocalImageUrl(job.requestedFileName, data.output_filename))
-
-                return {
-                  ...data,
-                  requestedFileName: job.requestedFileName,
-                  imageUrl,
-                } as JobView
-              })
-            )
-
-            if (!isCancelled) {
-              setJobs(updated)
+            if (job.status === 'Completed') {
+              return {
+                ...job,
+                imageUrl: currentImageUrl,
+              } as JobView
             }
-          }
-        } catch (error) {
-          console.error(error)
-        } finally {
-          if (!isCancelled) {
-            runPollCycle()
-          }
-        }
-      }, POLL_INTERVAL_MS)
-    }
 
-    runPollCycle()
+            try {
+              const res = await fetch(`/api/renders/${encodeURIComponent(String(job.id))}`, {
+                method: 'GET',
+                cache: 'no-store',
+              })
+
+              if (!res.ok) {
+                return {
+                  ...job,
+                  imageUrl: currentImageUrl,
+                } as JobView
+              }
+
+              const data = (await res.json()) as RenderJob
+              const imageUrl = resolveImageUrl(data.output_filename, data.download_link, data.animation_runtime)
+
+              return {
+                ...data,
+                imageUrl,
+              } as JobView
+            } catch {
+              return {
+                ...job,
+                imageUrl: currentImageUrl,
+              } as JobView
+            }
+          })
+        )
+
+        if (!isCancelled) {
+          setJobs(updated)
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }, POLL_INTERVAL_MS)
 
     return () => {
       isCancelled = true
-      pollingStartedRef.current = false
-      clearTimers()
+      clearInterval(countdownInterval)
+      clearInterval(pollInterval)
     }
   }, [jobs.length])
 
   const activeJobCount = jobs.filter((job) => {
-    const isTerminal = job.status === 'Completed' || job.status === 'Error'
-    const isLocalComplete = job.status !== 'Error' && job.imageUrl !== null
-    return !isTerminal && !isLocalComplete
+    if (job.status === 'Error') return false
+    if (job.status === 'Completed' && job.imageUrl !== null) return false
+    return true
   }).length
+
+  
 //UI rendering logic
   return (
     <div className="flex min-h-screen flex-col bg-black text-red-500 font-mono">
@@ -332,7 +362,18 @@ export default function Home() {
 
             <div className="space-y-5">
               {forms.map((form, i) => (
-                <div key={i} className="space-y-5 rounded-lg border border-red-900/60 bg-black/20 p-4">
+                <div key={i} className="relative space-y-5 rounded-lg border border-red-900/60 bg-black/20 p-4">
+                  {i > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => onRemove(i)}
+                      aria-label={`Remove render form ${i + 1}`}
+                      className="absolute right-2 top-2 rounded border border-red-700 px-2 py-0.5 text-xs font-bold text-red-300 transition-all hover:text-red-100 hover:drop-shadow-[0_0_8px_rgba(220,38,38,0.9)]"
+                    >
+                      X
+                    </button>
+                  ) : null}
+
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-red-300">Scene file (.gltf)</label>
                     <input
@@ -347,30 +388,8 @@ export default function Home() {
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-red-300">Output filename</label>
                       <input
-                        value={form.output_file_name}
-                        onChange={(e) => onTextChange(i, 'output_file_name', e.target.value)}
-                        className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-red-300">Frames / Second</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={form.frames_per_second}
-                        onChange={(e) => onNumberChange(i, 'frames_per_second', e.target.value)}
-                        className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-red-300">Animation runtime</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={form.animation_runtime}
-                        onChange={(e) => onNumberChange(i, 'animation_runtime', e.target.value)}
+                        value={form.output_filename}
+                        onChange={(e) => onTextChange(i, 'output_filename', e.target.value)}
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
@@ -472,7 +491,7 @@ export default function Home() {
                       <div className="grid grid-cols-3 items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => onDownload(job.output_filename)}
+                          onClick={() => onDownload(job)}
                           disabled={!job.imageUrl}
                           className={`justify-self-start rounded border border-red-800 px-2 py-1 text-xs font-semibold transition-all ${
                             job.imageUrl
@@ -496,13 +515,16 @@ export default function Home() {
                       {job.imageUrl ? (
                         <button
                           type="button"
-                          onClick={() => setSelectedImage({ src: job.imageUrl as string, name: job.output_filename })}
+                          onClick={() => onOpenImage(job)}
                           className="mt-3 block w-full"
                         >
                           <div className="flex h-56 w-full items-center justify-center overflow-hidden rounded-md border border-red-900/60 bg-black/40">
-                            <img
+                            <Image
                               src={job.imageUrl}
-                              alt={job.requestedFileName}
+                              alt={job.output_filename}
+                              width={1024}
+                              height={1024}
+                              unoptimized
                               className="h-full w-full object-contain"
                             />
                           </div>
@@ -529,9 +551,12 @@ export default function Home() {
         >
           <div className="w-full max-w-5xl rounded-lg border border-red-800 bg-black p-4">
             <div className="mb-3 text-center text-sm font-semibold text-red-300">{selectedImage.name}</div>
-            <img
+            <Image
               src={selectedImage.src}
               alt={selectedImage.name}
+              width={1920}
+              height={1080}
+              unoptimized
               className="max-h-[80vh] w-full rounded-md border border-red-900/60 object-contain"
             />
           </div>
