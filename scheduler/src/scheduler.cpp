@@ -1,4 +1,29 @@
 #include "scheduler.hpp"
+#include "render_history.hpp"
+#include "renderStatus.hpp"
+#include "s3Manager.hpp"
+#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
+namespace {
+constexpr const char* kBucketName = "pathological-capstone-s3-bucket";
+constexpr const char* kBucketRegion = "us-east-2";
+
+std::optional<std::string> buildDownloadLink(const std::string& key) {
+    static S3Manager s3Manager({
+        .bucketName = kBucketName,
+        .region = kBucketRegion,
+        .profileName = "default",
+    });
+
+    const auto presigned = s3Manager.requestFileUrl(key);
+    if (presigned && !presigned->empty()) {
+        return presigned;
+    }
+
+    return std::string("s3://") + kBucketName + "/" + key;
+}
+}
 
 void Scheduler::addJob(std::shared_ptr<RenderRequest> job) {
     {
@@ -54,6 +79,30 @@ void Scheduler::markWorkerIdle(const std::string& id) {
         }
     }
     job_available_.notify_one();
+}
+
+bool Scheduler::markRenderCompleted(const std::string& workerJobId) {
+    std::string renderId;
+    {
+        std::lock_guard<std::mutex> lock(job_map_mutex_);
+        auto it = worker_job_to_render_id_.find(workerJobId);
+        if (it == worker_job_to_render_id_.end()) {
+            return false;
+        }
+        renderId = it->second;
+        worker_job_to_render_id_.erase(it);
+    }
+
+    boost::uuids::string_generator stringGen;
+    const boost::uuids::uuid uuid = stringGen(renderId);
+    auto render = RenderHistory::getInstance().getRenderRequest(uuid);
+    if (!render) {
+        return false;
+    }
+    const std::string key = render->getOutputFileName() + "_" + std::to_string(render->getAnimationRuntimeInFrames());
+    render->setDownloadLink(buildDownloadLink(key));
+    render->setStatus(RenderStatus::COMPLETED);
+    return true;
 }
 
 void Scheduler::run() {
@@ -117,11 +166,13 @@ void Scheduler::assignJobs() {
 
         std::string worker_id = worker->id;
         std::string worker_address = worker->ip + ":" + std::to_string(worker->port);
+        std::string render_id = boost::uuids::to_string(job->getId());
         worker->status = WorkerStatus::BUSY;
+        RenderHistory::getInstance().updateStatus(job->getId(), RenderStatus::IN_PROGRESS);
 
         // Spin up a thread per dispatch so gRPC calls don't block the loop
         std::lock_guard<std::mutex> tlock(threads_mutex_);
-        dispatch_threads_.emplace_back([this, worker_id, worker_address, job]() {
+        dispatch_threads_.emplace_back([this, worker_id, worker_address, job, render_id]() {
             std::cout << "Dispatching to: " << worker_address << std::endl;
             RenderWorkerClient client(
                 grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials())
@@ -129,6 +180,7 @@ void Scheduler::assignJobs() {
  
             std::string job_id = client.RenderJob(job);
             if (job_id == "ERROR") {
+                RenderHistory::getInstance().updateStatus(job->getId(), RenderStatus::ERROR);
                 {
                     std::lock_guard<std::mutex> qlock(queue_mutex_);
                     pending_jobs_.push(job);
@@ -138,6 +190,14 @@ void Scheduler::assignJobs() {
                     Worker* w = findWorkerByID(worker_id);
                     if (w) w->status = WorkerStatus::OFFLINE;
                 }
+            } else {
+                {
+                    std::lock_guard<std::mutex> mapLock(job_map_mutex_);
+                    worker_job_to_render_id_[job_id] = render_id;
+                }
+
+                // Handle out-of-order completion notifications by finalizing here too.
+                markRenderCompleted(job_id);
             }
         });
     }

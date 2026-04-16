@@ -8,6 +8,7 @@
 #include <atomic>
 #include <string>
 #include <iostream>
+#include <unordered_map>
 
 #include <grpcpp/grpcpp.h>
 
@@ -35,6 +36,7 @@ public:
     void reconnectWorker(const std::string& id);
     void markWorkerOffline(const std::string& id);
     void markWorkerIdle(const std::string& id);
+    bool markRenderCompleted(const std::string& workerJobId);
 
     void run();
     void stop();
@@ -52,6 +54,10 @@ private:
     // Worker list
     std::vector<Worker> workers_;
     std::mutex workers_mutex_;
+
+    // Tracks worker generated job IDs to scheduler render IDs.
+    std::unordered_map<std::string, std::string> worker_job_to_render_id_;
+    std::mutex job_map_mutex_;
 
     // Dispatch thread tracking
     std::vector<std::thread> dispatch_threads_;

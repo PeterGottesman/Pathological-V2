@@ -41,6 +41,7 @@ Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedR
 
     // A recognized worker will be set to idle once a job is completed.
     if (worker != nullptr) {
+        Scheduler::getInstance().markRenderCompleted(request->job_id());
         Scheduler::getInstance().markWorkerIdle(request->worker_id());
         std::cout << "Job " << request->job_id() << " completed by worker: " << request->worker_id() << std::endl;
         response->set_status(RegistrationStatus::OK);
