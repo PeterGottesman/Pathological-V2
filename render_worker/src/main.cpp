@@ -11,7 +11,7 @@
 #include <string>
 #include <thread>
 
-// Creating reference to client singleton
+// Creating reference to client singleton and unique pointer that will store the server
 SchedulerClient& client = SchedulerClient::getInstance();
 std::unique_ptr<Server> server;
 
@@ -19,7 +19,8 @@ bool shutdownSig = false;
 std::mutex mutex;
 std::condition_variable shutdownNow;
 
-// Alerts scheduler that the render worker is disconnecting
+// Sends to STD out the signal hit and then alerts cv for
+// shutdownServer thread
 void signalHandler(int signal){
     std::string sig;
     if (signal == 1) {
@@ -32,7 +33,7 @@ void signalHandler(int signal){
         sig = "UNDEFINED";
     }
     std::cout << sig << " HIT" << std::endl;
-    shutdownSig = true;
+    shutdownSig = true;     // Used to stop spurious wakeup
     shutdownNow.notify_one();
 }
 
@@ -58,7 +59,7 @@ int main(int argc, char** argv) {
     app.add_option("-n, --name", worker_id, "Name that scheduler will refer to this render worker as");
     CLI11_PARSE(app, argc, argv);
 
-    // Sends scheduler IP and port
+    // Sets the members needed for the scheduler client
     client.SetMembers(
         grpc::CreateChannel(schedulerAddress, grpc::InsecureChannelCredentials()),
         worker_id,
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
         renderServerPort
     );
 
+    // If cannot establish connection with scheduler exit
     if(client.EstablishConnection() == 1){
         std::cerr << "Could not establish connection with scheduler. Now exiting." << std::endl;
         return 1;

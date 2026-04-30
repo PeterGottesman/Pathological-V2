@@ -20,6 +20,7 @@ using scheduler_server::JobCompletedRequest;
 // Assembles the client's payload, sends it and presents the response back
 // from the server.
 
+// Singleton pattern since it is declared in global scope
 class SchedulerClient {
 public:
     static SchedulerClient& getInstance(){

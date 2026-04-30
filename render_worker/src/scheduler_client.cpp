@@ -24,7 +24,8 @@ int SchedulerClient::EstablishConnection() {
 
   Status status = stub_->EstablishConnection(&context, request, &response);
 
-  // If the RPC call succeeds, an output message is displayed detailing the worker's current status with the scheduler.
+  // If the RPC call succeeds, an output message is displayed
+  // detailing the worker's current status with the scheduler.
 
   if (status.ok()) {
     if (response.status() == RegistrationStatus::OK) {
@@ -47,6 +48,9 @@ int SchedulerClient::EstablishConnection() {
   }
 }
 
+// Used to make sure that the render worker is
+// still connected.
+// CURRENTLY NOT USED
 void SchedulerClient::Heartbeat() {
   WorkerID request;
   request.set_worker_id(worker_id_);
@@ -64,6 +68,8 @@ void SchedulerClient::Heartbeat() {
   }
 }
 
+// Alerts the scheduler that a job is completed.
+// Scheduler identifies which job through the job_id
 void SchedulerClient::JobCompleted(std::string job_id) {
   JobCompletedRequest request;
   request.set_worker_id(worker_id_);
@@ -80,6 +86,8 @@ void SchedulerClient::JobCompleted(std::string job_id) {
     }
 }
 
+// Alerts the scheduler that the render worker
+// is disconnecting/going offline.
 void SchedulerClient::Disconnect() {
   WorkerID request;
   request.set_worker_id(worker_id_);
