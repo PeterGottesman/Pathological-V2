@@ -3,6 +3,8 @@
 #include "protos/render_server.pb.h"
 #include <memory>
 
+// Holds all of the jobs that a renderer
+// has processed
 class RenderJobs {
 public:
     void AddJob(std::string uuid, std::shared_ptr<Job> job);

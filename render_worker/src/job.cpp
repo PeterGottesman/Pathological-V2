@@ -35,6 +35,7 @@ render_server::Status Job::getStatus(){
     return this->status;
 }
 
+// Mainly for debugging
 void Job::print(){
     std::cout << width << std::endl;
     std::cout << height << std::endl;
