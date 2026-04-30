@@ -24,6 +24,8 @@ using boost::uuids::random_generator;
 using boost::uuids::uuid;
 using boost::uuids::to_string;
 
+// Needed for creating s3Manager
+// Defined in cpp file
 extern S3Config config;
 
 class RenderServer final : public RenderWorker::Service {

@@ -9,6 +9,8 @@
 
 #include "s3_manager.hpp"
 
+// Creates s3Manager instance. This does take a few
+// seconds to do
 S3Manager::S3Manager(const S3Config &config) : config(config) {
   Aws::InitAPI(options);
   Aws::Client::ClientConfiguration clientConfig;
@@ -21,6 +23,7 @@ S3Manager::~S3Manager() {
   Aws::ShutdownAPI(options);
 }
 
+// Checks if object is in bucket
 bool S3Manager::keyExists(const std::string &s3Key) {
   Aws::S3::Model::HeadObjectRequest req;
   req.SetBucket(config.bucketName);
@@ -33,6 +36,7 @@ bool S3Manager::keyExists(const std::string &s3Key) {
   return false;
 }
 
+// Retrieves object from s3 bucket
 bool S3Manager::getObject(const std::string &s3Key,
                           const std::string &localPath) {
   Aws::S3::Model::GetObjectRequest req;
@@ -58,6 +62,9 @@ bool S3Manager::getObject(const std::string &s3Key,
   return writeFileToPath(localPath, result.GetBody().rdbuf(), objectLen);
 }
 
+// Puts object into bucket. Takes path to file, what you want to name
+// the file once placing it in bucket, and if you want to overwrite
+// the a file of the same name if it is already in bucket
 bool S3Manager::putObject(const std::string &localPath,
                           const std::string &s3Key, bool overwriteExisting) {
 

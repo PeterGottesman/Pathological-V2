@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+// Peter's implementation. Refer to him when it comes to
+// any questions about the VULKAN path tracer
 void generateScene(uint32_t width, uint32_t height, uint32_t samples,
     std::string gltfFile, std::string output, float time, uint32_t tileSize, bool verbose){
     try {
