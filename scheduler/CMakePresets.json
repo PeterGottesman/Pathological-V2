@@ -1,22 +1,14 @@
 {
-  "version": 2,
+  "version": 4,
+  "include": ["../CMakePresets.json"],
   "configurePresets": [
     {
       "name": "default",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-      }
+      "inherits": "base"
     },
     {
       "name": "debug",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/debug-build",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-	"CMAKE_BUILD_TYPE": "Debug"
-      }
+      "inherits": "base-debug"
     }
   ]
 }

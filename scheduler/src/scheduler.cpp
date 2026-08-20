@@ -1,7 +1,7 @@
 #include "scheduler.hpp"
 #include "render_history.hpp"
 #include "renderStatus.hpp"
-#include "s3Manager.hpp"
+#include "s3_manager.hpp"
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
@@ -14,10 +14,11 @@ std::optional<std::string> buildDownloadLink(const std::string& key) {
         .bucketName = kBucketName,
         .region = kBucketRegion,
         .profileName = "default",
+        .presignedUrlTimeout = 1200,
     });
 
-    const auto presigned = s3Manager.requestFileUrl(key);
-    if (presigned && !presigned->empty()) {
+    const auto presigned = s3Manager.createLink(key);
+    if (!presigned.empty()) {
         return presigned;
     }
 

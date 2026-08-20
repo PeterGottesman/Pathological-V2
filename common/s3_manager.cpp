@@ -25,6 +25,7 @@ S3Manager::~S3Manager() {
 
 // Checks if object is in bucket
 bool S3Manager::keyExists(const std::string &s3Key) {
+  std::cout << "Fetching key: " << s3Key << std::endl;
   Aws::S3::Model::HeadObjectRequest req;
   req.SetBucket(config.bucketName);
   req.SetKey(s3Key);
@@ -33,6 +34,10 @@ bool S3Manager::keyExists(const std::string &s3Key) {
   if (resp.IsSuccess()) {
     return true;
   }
+
+  std::cerr << "Validation request failed for '" << s3Key
+            << "': " << resp.GetError().GetMessage() << std::endl;
+
   return false;
 }
 
@@ -100,7 +105,7 @@ bool S3Manager::putObject(const std::string &localPath,
 std::string S3Manager::createLink(const std::string &s3Key) {
   return client->GeneratePresignedUrl(config.bucketName, s3Key,
                                       Aws::Http::HttpMethod::HTTP_GET,
-                                      kPresignedUrlTimeout);
+                                      config.presignedUrlTimeout);
 }
 
 // Function that writes stream of data in binary mode. Designed to use for gltf

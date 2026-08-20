@@ -11,7 +11,9 @@
 struct S3Config {
   std::string bucketName;
   std::string region;
-  std::string profileName;
+  std::string profileName = "default";
+  // How long generated download links remain valid, in seconds.
+  uint64_t presignedUrlTimeout = 1800;
 };
 
 class S3Manager {
@@ -24,9 +26,6 @@ public:
   bool putObject(const std::string &localPath, const std::string &s3Key,
                  bool overwriteExisting);
   std::string createLink(const std::string &s3Key);
-
-  // Controls link expiration timer in seconds.
-  static constexpr uint64_t kPresignedUrlTimeout = 1800;
 
 private:
   S3Config config;
