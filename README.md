@@ -21,23 +21,23 @@ Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 
 ## Building
 
-The C++ side has two components, `scheduler/` and `render_worker/`, which share the gRPC proto libraries in `protos/` and the `S3Manager` in `common/` (pulled in automatically via CMake — no separate build step for those).
+The C++ side has two components, `scheduler/` and `render_worker/`, which share the gRPC proto libraries in `protos/` and the `S3Manager` in `common/`. Everything is built from this directory — there's a single root `CMakeLists.txt` and `vcpkg.json`; `scheduler/` and `render_worker/` no longer have their own.
 
-Build both together from this directory:
+Build both together:
 ```bash
 cmake --preset all
 cmake --build build
 ```
 This produces `build/scheduler/pathological-sched` and `build/render_worker/pathological`.
 
-Or build either one on its own, from its own subdirectory — useful if you only have the toolchain for one of them (e.g. building just `render_worker` on a Jetson without Drogon/AWS-SDK-for-scheduler installed):
+Or build just one — this only installs that component's vcpkg dependencies (via [vcpkg manifest features](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode#features)), so e.g. building `render_worker` alone on a Jetson doesn't require Drogon or pull in scheduler-only packages:
 ```bash
-cd scheduler        # or render_worker
-cmake --preset default
-cmake --build build
+cmake --preset scheduler        # or: cmake --preset render-worker
+cmake --build build-scheduler   # or: cmake --build build-render-worker
 ```
+`cmake --list-presets` shows all presets, including `-debug` variants of each.
 
-All need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker` additionally needs the Vulkan SDK and a ray-tracing-capable GPU. Both link AWS SDK for S3 access, using the `default` credentials profile.
+All presets need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker` additionally needs the Vulkan SDK and a ray-tracing-capable GPU. Both link AWS SDK for S3 access, using the `default` credentials profile.
 
 For running the full stack (scheduler + worker + frontend) together, see `frontend/README.md`.
 

@@ -5,30 +5,65 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
-      "name": "base-debug",
-      "hidden": true,
-      "generator": "Ninja",
+      "name": "all",
+      "inherits": "base",
+      "displayName": "Build scheduler + render_worker",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "scheduler;render-worker"
+      }
+    },
+    {
+      "name": "all-debug",
+      "inherits": "all",
+      "displayName": "Build scheduler + render_worker (debug)",
       "binaryDir": "${sourceDir}/debug-build",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "all",
+      "name": "scheduler",
       "inherits": "base",
-      "displayName": "Build scheduler + render_worker together"
+      "displayName": "Build scheduler only",
+      "binaryDir": "${sourceDir}/build-scheduler",
+      "cacheVariables": {
+        "BUILD_RENDER_WORKER": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "scheduler"
+      }
     },
     {
-      "name": "all-debug",
-      "inherits": "base-debug",
-      "displayName": "Build scheduler + render_worker together (debug)"
+      "name": "scheduler-debug",
+      "inherits": "scheduler",
+      "displayName": "Build scheduler only (debug)",
+      "binaryDir": "${sourceDir}/debug-build-scheduler",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "render-worker",
+      "inherits": "base",
+      "displayName": "Build render_worker only",
+      "binaryDir": "${sourceDir}/build-render-worker",
+      "cacheVariables": {
+        "BUILD_SCHEDULER": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "render-worker"
+      }
+    },
+    {
+      "name": "render-worker-debug",
+      "inherits": "render-worker",
+      "displayName": "Build render_worker only (debug)",
+      "binaryDir": "${sourceDir}/debug-build-render-worker",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     }
   ]
 }

@@ -13,17 +13,8 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Boost REQUIRED)
 
-# Shared protoscheduler/protorender libraries, generated once from ../protos.
-# Guarded so this still works standalone as well as nested under the
-# top-level build, which also pulls in render_worker (and therefore protos).
-if(NOT TARGET protoscheduler)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../protos ${CMAKE_CURRENT_BINARY_DIR}/protos-lib)
-endif()
-
-# Shared S3Manager, defined once in ../common. Same guard rationale as above.
-if(NOT TARGET s3manager)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../common ${CMAKE_CURRENT_BINARY_DIR}/common-lib)
-endif()
+# protoscheduler, protorender, and s3manager are defined by the top-level
+# CMakeLists.txt before this subdirectory is added.
 
 # Main executable
 add_executable(pathological-sched
