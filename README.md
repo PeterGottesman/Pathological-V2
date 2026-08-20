@@ -21,12 +21,29 @@ Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 
 ## Building
 
+The C++ side is split into two independently-built components, `scheduler/` and `render_worker/`, which share the gRPC proto libraries in `protos/` and the `S3Manager` in `common/` (pulled in automatically via CMake — no separate build step for those).
+
+Build the scheduler:
 ```bash
+cd scheduler
 cmake --preset default
 cmake --build build
 ```
 
+Build the render worker:
+```bash
+cd render_worker
+cmake --preset default
+cmake --build build
+```
+
+Both need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker` additionally needs the Vulkan SDK and a ray-tracing-capable GPU. Both link AWS SDK for S3 access, using the `default` credentials profile.
+
+For running the full stack (scheduler + worker + frontend) together, see `frontend/README.md`.
+
 ## Usage
+
+The commands below describe `render_worker`'s standalone rendering CLI (`src/render_test_main.cpp`), which is not currently wired into `render_worker/CMakeLists.txt` — only the scheduler-connected worker (`src/main.cpp`, built as `pathological`) is built by default. Kept here as a reference for the tiling/sampling options; someone re-adding a standalone entry point can build on this.
 
 ```bash
 ./pathological <gltf-file> [options]
