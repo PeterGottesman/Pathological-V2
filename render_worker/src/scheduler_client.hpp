@@ -3,8 +3,8 @@
 #include <grpcpp/grpcpp.h>
 #include <string>
 
-#include "../build/protos/scheduler_server.grpc.pb.h"
-#include "../build/protos/scheduler_server.pb.h"
+#include "protos/scheduler_server.grpc.pb.h"
+#include "protos/scheduler_server.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;

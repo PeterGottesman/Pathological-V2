@@ -2,8 +2,8 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "../build/protos/render_server.grpc.pb.h"
-#include "../build/protos/render_server.pb.h"
+#include "protos/render_server.grpc.pb.h"
+#include "protos/render_server.pb.h"
 #include "renderRequest.hpp"
 
 using grpc::Channel;

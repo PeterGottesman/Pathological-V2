@@ -21,23 +21,23 @@ Pathological is a Vulkan 1.3 path tracer using hardware ray tracing.
 
 ## Building
 
-The C++ side is split into two independently-built components, `scheduler/` and `render_worker/`, which share the gRPC proto libraries in `protos/` and the `S3Manager` in `common/` (pulled in automatically via CMake — no separate build step for those).
+The C++ side has two components, `scheduler/` and `render_worker/`, which share the gRPC proto libraries in `protos/` and the `S3Manager` in `common/` (pulled in automatically via CMake — no separate build step for those).
 
-Build the scheduler:
+Build both together from this directory:
 ```bash
-cd scheduler
+cmake --preset all
+cmake --build build
+```
+This produces `build/scheduler/pathological-sched` and `build/render_worker/pathological`.
+
+Or build either one on its own, from its own subdirectory — useful if you only have the toolchain for one of them (e.g. building just `render_worker` on a Jetson without Drogon/AWS-SDK-for-scheduler installed):
+```bash
+cd scheduler        # or render_worker
 cmake --preset default
 cmake --build build
 ```
 
-Build the render worker:
-```bash
-cd render_worker
-cmake --preset default
-cmake --build build
-```
-
-Both need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker` additionally needs the Vulkan SDK and a ray-tracing-capable GPU. Both link AWS SDK for S3 access, using the `default` credentials profile.
+All need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker` additionally needs the Vulkan SDK and a ray-tracing-capable GPU. Both link AWS SDK for S3 access, using the `default` credentials profile.
 
 For running the full stack (scheduler + worker + frontend) together, see `frontend/README.md`.
 

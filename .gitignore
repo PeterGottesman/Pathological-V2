@@ -3,6 +3,8 @@ CMakeFiles/
 .cache/
 .vscode/
 
+/build/
+/debug-build/
 /render_worker/build/
 /render_worker/debug-build/
 /scheduler/build/

@@ -45,6 +45,8 @@ Prerequisites:
 - Build tools and dependencies for `scheduler/` and `render_worker/` (CMake + vcpkg setup).
 - AWS credentials available to those binaries (`default` profile is used in code).
 
+You can build both binaries in one step from the repo root with `cmake --preset all && cmake --build build` (outputs at `build/scheduler/pathological-sched` and `build/render_worker/pathological`), or build each independently as shown below — see the root `README.md` for details.
+
 ### 1) Start Scheduler
 
 From `scheduler/`:
