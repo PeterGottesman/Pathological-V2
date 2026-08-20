@@ -11,7 +11,7 @@ find_package(CLI11 CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG REQUIRED COMPONENTS uuid)
 
 # protoscheduler, protorender, and s3manager are defined by the top-level
 # CMakeLists.txt before this subdirectory is added.
@@ -34,5 +34,5 @@ target_link_libraries(pathological-sched PRIVATE
     protorender
     s3manager
     gRPC::grpc++
-    Boost::boost
+    Boost::uuid
 )
