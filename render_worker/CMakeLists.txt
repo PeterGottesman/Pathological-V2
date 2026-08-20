@@ -20,11 +20,17 @@ find_package(Boost CONFIG REQUIRED COMPONENTS uuid)
 # tinygltf is header-only
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
-# Shared protoscheduler/protorender libraries, generated once from ../protos
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../protos ${CMAKE_CURRENT_BINARY_DIR}/protos-lib)
+# Shared protoscheduler/protorender libraries, generated once from ../protos.
+# Guarded so this still works standalone as well as nested under the
+# top-level build, which also pulls in scheduler (and therefore protos).
+if(NOT TARGET protoscheduler)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../protos ${CMAKE_CURRENT_BINARY_DIR}/protos-lib)
+endif()
 
-# Shared S3Manager, defined once in ../common
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../common ${CMAKE_CURRENT_BINARY_DIR}/common-lib)
+# Shared S3Manager, defined once in ../common. Same guard rationale as above.
+if(NOT TARGET s3manager)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../common ${CMAKE_CURRENT_BINARY_DIR}/common-lib)
+endif()
 
 # Main executable
 add_executable(pathological
@@ -55,8 +61,8 @@ target_link_libraries(pathological PRIVATE
 target_include_directories(pathological PRIVATE ${Stb_INCLUDE_DIR} ${TINYGLTF_INCLUDE_DIRS})
 
 # Shader compilation
-set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/shaders)
-set(SHADER_BINARY_DIR ${CMAKE_BINARY_DIR}/shaders)
+set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 
 file(MAKE_DIRECTORY ${SHADER_BINARY_DIR})
 

@@ -19,6 +19,16 @@
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "Debug"
       }
+    },
+    {
+      "name": "all",
+      "inherits": "base",
+      "displayName": "Build scheduler + render_worker together"
+    },
+    {
+      "name": "all-debug",
+      "inherits": "base-debug",
+      "displayName": "Build scheduler + render_worker together (debug)"
     }
   ]
 }

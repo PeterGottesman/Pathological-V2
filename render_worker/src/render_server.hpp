@@ -5,8 +5,8 @@
 #include <grpcpp/grpcpp.h>
 #include <memory>
 #include <boost/uuid.hpp>
-#include "../build/protos/render_server.grpc.pb.h"
-#include "../build/protos/render_server.pb.h"
+#include "protos/render_server.grpc.pb.h"
+#include "protos/render_server.pb.h"
 #include "s3_manager.hpp"
 #include "scheduler_client.hpp"
 #include "render_jobs.hpp"
