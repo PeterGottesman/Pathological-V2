@@ -4,11 +4,11 @@ CMakeFiles/
 .vscode/
 
 /build/
+/build-scheduler/
+/build-render-worker/
 /debug-build/
-/render_worker/build/
-/render_worker/debug-build/
-/scheduler/build/
-/scheduler/debug-build/
+/debug-build-scheduler/
+/debug-build-render-worker/
 
 /.worktrees/
 /docs/

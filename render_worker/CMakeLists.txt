@@ -20,17 +20,8 @@ find_package(Boost CONFIG REQUIRED COMPONENTS uuid)
 # tinygltf is header-only
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
-# Shared protoscheduler/protorender libraries, generated once from ../protos.
-# Guarded so this still works standalone as well as nested under the
-# top-level build, which also pulls in scheduler (and therefore protos).
-if(NOT TARGET protoscheduler)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../protos ${CMAKE_CURRENT_BINARY_DIR}/protos-lib)
-endif()
-
-# Shared S3Manager, defined once in ../common. Same guard rationale as above.
-if(NOT TARGET s3manager)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../common ${CMAKE_CURRENT_BINARY_DIR}/common-lib)
-endif()
+# protoscheduler, protorender, and s3manager are defined by the top-level
+# CMakeLists.txt before this subdirectory is added.
 
 # Main executable
 add_executable(pathological

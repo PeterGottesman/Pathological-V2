@@ -42,32 +42,31 @@ Run in this order.
 
 Prerequisites:
 
-- Build tools and dependencies for `scheduler/` and `render_worker/` (CMake + vcpkg setup).
+- Build tools and dependencies for `scheduler/` and `render_worker/` (CMake + vcpkg setup). Everything builds from the repo root — see the root `README.md` for the full build options (building both together, or just one).
 - AWS credentials available to those binaries (`default` profile is used in code).
 
-You can build both binaries in one step from the repo root with `cmake --preset all && cmake --build build` (outputs at `build/scheduler/pathological-sched` and `build/render_worker/pathological`), or build each independently as shown below — see the root `README.md` for details.
+### 1) Build
 
-### 1) Start Scheduler
-
-From `scheduler/`:
+From the repo root:
 
 ```bash
-cmake --preset default
+cmake --preset all
 cmake --build build
-./build/pathological-sched --http-port 8080 --grpc-port 50052
 ```
 
-### 2) Start Render Worker
-
-From `render_worker/`:
+### 2) Start Scheduler
 
 ```bash
-cmake --preset default
-cmake --build build
-./build/pathological 127.0.0.1:50052 --port 50051 --render-address 127.0.0.1 --name worker-1
+./build/scheduler/pathological-sched --http-port 8080 --grpc-port 50052
 ```
 
-### 3) Start Frontend
+### 3) Start Render Worker
+
+```bash
+./build/render_worker/pathological 127.0.0.1:50052 --port 50051 --render-address 127.0.0.1 --name worker-1
+```
+
+### 4) Start Frontend
 
 From `frontend/`:
 

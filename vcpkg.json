@@ -2,14 +2,9 @@
   "name": "pathological-v2",
   "version": "0.1.0",
   "dependencies": [
-    "drogon",
     "cli11",
     "grpc",
     "protobuf",
-    "vulkan-memory-allocator",
-    "glm",
-    "stb",
-    "tinygltf",
     "boost-uuid",
     {
       "name": "aws-sdk-cpp",
@@ -17,5 +12,22 @@
         "s3"
       ]
     }
-  ]
+  ],
+  "features": {
+    "scheduler": {
+      "description": "Extra dependencies needed to build the scheduler",
+      "dependencies": [
+        "drogon"
+      ]
+    },
+    "render-worker": {
+      "description": "Extra dependencies needed to build the render worker",
+      "dependencies": [
+        "vulkan-memory-allocator",
+        "glm",
+        "stb",
+        "tinygltf"
+      ]
+    }
+  }
 }
