@@ -15,40 +15,16 @@ find_package(Stb REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED COMPONENTS uuid)
-find_package(AWSSDK REQUIRED COMPONENTS s3)
 
 
 # tinygltf is header-only
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
-get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
-get_filename_component(PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../protos ABSOLUTE)
+# Shared protoscheduler/protorender libraries, generated once from ../protos
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../protos ${CMAKE_CURRENT_BINARY_DIR}/protos-lib)
 
-# Generates protobuf files for the scheduler_server to use
-add_library(protoscheduler STATIC ${PROTO_DIR}/scheduler_server.proto)
-target_link_libraries(protoscheduler gRPC::grpc++)
-target_include_directories(protoscheduler PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-protobuf_generate(TARGET protoscheduler LANGUAGE cpp IMPORT_DIRS ${PROTO_DIR} PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
-protobuf_generate(
-TARGET protoscheduler
-LANGUAGE grpc
-GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
-IMPORT_DIRS ${PROTO_DIR}
-PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
-
-# Generates protobuf files for the render_server to use
-add_library(protorender STATIC ${PROTO_DIR}/render_server.proto)
-target_link_libraries(protorender gRPC::grpc++)
-target_include_directories(protorender PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-protobuf_generate(TARGET protorender LANGUAGE cpp IMPORT_DIRS ${PROTO_DIR} PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
-protobuf_generate(
-TARGET protorender
-LANGUAGE grpc
-GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
-IMPORT_DIRS ${PROTO_DIR}
-PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
+# Shared S3Manager, defined once in ../common
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../common ${CMAKE_CURRENT_BINARY_DIR}/common-lib)
 
 # Main executable
 add_executable(pathological
@@ -63,7 +39,6 @@ add_executable(pathological
     src/scheduler_client.cpp
     src/job.cpp
     src/render_jobs.cpp
-    src/s3_manager.cpp
 )
 
 target_link_libraries(pathological PRIVATE
@@ -71,9 +46,9 @@ target_link_libraries(pathological PRIVATE
     GPUOpen::VulkanMemoryAllocator
     glm::glm
     CLI11::CLI11
-    ${AWSSDK_LINK_LIBRARIES}
     protorender
     protoscheduler
+    s3manager
     Boost::uuid
 )
 

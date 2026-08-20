@@ -1,5 +1,5 @@
 {
-  "name": "pathological-sched",
+  "name": "pathological",
   "version": "0.1.0",
   "dependencies": [
     "vulkan-memory-allocator",
