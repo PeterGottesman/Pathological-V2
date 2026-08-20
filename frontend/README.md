@@ -38,42 +38,12 @@ Note: job submit/status will fail unless the scheduler is running on `localhost:
 
 ## Full Local Run (Scheduler + Worker + Frontend)
 
-Run in this order.
-
-Prerequisites:
-
-- Build tools and dependencies for `scheduler/` and `render_worker/` (CMake + vcpkg setup). Everything builds from the repo root — see the root `README.md` for the full build options (building both together, or just one).
-- AWS credentials available to those binaries (`default` profile is used in code).
-
-### 1) Build
-
-From the repo root:
-
-```bash
-cmake --preset all
-cmake --build build
-```
-
-### 2) Start Scheduler
-
-```bash
-./build/scheduler/pathological-sched --http-port 8080 --grpc-port 50052
-```
-
-### 3) Start Render Worker
-
-```bash
-./build/render_worker/pathological 127.0.0.1:50052 --port 50051 --render-address 127.0.0.1 --name worker-1
-```
-
-### 4) Start Frontend
-
-From `frontend/`:
-
-```bash
-npm install
-npm run dev
-```
+The full sequence (build, start scheduler, start render worker, start
+frontend) — including exact CLI flags and prerequisites (CMake/vcpkg setup,
+Vulkan SDK, AWS credentials) — lives in the root
+[`README.md`](../README.md#running-the-full-stack), since it's identical
+regardless of which component you start from. The frontend-only step of that
+sequence is the "Quick Start" above.
 
 ## Important Frontend Files
 
