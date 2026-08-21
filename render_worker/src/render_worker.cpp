@@ -1,14 +1,15 @@
 #include "render_worker.hpp"
-#include "vulkan_context.hpp"
-#include "scene_graph.hpp"
-#include "path_tracer.hpp"
 
 #include <iostream>
 
+#include "path_tracer.hpp"
+#include "scene_graph.hpp"
+#include "vulkan_context.hpp"
+
 // Peter's implementation. Refer to him when it comes to
 // any questions about the VULKAN path tracer
-void generateScene(uint32_t width, uint32_t height, uint32_t samples,
-    std::string gltfFile, std::string output, float time, uint32_t tileSize, bool verbose){
+void generateScene(uint32_t width, uint32_t height, uint32_t samples, std::string gltfFile, std::string output,
+                   float time, uint32_t tileSize, bool verbose) {
     try {
         std::cout << "Pathological - Vulkan Path Tracer" << std::endl;
         std::cout << "==================================" << std::endl;
@@ -32,7 +33,7 @@ void generateScene(uint32_t width, uint32_t height, uint32_t samples,
 
             // Wait for all GPU work to complete before cleanup
             ctx.device().waitIdle();
-        } // Explicit scope to ensure cleanup order
+        }  // Explicit scope to ensure cleanup order
 
         std::cout << std::endl;
         std::cout << "Done!" << std::endl;
