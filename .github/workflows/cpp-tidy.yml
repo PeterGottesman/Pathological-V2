@@ -24,9 +24,8 @@ concurrency:
 
 env:
   # lukka/run-vcpkg auto-sets VCPKG_BINARY_SOURCES to the (now-removed) x-gha backend whenever
-  # this isn't already set, so it has to be set explicitly here. "default" is vcpkg's own local
-  # file cache (~/.cache/vcpkg/archives on Linux) — the same path the "Cache vcpkg binary
-  # archives" step below persists across runs.
+  # this isn't already set, so it has to be set explicitly here. "default" tells vcpkg to use
+  # whatever VCPKG_DEFAULT_BINARY_CACHE points at (see binaryCachePath on the run-vcpkg step).
   VCPKG_BINARY_SOURCES: "clear;default,readwrite"
 
 jobs:
@@ -53,11 +52,13 @@ jobs:
       - uses: actions/checkout@v4
 
       # Shares a cache key/scope with cpp-build.yml's identical step, so a clang-tidy run can
-      # reuse archives a build job already produced (and vice versa).
+      # reuse archives a build job already produced (and vice versa). Path has to match the
+      # binaryCachePath given to run-vcpkg below exactly, since that's what sets
+      # VCPKG_DEFAULT_BINARY_CACHE, which vcpkg checks before its own ~/.cache default.
       - name: Cache vcpkg binary archives
         uses: actions/cache@v4
         with:
-          path: ~/.cache/vcpkg/archives
+          path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
           restore-keys: |
             vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-
@@ -81,6 +82,7 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: e7b524242c8a5d718a7afa26794c3c19bb8b0c71
+          binaryCachePath: ${{ github.workspace }}/vcpkg_cache
 
       - name: Configure (installs deps + generates compile_commands.json)
         run: cmake --preset ${{ matrix.preset }}

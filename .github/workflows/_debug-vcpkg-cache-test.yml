@@ -2,6 +2,8 @@ name: DEBUG vcpkg cache test
 
 "on":
   workflow_dispatch:
+  push:
+    branches: [ci-github-actions]
 
 jobs:
   test:
