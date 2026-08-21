@@ -13,25 +13,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache vcpkg binary archives
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: debug-vcpkg-archives-${{ runner.os }}-cli11
-
       - uses: lukka/get-cmake@latest
 
       - name: Set up vcpkg
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: e7b524242c8a5d718a7afa26794c3c19bb8b0c71
-          binaryCachePath: ${{ github.workspace }}/vcpkg_cache
 
       - name: Show where vcpkg thinks its default binary cache is
         run: echo "VCPKG_DEFAULT_BINARY_CACHE=$VCPKG_DEFAULT_BINARY_CACHE"
+
+      # Must come after "Set up vcpkg": that step exports VCPKG_DEFAULT_BINARY_CACHE (its own
+      # default path, not ~/.cache) into env for later steps to read.
+      - name: Cache vcpkg binary archives
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: debug-vcpkg-archives-${{ runner.os }}-cli11
 
       - name: Install a tiny port (cli11 - header only, no deps)
         run: ./vcpkg/vcpkg install cli11 --triplet x64-linux
 
       - name: Show cache dir contents after install
-        run: find "${{ github.workspace }}/vcpkg_cache" -type f | head -20
+        run: find "$VCPKG_DEFAULT_BINARY_CACHE" -type f | head -20
