@@ -21,7 +21,9 @@ message RenderJobRequest {
   uint32 width = 3;
   uint32 height = 4;
   uint32 samples = 5;
-  float time = 6;
+  float time = 6; // Animation time in seconds for this specific frame.
+  string job_id = 7; // Scheduler-assigned id, registered before dispatch so completion can't race the response.
+  uint32 frame_index = 8; // Which frame of the animation this is; used to name the uploaded output deterministically.
 }
 
 // Render worker returns a unique job identifier so that the Scheduler can refer back to the render

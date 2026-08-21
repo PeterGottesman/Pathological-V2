@@ -54,6 +54,8 @@ int RenderRequest::getSamplesPerPixel() const { return this->samplesPerPixel; }
 
 const std::optional<std::string> &RenderRequest::getDownloadLink() const { return this->downloadLink; }
 
+const std::vector<std::string> &RenderRequest::getDownloadLinks() const { return this->downloadLinks; }
+
 RenderRequest &RenderRequest::setStatus(RenderStatus status) {
     this->status = status;
     return *this;
@@ -133,6 +135,11 @@ RenderRequest &RenderRequest::setDownloadLink(const std::optional<std::string> &
     return *this;
 }
 
+RenderRequest &RenderRequest::setDownloadLinks(const std::vector<std::string> &links) {
+    this->downloadLinks = links;
+    return *this;
+}
+
 Json::Value RenderRequest::toJson() const {
     Json::Value ret;
 
@@ -154,6 +161,16 @@ Json::Value RenderRequest::toJson() const {
     } else {
         ret["download_link"] = Json::nullValue;
     }
+
+    // One entry per rendered frame, in frame order. Populated once the render
+    // completes; empty (not null) while frames are still in progress.
+    Json::Value links(Json::arrayValue);
+    if (this->status == RenderStatus::COMPLETED) {
+        for (const auto &link : this->downloadLinks) {
+            links.append(link);
+        }
+    }
+    ret["download_links"] = links;
 
     return ret;
 }

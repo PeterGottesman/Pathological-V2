@@ -5,6 +5,7 @@
 #include <boost/uuid.hpp>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "renderStatus.hpp"
 
@@ -30,6 +31,7 @@ public:
     const std::string &getCreatedAtTimestamp() const;
     const std::string &getOutputFileName() const;
     const std::optional<std::string> &getDownloadLink() const;
+    const std::vector<std::string> &getDownloadLinks() const;
 
     RenderRequest &setStatus(RenderStatus status);
     RenderRequest &setWidth(int w);
@@ -43,6 +45,7 @@ public:
     RenderRequest &setCreatedAtTimestamp(const std::string &time);
     RenderRequest &setOutputFileName(const std::string &name);
     RenderRequest &setDownloadLink(const std::optional<std::string> &link);
+    RenderRequest &setDownloadLinks(const std::vector<std::string> &links);
 
     Json::Value toJson() const;
 
@@ -60,4 +63,5 @@ private:
     std::string createdAt;
     std::string outputFileName;
     std::optional<std::string> downloadLink;
+    std::vector<std::string> downloadLinks;
 };
