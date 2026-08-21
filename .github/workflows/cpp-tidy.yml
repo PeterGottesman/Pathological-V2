@@ -22,9 +22,6 @@ concurrency:
   group: cpp-tidy-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-
 jobs:
   clang-tidy:
     name: clang-tidy (${{ matrix.preset }})
@@ -48,8 +45,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Export GitHub Actions cache env vars for vcpkg binary caching
-        uses: crazy-max/ghaction-github-runtime@v3
+      # Shares a cache key/scope with cpp-build.yml's identical step, so a clang-tidy run can
+      # reuse archives a build job already produced (and vice versa).
+      - name: Cache vcpkg binary archives
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/vcpkg/archives
+          key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: |
+            vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-
 
       - name: Install CMake + Ninja
         uses: lukka/get-cmake@latest
