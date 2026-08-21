@@ -29,12 +29,32 @@ std::optional<std::string> buildDownloadLink(const std::string& key) {
 }  // namespace
 
 void Scheduler::addJob(const std::shared_ptr<RenderRequest>& job) {
+    const int totalFrames = job->getAnimationRuntimeInFrames();
+    const int fps = job->getFramesPerSecond();
+    if (totalFrames <= 0) {
+        std::cout << "Render request has no frames to schedule, skipping." << "\n";
+        return;
+    }
+
+    const std::string renderId = boost::uuids::to_string(job->getId());
+    {
+        std::lock_guard<std::mutex> lock(progress_mutex_);
+        RenderProgress progress;
+        progress.totalFrames = static_cast<uint32_t>(totalFrames);
+        progress.frameLinks.resize(totalFrames);
+        render_progress_[renderId] = std::move(progress);
+    }
+
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
-        pending_jobs_.push(job);
-        std::cout << "Job added to queue. Queue size: " << pending_jobs_.size() << "\n";
+        for (int i = 0; i < totalFrames; ++i) {
+            const float time = fps > 0 ? static_cast<float>(i) / static_cast<float>(fps) : static_cast<float>(i);
+            pending_jobs_.push(FrameJob{job, static_cast<uint32_t>(i), time});
+        }
+        std::cout << "Queued " << totalFrames << " frame(s) for render " << renderId
+                  << ". Queue size: " << pending_jobs_.size() << "\n";
     }
-    job_available_.notify_one();
+    job_available_.notify_all();
 }
 
 void Scheduler::registerWorker(const std::string& id, const std::string& ip, uint32_t port) {
@@ -85,26 +105,68 @@ void Scheduler::markWorkerIdle(const std::string& id) {
 }
 
 bool Scheduler::markRenderCompleted(const std::string& workerJobId) {
-    std::string renderId;
+    FrameJobContext ctx;
     {
         std::lock_guard<std::mutex> lock(job_map_mutex_);
         auto it = worker_job_to_render_id_.find(workerJobId);
         if (it == worker_job_to_render_id_.end()) {
             return false;
         }
-        renderId = it->second;
+        ctx = it->second;
         worker_job_to_render_id_.erase(it);
     }
 
     boost::uuids::string_generator stringGen;
-    const boost::uuids::uuid uuid = stringGen(renderId);
+    const boost::uuids::uuid uuid = stringGen(ctx.renderId);
     auto render = RenderHistory::getInstance().getRenderRequest(uuid);
     if (!render) {
         return false;
     }
-    const std::string key = render->getOutputFileName() + "_" + std::to_string(render->getAnimationRuntimeInFrames());
-    render->setDownloadLink(buildDownloadLink(key));
-    render->setStatus(RenderStatus::COMPLETED);
+
+    // Frames are named by index, not by float-formatted time, so uploads are
+    // deterministic and the collection can be reassembled in order.
+    const std::string key = render->getOutputFileName() + "_" + std::to_string(ctx.frameIndex);
+    const auto link = buildDownloadLink(key);
+
+    bool allFramesDone = false;
+    uint32_t framesCompleted = 0;
+    uint32_t totalFrames = 0;
+    std::vector<std::string> orderedLinks;
+    {
+        std::lock_guard<std::mutex> lock(progress_mutex_);
+        auto it = render_progress_.find(ctx.renderId);
+        if (it == render_progress_.end()) {
+            // Already finalized (e.g. a duplicate completion notification).
+            return false;
+        }
+        RenderProgress& progress = it->second;
+        if (ctx.frameIndex < progress.frameLinks.size() && !progress.frameLinks[ctx.frameIndex]) {
+            progress.frameLinks[ctx.frameIndex] = link;
+            progress.framesCompleted++;
+        }
+        framesCompleted = progress.framesCompleted;
+        totalFrames = progress.totalFrames;
+        allFramesDone = framesCompleted >= totalFrames;
+        if (allFramesDone) {
+            orderedLinks.reserve(progress.frameLinks.size());
+            for (auto& frameLink : progress.frameLinks) {
+                orderedLinks.push_back(frameLink.value_or(""));
+            }
+            render_progress_.erase(it);
+        }
+    }
+
+    render->setFramesCompleted(framesCompleted);
+
+    if (allFramesDone) {
+        render->setDownloadLinks(orderedLinks);
+        if (!orderedLinks.empty()) {
+            render->setDownloadLink(orderedLinks.front());
+        }
+        render->setStatus(RenderStatus::COMPLETED);
+        std::cout << "Render " << ctx.renderId << " completed with " << totalFrames << " frame(s)." << "\n";
+    }
+
     return true;
 }
 
@@ -168,27 +230,44 @@ void Scheduler::assignJobs() {
             std::cout << "No idle workers available, jobs in queue: " << pending_jobs_.size() << "\n";
             break;
         }
-        std::shared_ptr<RenderRequest> job = pending_jobs_.front();
+        FrameJob frameJob = pending_jobs_.front();
         pending_jobs_.pop();
 
         std::string worker_id = worker->id;
         std::string worker_address = worker->ip + ":" + std::to_string(worker->port);
-        std::string render_id = boost::uuids::to_string(job->getId());
+        std::string render_id = boost::uuids::to_string(frameJob.renderRequest->getId());
+        std::string job_id = generateJobId();
         worker->status = WorkerStatus::BUSY;
-        RenderHistory::getInstance().updateStatus(job->getId(), RenderStatus::IN_PROGRESS);
+        RenderHistory::getInstance().updateStatus(frameJob.renderRequest->getId(), RenderStatus::IN_PROGRESS);
+
+        // Registered before dispatch (not after the RPC returns) because the
+        // worker's RenderJob handler is synchronous: it calls back with
+        // JobCompleted before its own RPC response reaches us. Registering
+        // here guarantees the mapping exists by the time that callback
+        // arrives instead of racing it.
+        {
+            std::lock_guard<std::mutex> mapLock(job_map_mutex_);
+            worker_job_to_render_id_[job_id] = FrameJobContext{render_id, frameJob.frameIndex};
+        }
 
         // Spin up a thread per dispatch so gRPC calls don't block the loop
         std::lock_guard<std::mutex> tlock(threads_mutex_);
-        dispatch_threads_.emplace_back([this, worker_id, worker_address, job, render_id]() {
-            std::cout << "Dispatching to: " << worker_address << "\n";
+        dispatch_threads_.emplace_back([this, worker_id, worker_address, frameJob, job_id]() {
+            std::cout << "Dispatching frame " << frameJob.frameIndex << " to: " << worker_address << "\n";
             RenderWorkerClient client(grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials()));
 
-            std::string job_id = client.RenderJob(job);
-            if (job_id == "ERROR") {
-                RenderHistory::getInstance().updateStatus(job->getId(), RenderStatus::ERROR);
+            const bool accepted = client.RenderJob(frameJob.renderRequest, job_id, frameJob.frameIndex, frameJob.time);
+            if (!accepted) {
+                // The worker never got the frame, so no JobCompleted will
+                // ever arrive for it — undo the registration and retry the
+                // frame elsewhere.
+                {
+                    std::lock_guard<std::mutex> mapLock(job_map_mutex_);
+                    worker_job_to_render_id_.erase(job_id);
+                }
                 {
                     std::lock_guard<std::mutex> qlock(queue_mutex_);
-                    pending_jobs_.push(job);
+                    pending_jobs_.push(frameJob);
                 }
                 {
                     std::lock_guard<std::mutex> wlock(workers_mutex_);
@@ -197,17 +276,17 @@ void Scheduler::assignJobs() {
                         w->status = WorkerStatus::OFFLINE;
                     }
                 }
-            } else {
-                {
-                    std::lock_guard<std::mutex> mapLock(job_map_mutex_);
-                    worker_job_to_render_id_[job_id] = render_id;
-                }
-
-                // Handle out-of-order completion notifications by finalizing here too.
-                markRenderCompleted(job_id);
+                job_available_.notify_all();
             }
+            // On success, completion (and flipping the worker back to IDLE)
+            // is driven entirely by the worker's JobCompleted RPC.
         });
     }
+}
+
+std::string Scheduler::generateJobId() {
+    std::lock_guard<std::mutex> lock(job_id_gen_mutex_);
+    return boost::uuids::to_string(job_id_gen_());
 }
 
 Worker* Scheduler::findIdleWorker() {

@@ -1,11 +1,9 @@
 #include "render_server.hpp"
 
 #include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <filesystem>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <utility>
 
@@ -27,13 +25,15 @@ S3Config config{
 Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response) {
     std::cout << "Render Recieved" << "\n";
 
-    // Makes shared_ptr to job instance and creates UUID
-    std::shared_ptr<Job> job =
-        std::make_shared<Job>(request->width(), request->height(), request->samples(), request->scene_location(),
-                              request->output_name(), request->time(), render_server::Status::IN_PROGRESS);
-    std::string job_id = boost::uuids::to_string(random_gen());
+    // Makes shared_ptr to job instance. The job id comes from the scheduler
+    // (not generated here) so it can register the id -> render mapping
+    // before dispatching, ahead of this handler's JobCompleted callback.
+    std::shared_ptr<Job> job = std::make_shared<Job>(request->width(), request->height(), request->samples(),
+                                                     request->scene_location(), request->output_name(), request->time(),
+                                                     request->frame_index(), render_server::Status::IN_PROGRESS);
+    std::string job_id = request->job_id();
 
-    // Sends UUID to scheduler for tracking and
+    // Sends id back to scheduler for confirmation and
     // adds job to instance of RenderJobs class
     response->set_job_identifier(job_id);
     this->jobs.AddJob(job_id, job);
@@ -42,13 +42,10 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
     generateScene(job->getWidth(), job->getHeight(), job->getSamples(), job->getGLTF(), job->getOutput(),
                   job->getTime(), 512, false);
 
-    // Generates name for s3 upload
-    // currently {output}_{time}
-    std::stringstream stream;
-    std::string string_time;
-    stream << job->getTime();
-    stream >> string_time;
-    std::string job_name = job->getOutput() + "_" + string_time;
+    // Generates name for s3 upload: {output}_{frame_index}. Keyed by frame
+    // index (not the float time) so uploads are deterministic and sort in
+    // frame order.
+    std::string job_name = job->getOutput() + "_" + std::to_string(job->getFrameIndex());
     std::cout << job_name << "\n";
 
     // Adds render to s3 bucket and removes render from
