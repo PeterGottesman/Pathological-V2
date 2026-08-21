@@ -33,8 +33,7 @@ tracing) and upload results to S3. A **frontend** web UI drives the whole thing.
 
 - CMake 3.20+
 - Ninja (`ninja-build`)
-- [vcpkg](https://vcpkg.io), with `VCPKG_ROOT` set. The manifest is pinned to
-  vcpkg registry baseline `e7b524242c8a5d718a7afa26794c3c19bb8b0c71`.
+- [vcpkg](https://vcpkg.io), 
 - Vulkan SDK 1.3+ and a ray-tracing-capable GPU (`render_worker` only)
 - AWS credentials for the `default` profile (both `scheduler` and
   `render_worker` link the AWS SDK for S3 access)
@@ -63,39 +62,34 @@ All presets need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker`
 
 ## Running the full stack
 
-Run in this order.
+Run in this order after building.
 
-### 1) Build
-
-```bash
-cmake --preset all
-cmake --build build
-```
-
-### 2) Start the scheduler
+### 1) Start the scheduler
 
 ```bash
 ./build/scheduler/pathological-sched --http-port 8080 --grpc-port 50052
 ```
 
-Flags (`scheduler/src/main.cpp`): `-a, --address` (HTTP/gRPC listen address,
-default `0.0.0.0`), `-p, --grpc-port` (default `50052`), `--http-port`
-(default `8080`).
+Flags:
+- `-a, --address` (HTTP/gRPC listen address, default `0.0.0.0`)
+- `-p, --grpc-port` (default `50052`)
+- `--http-port` (default `8080`)
 
-### 3) Start a render worker
+### 2) Start a render worker
 
 ```bash
 ./build/render_worker/pathological 127.0.0.1:50052 --port 50051 --render-address 127.0.0.1 --name worker-1
 ```
 
-Flags (`render_worker/src/main.cpp`): the scheduler address (`host:port`) is a
-required positional argument; `-p, --port` is the port the worker's own gRPC
-server listens on (default `50051`); `-a, --render-address` is the address the
-scheduler should reach this worker at (default `127.0.0.1`); `-n, --name` is
-the worker's display name (default `test_client_1`). You can start multiple
-workers with different `--port`/`--name` values to scale out.
+Flags: 
+- the scheduler address (`host:port`) is a required positional argument
+- `-p, --port` is the port the worker's own gRPC server listens on (default `50051`)
+- `-a, --render-address` is the address the scheduler should reach this worker at (default `127.0.0.1`)
+- `-n, --name` is the worker's display name (default `test_client_1`).
 
-### 4) Start the frontend
+To scale out, start multiple workers with different `--port`/`--name` values.
+
+### 3) Start the frontend
 
 ```bash
 cd frontend
@@ -118,6 +112,4 @@ to prevent GPU timeouts on embedded platforms:
 
 This currently isn't exposed as a runtime option: `render_worker/src/render_server.cpp`
 calls the tracer with a fixed max tile size of 512 and verbose output off for
-every job it receives from the scheduler. Someone wanting to make this
-configurable per-job would extend the `RenderJobRequest` proto and `Job` class
-(currently just width/height/samples/scene/output/time) to carry it through.
+every job it receives from the scheduler. 
