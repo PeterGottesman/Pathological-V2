@@ -27,6 +27,10 @@ float Job::getTime(){
     return this->time;
 }
 
+uint32_t Job::getFrameIndex(){
+    return this->frameIndex;
+}
+
 void Job::setStatus(render_server::Status status){
     this->status = status;
 }
@@ -43,5 +47,6 @@ void Job::print(){
     std::cout << gltfFile << std::endl;
     std::cout << output << std::endl;
     std::cout << time << std::endl;
+    std::cout << frameIndex << std::endl;
     std::cout << status << std::endl;
 }

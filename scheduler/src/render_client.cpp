@@ -2,7 +2,8 @@
 
 // Assembles the client's payload using getter functions from renderRequest.cpp, sends it and presents the response back
 // from the server.
-std::string RenderWorkerClient::RenderJob(std::shared_ptr<RenderRequest> render) {
+bool RenderWorkerClient::RenderJob(std::shared_ptr<RenderRequest> render, const std::string& job_id,
+    uint32_t frame_index, float time) {
   // Data we are sending and getting back
   RenderJobRequest request;
   RenderJobResponse response;
@@ -14,17 +15,19 @@ std::string RenderWorkerClient::RenderJob(std::shared_ptr<RenderRequest> render)
   request.set_width(static_cast<uint32_t>(render->getWidth()));
   request.set_height(static_cast<uint32_t>(render->getHeight()));
   request.set_samples(static_cast<uint32_t>(render->getSamplesPerPixel()));
-  request.set_time(static_cast<float>(render->getAnimationRuntimeInFrames())); // ****I'm ASSUMING this is what is from the frontend
+  request.set_time(time);
+  request.set_job_id(job_id);
+  request.set_frame_index(frame_index);
 
   // The actual RPC.
   Status status = stub_->RenderJob(&context, request, &response);
 
   // Act upon its status.
   if (status.ok()) {
-    return response.job_identifier();
+    return true;
   } else {
     std::cout << status.error_code() << ": " << status.error_message() << std::endl;
-    return "ERROR";
+    return false;
   }
 }
 
