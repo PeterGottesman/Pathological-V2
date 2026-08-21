@@ -21,6 +21,13 @@ concurrency:
   group: cpp-build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # lukka/run-vcpkg auto-sets VCPKG_BINARY_SOURCES to the (now-removed) x-gha backend whenever
+  # this isn't already set, so it has to be set explicitly here. "default" is vcpkg's own local
+  # file cache (~/.cache/vcpkg/archives on Linux) — the same path the "Cache vcpkg binary
+  # archives" step below persists across runs.
+  VCPKG_BINARY_SOURCES: "clear;default,readwrite"
+
 jobs:
   build:
     name: build (${{ matrix.preset }})
