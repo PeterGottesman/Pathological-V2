@@ -1,0 +1,35 @@
+name: CMake lint
+
+"on":
+  push:
+    branches: [main]
+    paths: &cmake-paths
+      - "**/CMakeLists.txt"
+      - "**/*.cmake"
+      - ".cmake-format.yaml"
+      - ".github/workflows/cmake-lint.yml"
+  pull_request:
+    paths: *cmake-paths
+  workflow_dispatch:
+
+concurrency:
+  group: cmake-lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cmake-lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install cmakelang
+        run: pip install cmakelang
+
+      - name: Run cmake-lint
+        run: |
+          files=$(find . -name CMakeLists.txt -o -name "*.cmake" | grep -v '^\./build')
+          cmake-lint $files

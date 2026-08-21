@@ -1,0 +1,33 @@
+name: C++ format
+
+"on":
+  push:
+    branches: [main]
+    paths: &cpp-format-paths
+      - "**/*.cpp"
+      - "**/*.hpp"
+      - "**/*.h"
+      - "**/*.cc"
+      - ".clang-format"
+      - ".github/workflows/cpp-format.yml"
+  pull_request:
+    paths: *cpp-format-paths
+  workflow_dispatch:
+
+concurrency:
+  group: cpp-format-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-18
+
+      - name: Check formatting
+        run: |
+          files=$(find common render_worker scheduler -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.cc" \))
+          clang-format-18 --dry-run --Werror $files
