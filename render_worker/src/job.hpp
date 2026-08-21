@@ -7,15 +7,17 @@
 class Job {
 public:
     Job(uint32_t width, uint32_t height, uint32_t samples,
-        std::string gltfFile, std::string output, float time, render_server::Status status) :
+        std::string gltfFile, std::string output, float time, uint32_t frameIndex,
+        render_server::Status status) :
         width(width), height(height), samples(samples),
-        gltfFile(gltfFile), output(output), time(time), status(status) {}
+        gltfFile(gltfFile), output(output), time(time), frameIndex(frameIndex), status(status) {}
     uint32_t getWidth();
     uint32_t getHeight();
     uint32_t getSamples();
     std::string getGLTF();
     std::string getOutput();
     float getTime();
+    uint32_t getFrameIndex();
     void setStatus(render_server::Status status);   // Only setter on Status as that is the only thing
                                                     // that needs to be changed. The rest are set
                                                     // on construction
@@ -30,5 +32,6 @@ private:
     std::string gltfFile;
     std::string output;
     float time;
+    uint32_t frameIndex;
     render_server::Status status;
 };
