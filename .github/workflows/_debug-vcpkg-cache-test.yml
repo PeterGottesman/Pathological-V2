@@ -32,7 +32,7 @@ jobs:
           key: debug-vcpkg-archives-${{ runner.os }}-cli11
 
       - name: Install a tiny port (cli11 - header only, no deps)
-        run: ./vcpkg/vcpkg install cli11 --triplet x64-linux
+        run: ./vcpkg/vcpkg install cli11 --classic --triplet x64-linux
 
       - name: Show cache dir contents after install
         run: find "$VCPKG_DEFAULT_BINARY_CACHE" -type f | head -20

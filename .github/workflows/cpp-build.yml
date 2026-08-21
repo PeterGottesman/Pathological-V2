@@ -44,18 +44,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # vcpkg's own "x-gha" cache backend was removed by vcpkg-tool; wrap a local archive
-      # directory with actions/cache instead. lukka/run-vcpkg sets VCPKG_DEFAULT_BINARY_CACHE
-      # itself (see binaryCachePath below), which vcpkg checks before its own ~/.cache default,
-      # so this path has to match that input exactly or vcpkg never writes here.
-      - name: Cache vcpkg binary archives
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
-          restore-keys: |
-            vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-
-
       - name: Install CMake + Ninja
         uses: lukka/get-cmake@latest
 
@@ -72,7 +60,17 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: e7b524242c8a5d718a7afa26794c3c19bb8b0c71
-          binaryCachePath: ${{ github.workspace }}/vcpkg_cache
+
+      # Must come after "Set up vcpkg": that step exports VCPKG_DEFAULT_BINARY_CACHE (its own
+      # default archive path, not ~/.cache) into env for this step to read. vcpkg's own "x-gha"
+      # cache backend was removed by vcpkg-tool, so this wraps the local archive path instead.
+      - name: Cache vcpkg binary archives
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: |
+            vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-
 
       - name: Configure
         run: cmake --preset ${{ matrix.preset }}
