@@ -1,7 +1,8 @@
 #pragma once
+#include <memory>
+
 #include "job.hpp"
 #include "protos/render_server.pb.h"
-#include <memory>
 
 // Holds all of the jobs that a renderer
 // has processed

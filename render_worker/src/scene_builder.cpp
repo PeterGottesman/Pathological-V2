@@ -1,8 +1,10 @@
 #include "scene_builder.hpp"
+
 #include <tiny_gltf.h>
-#include <stdexcept>
-#include <iostream>
+
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <stdexcept>
 
 NodeId SceneBuilder::createNode(const std::string& name) {
     NodeId id = m_nodes.size();
@@ -35,8 +37,7 @@ void SceneBuilder::setMesh(NodeId node, MeshId mesh) {
     m_nodes[node].mesh = mesh;
 }
 
-MeshId SceneBuilder::createMesh(const std::vector<Vertex>& vertices,
-                                const std::vector<uint32_t>& indices,
+MeshId SceneBuilder::createMesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
                                 MaterialId material) {
     MeshId id = m_meshes.size();
     MeshData meshData;
@@ -122,23 +123,17 @@ static glm::mat4 getGltfNodeTransform(const tinygltf::Node& gltfNode) {
         glm::vec3 scale(1.0f);
 
         if (gltfNode.translation.size() == 3) {
-            translation = glm::vec3(gltfNode.translation[0],
-                                   gltfNode.translation[1],
-                                   gltfNode.translation[2]);
+            translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]);
         }
 
         if (gltfNode.rotation.size() == 4) {
             // glTF uses [x, y, z, w], glm uses [w, x, y, z]
-            rotation = glm::quat(gltfNode.rotation[3],
-                                gltfNode.rotation[0],
-                                gltfNode.rotation[1],
-                                gltfNode.rotation[2]);
+            rotation =
+                glm::quat(gltfNode.rotation[3], gltfNode.rotation[0], gltfNode.rotation[1], gltfNode.rotation[2]);
         }
 
         if (gltfNode.scale.size() == 3) {
-            scale = glm::vec3(gltfNode.scale[0],
-                             gltfNode.scale[1],
-                             gltfNode.scale[2]);
+            scale = glm::vec3(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]);
         }
 
         glm::mat4 T = glm::translate(glm::mat4(1.0f), translation);
@@ -150,8 +145,7 @@ static glm::mat4 getGltfNodeTransform(const tinygltf::Node& gltfNode) {
     return transform;
 }
 
-void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
-                                std::optional<NodeId> parent,
+void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode, std::optional<NodeId> parent,
                                 const tinygltf::Model& model) {
     // Create node
     NodeId nodeId = createNode(gltfNode.name);
@@ -175,8 +169,7 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
 
             // Only support triangles
             if (primitive.mode != TINYGLTF_MODE_TRIANGLES) {
-                std::cerr << "Warning: Skipping non-triangle primitive in mesh "
-                         << gltfMesh.name << std::endl;
+                std::cerr << "Warning: Skipping non-triangle primitive in mesh " << gltfMesh.name << std::endl;
                 return;
             }
 
@@ -188,16 +181,12 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
                 const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
                 const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
-                const float* positions = reinterpret_cast<const float*>(
-                    &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                const float* positions =
+                    reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
 
                 vertices.resize(accessor.count);
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    vertices[i].position = glm::vec3(
-                        positions[i * 3 + 0],
-                        positions[i * 3 + 1],
-                        positions[i * 3 + 2]
-                    );
+                    vertices[i].position = glm::vec3(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2]);
                     vertices[i].pad = 0.0f;
                 }
             }
@@ -212,20 +201,20 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode,
                 indices.resize(accessor.count);
 
                 if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
-                    const uint8_t* idx = reinterpret_cast<const uint8_t*>(
-                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                    const uint8_t* idx =
+                        reinterpret_cast<const uint8_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
                     for (size_t i = 0; i < accessor.count; ++i) {
                         indices[i] = idx[i];
                     }
                 } else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-                    const uint16_t* idx = reinterpret_cast<const uint16_t*>(
-                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                    const uint16_t* idx =
+                        reinterpret_cast<const uint16_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
                     for (size_t i = 0; i < accessor.count; ++i) {
                         indices[i] = idx[i];
                     }
                 } else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
-                    const uint32_t* idx = reinterpret_cast<const uint32_t*>(
-                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                    const uint32_t* idx =
+                        reinterpret_cast<const uint32_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
                     std::copy(idx, idx + accessor.count, indices.begin());
                 }
             }
@@ -263,8 +252,7 @@ Scene SceneBuilder::flattenToScene(const VulkanContext& ctx) {
     // Traverse from each root node
     std::vector<NodeId> roots = getRootNodes();
     for (NodeId rootId : roots) {
-        traverseAndFlatten(rootId, glm::mat4(1.0f),
-                          allVertices, allIndices, allMaterialIndices);
+        traverseAndFlatten(rootId, glm::mat4(1.0f), allVertices, allIndices, allMaterialIndices);
     }
 
     // Handle empty scene
@@ -275,11 +263,8 @@ Scene SceneBuilder::flattenToScene(const VulkanContext& ctx) {
     return Scene(ctx, allVertices, allIndices, m_materials, allMaterialIndices);
 }
 
-void SceneBuilder::traverseAndFlatten(NodeId nodeId,
-                                     const glm::mat4& parentTransform,
-                                     std::vector<Vertex>& outVertices,
-                                     std::vector<uint32_t>& outIndices,
-                                     std::vector<uint32_t>& outMaterialIndices) {
+void SceneBuilder::traverseAndFlatten(NodeId nodeId, const glm::mat4& parentTransform, std::vector<Vertex>& outVertices,
+                                      std::vector<uint32_t>& outIndices, std::vector<uint32_t>& outMaterialIndices) {
     const Node& node = m_nodes[nodeId];
     glm::mat4 worldTransform = parentTransform * node.localTransform;
 

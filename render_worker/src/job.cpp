@@ -1,42 +1,27 @@
 #include "job.hpp"
-#include "protos/render_server.pb.h"
 
 #include <cstdint>
 
-uint32_t Job::getWidth(){
-    return this->width;
-}
+#include "protos/render_server.pb.h"
 
-uint32_t Job::getHeight(){
-    return this->height;
-}
+uint32_t Job::getWidth() { return this->width; }
 
-uint32_t Job::getSamples(){
-    return this->samples;
-}
+uint32_t Job::getHeight() { return this->height; }
 
-std::string Job::getGLTF(){
-    return this->gltfFile;
-}
+uint32_t Job::getSamples() { return this->samples; }
 
-std::string Job::getOutput(){
-    return this->output;
-}
+std::string Job::getGLTF() { return this->gltfFile; }
 
-float Job::getTime(){
-    return this->time;
-}
+std::string Job::getOutput() { return this->output; }
 
-void Job::setStatus(render_server::Status status){
-    this->status = status;
-}
+float Job::getTime() { return this->time; }
 
-render_server::Status Job::getStatus(){
-    return this->status;
-}
+void Job::setStatus(render_server::Status status) { this->status = status; }
+
+render_server::Status Job::getStatus() { return this->status; }
 
 // Mainly for debugging
-void Job::print(){
+void Job::print() {
     std::cout << width << std::endl;
     std::cout << height << std::endl;
     std::cout << samples << std::endl;

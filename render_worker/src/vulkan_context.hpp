@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
 
-#include <optional>
-#include <vector>
-#include <string>
 #include <functional>
+#include <optional>
+#include <string>
+#include <vector>
+#include <vulkan/vulkan_raii.hpp>
 
 class VulkanContext {
 public:
@@ -29,9 +29,7 @@ public:
     VmaAllocator allocator() const { return m_allocator; }
 
     // Ray tracing properties
-    const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR& rtProperties() const {
-        return m_rtProperties;
-    }
+    const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR& rtProperties() const { return m_rtProperties; }
 
     // Utility: run a one-shot command
     void executeCommands(std::function<void(vk::raii::CommandBuffer&)> func) const;

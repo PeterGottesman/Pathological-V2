@@ -1,17 +1,16 @@
 #include "path_tracer.hpp"
-#include "vulkan/vulkan.hpp"
 
 #include <fstream>
-#include <stdexcept>
 #include <iostream>
+#include <stdexcept>
+
+#include "vulkan/vulkan.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-PathTracer::PathTracer(const VulkanContext& ctx, const Scene& scene,
-                       uint32_t width, uint32_t height)
-    : m_ctx(ctx), m_scene(scene), m_width(width), m_height(height)
-{
+PathTracer::PathTracer(const VulkanContext& ctx, const Scene& scene, uint32_t width, uint32_t height)
+    : m_ctx(ctx), m_scene(scene), m_width(width), m_height(height) {
     createOutputImage();
     createAccelerationStructures();
     createRayTracingPipeline();
@@ -42,8 +41,8 @@ void PathTracer::createOutputImage() {
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
     VkImage image;
-    if (vmaCreateImage(m_ctx.allocator(), &imageInfo, &allocInfo,
-                       &image, &m_outputImageAllocation, nullptr) != VK_SUCCESS) {
+    if (vmaCreateImage(m_ctx.allocator(), &imageInfo, &allocInfo, &image, &m_outputImageAllocation, nullptr) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Failed to create output image");
     }
     m_outputImage = image;
@@ -77,12 +76,8 @@ void PathTracer::createOutputImage() {
         barrier.srcAccessMask = {};
         barrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
 
-        cmd.pipelineBarrier(
-            vk::PipelineStageFlagBits::eTopOfPipe,
-            vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            {},
-            nullptr, nullptr, barrier
-        );
+        cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eRayTracingShaderKHR, {},
+                            nullptr, nullptr, barrier);
     });
 }
 
@@ -114,20 +109,14 @@ void PathTracer::createAccelerationStructures() {
 
     uint32_t primitiveCount = m_scene.triangleCount();
 
-    auto sizeInfo = m_ctx.device().getAccelerationStructureBuildSizesKHR(
-        vk::AccelerationStructureBuildTypeKHR::eDevice,
-        buildInfo,
-        primitiveCount
-    );
+    auto sizeInfo = m_ctx.device().getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice,
+                                                                         buildInfo, primitiveCount);
 
     // Create BLAS buffer
     m_blasBuffer = std::make_unique<Buffer>(
-        m_ctx.allocator(),
-        sizeInfo.accelerationStructureSize,
-        vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
-        vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
+        m_ctx.allocator(), sizeInfo.accelerationStructureSize,
+        vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
 
     // Create BLAS
     vk::AccelerationStructureCreateInfoKHR blasCreateInfo{};
@@ -138,12 +127,9 @@ void PathTracer::createAccelerationStructures() {
     m_blas = vk::raii::AccelerationStructureKHR(m_ctx.device(), blasCreateInfo);
 
     // Create scratch buffer
-    Buffer scratchBuffer(
-        m_ctx.allocator(),
-        sizeInfo.buildScratchSize,
-        vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
+    Buffer scratchBuffer(m_ctx.allocator(), sizeInfo.buildScratchSize,
+                         vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                         VMA_MEMORY_USAGE_GPU_ONLY);
 
     buildInfo.dstAccelerationStructure = **m_blas;
     buildInfo.scratchData.deviceAddress = scratchBuffer.deviceAddress(*m_ctx.device());
@@ -156,9 +142,8 @@ void PathTracer::createAccelerationStructures() {
 
     const vk::AccelerationStructureBuildRangeInfoKHR* pRangeInfo = &rangeInfo;
 
-    m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
-        cmd.buildAccelerationStructuresKHR(buildInfo, pRangeInfo);
-    });
+    m_ctx.executeCommands(
+        [&](vk::raii::CommandBuffer& cmd) { cmd.buildAccelerationStructuresKHR(buildInfo, pRangeInfo); });
 
     // === Build TLAS ===
 
@@ -174,14 +159,11 @@ void PathTracer::createAccelerationStructures() {
     instance.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsKHR::eTriangleFacingCullDisable);
     instance.accelerationStructureReference = blasAddress;
 
-    m_instanceBuffer = std::make_unique<Buffer>(
-        m_ctx.allocator(),
-        sizeof(vk::AccelerationStructureInstanceKHR),
-        vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
-        vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_CPU_TO_GPU,
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-    );
+    m_instanceBuffer =
+        std::make_unique<Buffer>(m_ctx.allocator(), sizeof(vk::AccelerationStructureInstanceKHR),
+                                 vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+                                     vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                 VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
     m_instanceBuffer->upload(&instance, 1);
 
     vk::AccelerationStructureGeometryInstancesDataKHR instancesData{};
@@ -200,18 +182,12 @@ void PathTracer::createAccelerationStructures() {
     tlasBuildInfo.pGeometries = &tlasGeometry;
 
     auto tlasSizeInfo = m_ctx.device().getAccelerationStructureBuildSizesKHR(
-        vk::AccelerationStructureBuildTypeKHR::eDevice,
-        tlasBuildInfo,
-        1u
-    );
+        vk::AccelerationStructureBuildTypeKHR::eDevice, tlasBuildInfo, 1u);
 
     m_tlasBuffer = std::make_unique<Buffer>(
-        m_ctx.allocator(),
-        tlasSizeInfo.accelerationStructureSize,
-        vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
-        vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
+        m_ctx.allocator(), tlasSizeInfo.accelerationStructureSize,
+        vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
 
     vk::AccelerationStructureCreateInfoKHR tlasCreateInfo{};
     tlasCreateInfo.buffer = m_tlasBuffer->buffer();
@@ -220,12 +196,9 @@ void PathTracer::createAccelerationStructures() {
 
     m_tlas = vk::raii::AccelerationStructureKHR(m_ctx.device(), tlasCreateInfo);
 
-    Buffer tlasScratchBuffer(
-        m_ctx.allocator(),
-        tlasSizeInfo.buildScratchSize,
-        vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
+    Buffer tlasScratchBuffer(m_ctx.allocator(), tlasSizeInfo.buildScratchSize,
+                             vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                             VMA_MEMORY_USAGE_GPU_ONLY);
 
     tlasBuildInfo.dstAccelerationStructure = **m_tlas;
     tlasBuildInfo.scratchData.deviceAddress = tlasScratchBuffer.deviceAddress(*m_ctx.device());
@@ -234,9 +207,8 @@ void PathTracer::createAccelerationStructures() {
     tlasRangeInfo.primitiveCount = 1;
     const vk::AccelerationStructureBuildRangeInfoKHR* pTlasRangeInfo = &tlasRangeInfo;
 
-    m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
-        cmd.buildAccelerationStructuresKHR(tlasBuildInfo, pTlasRangeInfo);
-    });
+    m_ctx.executeCommands(
+        [&](vk::raii::CommandBuffer& cmd) { cmd.buildAccelerationStructuresKHR(tlasBuildInfo, pTlasRangeInfo); });
 
     std::cout << "Acceleration structures built successfully" << std::endl;
 }
@@ -342,12 +314,10 @@ void PathTracer::createRayTracingPipeline() {
     pipelineInfo.maxPipelineRayRecursionDepth = 1;
     pipelineInfo.layout = **m_pipelineLayout;
 
-    m_pipeline = vk::raii::Pipeline(
-        m_ctx.device(),
-        nullptr,  // deferred operation
-        nullptr,  // pipeline cache
-        pipelineInfo
-    );
+    m_pipeline = vk::raii::Pipeline(m_ctx.device(),
+                                    nullptr,  // deferred operation
+                                    nullptr,  // pipeline cache
+                                    pipelineInfo);
 
     std::cout << "Ray tracing pipeline created" << std::endl;
 }
@@ -361,31 +331,23 @@ void PathTracer::createShaderBindingTable() {
     uint32_t handleSizeAligned = (handleSize + handleAlignment - 1) & ~(handleAlignment - 1);
     uint32_t handleSizeBaseAligned = (handleSize + baseAlignment - 1) & ~(baseAlignment - 1);
 
-    uint32_t groupCount = 3; // raygen, miss, hit
+    uint32_t groupCount = 3;  // raygen, miss, hit
     uint32_t sbtSize = groupCount * handleSizeBaseAligned;
 
     // Get shader group handles
-    auto handleData = m_pipeline->getRayTracingShaderGroupHandlesKHR<uint8_t>(
-        0, groupCount, groupCount * handleSize
-    );
+    auto handleData = m_pipeline->getRayTracingShaderGroupHandlesKHR<uint8_t>(0, groupCount, groupCount * handleSize);
     std::vector<uint8_t> handles = handleData;
 
     // Create SBT buffer
     m_sbtBuffer = std::make_unique<Buffer>(
-        m_ctx.allocator(),
-        sbtSize,
-        vk::BufferUsageFlagBits::eShaderBindingTableKHR |
-        vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_CPU_TO_GPU,
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-    );
+        m_ctx.allocator(), sbtSize,
+        vk::BufferUsageFlagBits::eShaderBindingTableKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
     // Copy handles to SBT buffer with proper alignment
     uint8_t* sbtData = static_cast<uint8_t*>(m_sbtBuffer->map());
     for (uint32_t i = 0; i < groupCount; i++) {
-        std::memcpy(sbtData + i * handleSizeBaseAligned,
-                    handles.data() + i * handleSize,
-                    handleSize);
+        std::memcpy(sbtData + i * handleSizeBaseAligned, handles.data() + i * handleSize, handleSize);
     }
     m_sbtBuffer->unmap();
 
@@ -416,7 +378,7 @@ void PathTracer::createDescriptorSets() {
         {vk::DescriptorType::eStorageBuffer, 4},
     };
 
-	vk::DescriptorPoolCreateFlags poolCreateFlags{vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet};
+    vk::DescriptorPoolCreateFlags poolCreateFlags{vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet};
     vk::DescriptorPoolCreateInfo poolInfo{poolCreateFlags};
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -505,8 +467,8 @@ void PathTracer::createDescriptorSets() {
 }
 
 void PathTracer::render(uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose) {
-    std::cout << "Rendering " << m_width << "x" << m_height
-              << " with " << samplesPerPixel << " samples per pixel..." << std::endl;
+    std::cout << "Rendering " << m_width << "x" << m_height << " with " << samplesPerPixel << " samples per pixel..."
+              << std::endl;
     std::cout << "Max tile size: " << maxTileSize << "x" << maxTileSize << std::endl;
 
     SubdivisionStats stats;
@@ -520,14 +482,12 @@ void PathTracer::render(uint32_t samplesPerPixel, uint32_t maxTileSize, bool ver
     std::cout << "  Total tiles rendered: " << stats.totalTiles << std::endl;
     std::cout << "  Subdivisions performed: " << stats.subdivisions << std::endl;
     if (stats.totalTiles > 0) {
-        std::cout << "  Tile size range: " << stats.minTileSize << " - "
-                  << stats.maxTileSize << " pixels" << std::endl;
+        std::cout << "  Tile size range: " << stats.minTileSize << " - " << stats.maxTileSize << " pixels" << std::endl;
     }
 }
 
-void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY,
-                                   uint32_t width, uint32_t height,
-                                   uint32_t samplesPerPixel) {
+void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY, uint32_t width, uint32_t height,
+                                  uint32_t samplesPerPixel) {
     // Set up camera (looking at scene center)
     PushConstants pc{};
     pc.cameraPosition = glm::vec3(0.0f, 0.0f, 3.5f);
@@ -548,39 +508,17 @@ void PathTracer::renderTileRegion(uint32_t offsetX, uint32_t offsetY,
         cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, **m_pipeline);
 
         vk::DescriptorSet descSet = **m_descriptorSet;
-        cmd.bindDescriptorSets(
-            vk::PipelineBindPoint::eRayTracingKHR,
-            **m_pipelineLayout,
-            0,
-            descSet,
-            nullptr
-        );
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, **m_pipelineLayout, 0, descSet, nullptr);
 
-        cmd.pushConstants<PushConstants>(
-            **m_pipelineLayout,
-            vk::ShaderStageFlagBits::eRaygenKHR,
-            0,
-            pc
-        );
+        cmd.pushConstants<PushConstants>(**m_pipelineLayout, vk::ShaderStageFlagBits::eRaygenKHR, 0, pc);
 
-        cmd.traceRaysKHR(
-            m_raygenRegion,
-            m_missRegion,
-            m_hitRegion,
-            m_callableRegion,
-            width,
-            height,
-            1
-        );
+        cmd.traceRaysKHR(m_raygenRegion, m_missRegion, m_hitRegion, m_callableRegion, width, height, 1);
     });
 }
 
-void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
-                                      uint32_t width, uint32_t height,
-                                      uint32_t samplesPerPixel,
-                                      uint32_t maxTileSize,
-                                      bool verbose,
-                                      SubdivisionStats& stats) {
+void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY, uint32_t width, uint32_t height,
+                                     uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose,
+                                     SubdivisionStats& stats) {
     const uint32_t MIN_TILE_SIZE = 64;
 
     // Check if this tile is larger than max allowed size
@@ -595,21 +533,20 @@ void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
         uint32_t halfH = height / 2;
 
         if (verbose) {
-            std::cout << "Subdividing tile at (" << offsetX << "," << offsetY
-                      << ") size " << width << "x" << height << " into 4 quadrants" << std::endl;
+            std::cout << "Subdividing tile at (" << offsetX << "," << offsetY << ") size " << width << "x" << height
+                      << " into 4 quadrants" << std::endl;
         }
 
         stats.subdivisions++;
 
         // Render each quadrant recursively
-        renderTileRecursive(offsetX, offsetY, halfW, halfH,
-                           samplesPerPixel, maxTileSize, verbose, stats);
-        renderTileRecursive(offsetX + halfW, offsetY, width - halfW, halfH,
-                           samplesPerPixel, maxTileSize, verbose, stats);
-        renderTileRecursive(offsetX, offsetY + halfH, halfW, height - halfH,
-                           samplesPerPixel, maxTileSize, verbose, stats);
-        renderTileRecursive(offsetX + halfW, offsetY + halfH, width - halfW, height - halfH,
-                           samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX, offsetY, halfW, halfH, samplesPerPixel, maxTileSize, verbose, stats);
+        renderTileRecursive(offsetX + halfW, offsetY, width - halfW, halfH, samplesPerPixel, maxTileSize, verbose,
+                            stats);
+        renderTileRecursive(offsetX, offsetY + halfH, halfW, height - halfH, samplesPerPixel, maxTileSize, verbose,
+                            stats);
+        renderTileRecursive(offsetX + halfW, offsetY + halfH, width - halfW, height - halfH, samplesPerPixel,
+                            maxTileSize, verbose, stats);
     } else {
         // Render this tile directly
         // Note: If subdivision is needed but not possible (tile would become < 64x64),
@@ -617,8 +554,7 @@ void PathTracer::renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
         // tiles smaller than MIN_TILE_SIZE, which is essential for GPU timeout management.
         // Small overage (1-63 pixels) is acceptable on embedded platforms.
         if (verbose) {
-            std::cout << "Rendering tile at (" << offsetX << "," << offsetY
-                      << ") size " << width << "x" << height;
+            std::cout << "Rendering tile at (" << offsetX << "," << offsetY << ") size " << width << "x" << height;
             if (needsSubdivision) {
                 std::cout << " [exceeds maxTileSize=" << maxTileSize << ", cannot subdivide further]";
             }
@@ -639,13 +575,8 @@ void PathTracer::saveImage(const std::string& filename) {
 
     // Create staging buffer
     vk::DeviceSize imageSize = m_width * m_height * 4;
-    Buffer stagingBuffer(
-        m_ctx.allocator(),
-        imageSize,
-        vk::BufferUsageFlagBits::eTransferDst,
-        VMA_MEMORY_USAGE_GPU_TO_CPU,
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
-    );
+    Buffer stagingBuffer(m_ctx.allocator(), imageSize, vk::BufferUsageFlagBits::eTransferDst,
+                         VMA_MEMORY_USAGE_GPU_TO_CPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT);
 
     // Copy image to staging buffer
     m_ctx.executeCommands([&](vk::raii::CommandBuffer& cmd) {
@@ -664,12 +595,8 @@ void PathTracer::saveImage(const std::string& filename) {
         barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
         barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
 
-        cmd.pipelineBarrier(
-            vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            vk::PipelineStageFlagBits::eTransfer,
-            {},
-            nullptr, nullptr, barrier
-        );
+        cmd.pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderKHR, vk::PipelineStageFlagBits::eTransfer, {},
+                            nullptr, nullptr, barrier);
 
         // Copy image to buffer
         vk::BufferImageCopy region{};
@@ -687,12 +614,7 @@ void PathTracer::saveImage(const std::string& filename) {
         region.imageExtent.height = m_height;
         region.imageExtent.depth = 1;
 
-        cmd.copyImageToBuffer(
-            m_outputImage,
-            vk::ImageLayout::eTransferSrcOptimal,
-            stagingBuffer.buffer(),
-            region
-        );
+        cmd.copyImageToBuffer(m_outputImage, vk::ImageLayout::eTransferSrcOptimal, stagingBuffer.buffer(), region);
     });
 
     // Read back and save

@@ -10,11 +10,11 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using render_server::RenderWorker;
 using render_server::RenderJobRequest;
 using render_server::RenderJobResponse;
 using render_server::RenderStatusRequest;
 using render_server::RenderStatusResponse;
+using render_server::RenderWorker;
 
 class RenderWorkerClient {
 public:

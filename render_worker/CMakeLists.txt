@@ -67,23 +67,24 @@ set(SHADER_INCLUDES
     ${SHADER_SOURCE_DIR}/common.glsl
 )
 
-foreach(SHADER ${SHADER_SOURCES})
-    get_filename_component(SHADER_NAME ${SHADER} NAME)
+foreach(shader ${SHADER_SOURCES})
+    get_filename_component(SHADER_NAME ${shader} NAME)
     set(SHADER_OUTPUT ${SHADER_BINARY_DIR}/${SHADER_NAME}.spv)
     add_custom_command(
         OUTPUT ${SHADER_OUTPUT}
-        COMMAND Vulkan::glslc -I${SHADER_SOURCE_DIR} ${SHADER} -o ${SHADER_OUTPUT} --target-env=vulkan1.3
-        DEPENDS ${SHADER} ${SHADER_INCLUDES}
+        COMMAND Vulkan::glslc -I${SHADER_SOURCE_DIR} ${shader} -o ${SHADER_OUTPUT} --target-env=vulkan1.3
+        DEPENDS ${shader} ${SHADER_INCLUDES}
         COMMENT "Compiling ${SHADER_NAME}"
     )
     list(APPEND SPV_SHADERS ${SHADER_OUTPUT})
 endforeach()
 
-add_custom_target(shaders DEPENDS ${SPV_SHADERS})
+add_custom_target(shaders DEPENDS ${SPV_SHADERS} COMMENT "Building shaders")
 add_dependencies(pathological shaders)
 
 # Copy shaders to output directory for runtime access
 add_custom_command(TARGET pathological POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${SHADER_BINARY_DIR} $<TARGET_FILE_DIR:pathological>/shaders
+    COMMENT "Copying shaders to output directory"
 )

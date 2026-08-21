@@ -1,9 +1,11 @@
 #include "scheduler.hpp"
-#include "render_history.hpp"
-#include "renderStatus.hpp"
-#include "s3_manager.hpp"
+
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
+
+#include "renderStatus.hpp"
+#include "render_history.hpp"
+#include "s3_manager.hpp"
 
 namespace {
 constexpr const char* kBucketName = "pathological-capstone-s3-bucket";
@@ -24,7 +26,7 @@ std::optional<std::string> buildDownloadLink(const std::string& key) {
 
     return std::string("s3://") + kBucketName + "/" + key;
 }
-}
+}  // namespace
 
 void Scheduler::addJob(std::shared_ptr<RenderRequest> job) {
     {
@@ -123,7 +125,8 @@ void Scheduler::run() {
                         }
                     }
                 }
-                std::cout << "Wait check — jobs: " << pending_jobs_.size() << " | idle worker: " << has_idle_worker << " | running: " << running_ << std::endl;
+                std::cout << "Wait check — jobs: " << pending_jobs_.size() << " | idle worker: " << has_idle_worker
+                          << " | running: " << running_ << std::endl;
                 return (!pending_jobs_.empty() && has_idle_worker) || !running_;
             });
         }
@@ -155,7 +158,8 @@ void Scheduler::joinThreads() {
 void Scheduler::assignJobs() {
     std::unique_lock<std::mutex> workers_lock(workers_mutex_);
     std::unique_lock<std::mutex> queue_lock(queue_mutex_);
-    std::cout << "Assigning jobs. Queue size: " << pending_jobs_.size()  << " | Connected workers: " << workers_.size() << std::endl;
+    std::cout << "Assigning jobs. Queue size: " << pending_jobs_.size() << " | Connected workers: " << workers_.size()
+              << std::endl;
     while (!pending_jobs_.empty()) {
         Worker* worker = findIdleWorker();
         if (worker == nullptr) {
@@ -175,10 +179,8 @@ void Scheduler::assignJobs() {
         std::lock_guard<std::mutex> tlock(threads_mutex_);
         dispatch_threads_.emplace_back([this, worker_id, worker_address, job, render_id]() {
             std::cout << "Dispatching to: " << worker_address << std::endl;
-            RenderWorkerClient client(
-                grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials())
-            );
- 
+            RenderWorkerClient client(grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials()));
+
             std::string job_id = client.RenderJob(job);
             if (job_id == "ERROR") {
                 RenderHistory::getInstance().updateStatus(job->getId(), RenderStatus::ERROR);

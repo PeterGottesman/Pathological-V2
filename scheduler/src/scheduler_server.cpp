@@ -1,8 +1,11 @@
 #include "scheduler_server.hpp"
-#include "scheduler.hpp"
+
 #include <chrono>
 
-Status SchedulerServer::EstablishConnection(ServerContext *context, const WorkerInfo *request, ServerResponse *response) {
+#include "scheduler.hpp"
+
+Status SchedulerServer::EstablishConnection(ServerContext* context, const WorkerInfo* request,
+                                            ServerResponse* response) {
     std::cout << "Worker connected: " << request->worker_ip() << std::endl;
 
     // Check if worker is reconnecting by searching scheduler's worker list
@@ -28,14 +31,15 @@ Status SchedulerServer::Heartbeat(ServerContext* context, const WorkerID* reques
     // If a worker can be recognized by the scheduler, the connection is still active.
     if (worker != nullptr) {
         response->set_status(RegistrationStatus::OK);
-    // If a worker cannot be recognized, it must reconnect.
+        // If a worker cannot be recognized, it must reconnect.
     } else {
         response->set_status(RegistrationStatus::UNKNOWN);
     }
     return Status::OK;
 }
 
-Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedRequest* request, ServerResponse* response) {
+Status SchedulerServer::JobCompleted(ServerContext* context, const JobCompletedRequest* request,
+                                     ServerResponse* response) {
     std::cout << "JobCompleted RPC received." << std::endl;
     Worker* worker = Scheduler::getInstance().findWorkerByID(request->worker_id());
 
@@ -68,25 +72,26 @@ Status SchedulerServer::Disconnect(ServerContext* context, const WorkerID* reque
 static std::unique_ptr<Server> server;
 
 void RunServer(uint16_t port) {
-  std::string server_address = "0.0.0.0:" + std::to_string(port); // **** Used to be 'absl::' but VSCode HATES it. ****
-  SchedulerServer service;
+    std::string server_address =
+        "0.0.0.0:" + std::to_string(port);  // **** Used to be 'absl::' but VSCode HATES it. ****
+    SchedulerServer service;
 
-  grpc::EnableDefaultHealthCheckService(true);
-  ServerBuilder builder;
+    grpc::EnableDefaultHealthCheckService(true);
+    ServerBuilder builder;
 
-  // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    // Listen on the given address without any authentication mechanism.
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
 
-  // Register "service" as the instance through which we'll communicate with
-  // clients.
-  builder.RegisterService(&service);
+    // Register "service" as the instance through which we'll communicate with
+    // clients.
+    builder.RegisterService(&service);
 
-  // Builds and starts the server.
-  server = builder.BuildAndStart();
-  std::cout << "Scheduler listening on " << server_address << std::endl;
+    // Builds and starts the server.
+    server = builder.BuildAndStart();
+    std::cout << "Scheduler listening on " << server_address << std::endl;
 
-  // Wait for the server to shutdown
-  server->Wait();
+    // Wait for the server to shutdown
+    server->Wait();
 }
 
 void StopServer() {

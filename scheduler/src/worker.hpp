@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 // **** Eventually, it would be preferable to use the WorkerStatus in the .proto header for easier development ****
 // **** There were some issues (maybe compilation) for the implementation in the header file.                  ****
