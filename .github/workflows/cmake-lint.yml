@@ -27,7 +27,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install cmakelang
-        run: pip install cmakelang
+        run: pip install cmakelang pyyaml
 
       - name: Run cmake-lint
         run: |

@@ -1,7 +1,13 @@
 version: v1
 lint:
   use:
-    - DEFAULT
+    - BASIC
+  except:
+    # This repo intentionally keeps scheduler_server.proto and render_server.proto together in
+    # a single protos/ directory rather than one-directory-per-package; these two rules assume
+    # the latter layout.
+    - DIRECTORY_SAME_PACKAGE
+    - PACKAGE_DIRECTORY_MATCH
 breaking:
   use:
     - FILE
