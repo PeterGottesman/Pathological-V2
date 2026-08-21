@@ -29,5 +29,12 @@
         "tinygltf"
       ]
     }
-  }
+  },
+  "overrides": [
+    {
+      "name": "tinygltf",
+      "version": "3.0.0",
+      "port-version": 1
+    }
+  ]
 }
