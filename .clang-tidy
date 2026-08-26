@@ -1,0 +1,17 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  clang-analyzer-*,
+  performance-*,
+  portability-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-emplace,
+  readability-braces-around-statements,
+  readability-container-size-empty,
+  readability-redundant-string-cstr,
+WarningsAsErrors: ""
+HeaderFilterRegex: "(scheduler|render_worker|common)/src/.*"
+FormatStyle: none
