@@ -1,9 +1,11 @@
 #include "scheduler.hpp"
-#include "render_history.hpp"
-#include "renderStatus.hpp"
-#include "s3_manager.hpp"
+
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
+
+#include "renderStatus.hpp"
+#include "render_history.hpp"
+#include "s3_manager.hpp"
 
 namespace {
 constexpr const char* kBucketName = "pathological-capstone-s3-bucket";
@@ -17,20 +19,20 @@ std::optional<std::string> buildDownloadLink(const std::string& key) {
         .presignedUrlTimeout = 1200,
     });
 
-    const auto presigned = s3Manager.createLink(key);
+    auto presigned = s3Manager.createLink(key);
     if (!presigned.empty()) {
         return presigned;
     }
 
     return std::string("s3://") + kBucketName + "/" + key;
 }
-}
+}  // namespace
 
-void Scheduler::addJob(std::shared_ptr<RenderRequest> job) {
+void Scheduler::addJob(const std::shared_ptr<RenderRequest>& job) {
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
         pending_jobs_.push(job);
-        std::cout << "Job added to queue. Queue size: " << pending_jobs_.size() << std::endl;
+        std::cout << "Job added to queue. Queue size: " << pending_jobs_.size() << "\n";
     }
     job_available_.notify_one();
 }
@@ -44,7 +46,7 @@ void Scheduler::registerWorker(const std::string& id, const std::string& ip, uin
         worker.port = port;
         worker.status = WorkerStatus::IDLE;
         workers_.push_back(worker);
-        std::cout << "Worker registered: " << id << " at " << ip << std::endl;
+        std::cout << "Worker registered: " << id << " at " << ip << "\n";
     }
     job_available_.notify_one();
 }
@@ -55,7 +57,7 @@ void Scheduler::reconnectWorker(const std::string& id) {
         Worker* worker = findWorkerByID(id);
         if (worker != nullptr) {
             worker->status = WorkerStatus::IDLE;
-            std::cout << "Worker reconnected: " << id << std::endl;
+            std::cout << "Worker reconnected: " << id << "\n";
         }
     }
     job_available_.notify_one();
@@ -66,7 +68,7 @@ void Scheduler::markWorkerOffline(const std::string& id) {
     Worker* worker = findWorkerByID(id);
     if (worker != nullptr) {
         worker->status = WorkerStatus::OFFLINE;
-        std::cout << "Worker is offline: " << id << std::endl;
+        std::cout << "Worker is offline: " << id << "\n";
     }
 }
 
@@ -76,7 +78,7 @@ void Scheduler::markWorkerIdle(const std::string& id) {
         Worker* worker = findWorkerByID(id);
         if (worker != nullptr) {
             worker->status = WorkerStatus::IDLE;
-            std::cout << "Worker is idle: " << id << std::endl;
+            std::cout << "Worker is idle: " << id << "\n";
         }
     }
     job_available_.notify_one();
@@ -108,7 +110,7 @@ bool Scheduler::markRenderCompleted(const std::string& workerJobId) {
 
 void Scheduler::run() {
     running_ = true;
-    std::cout << "Scheduler running." << std::endl;
+    std::cout << "Scheduler running." << "\n";
     while (running_) {
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -123,17 +125,20 @@ void Scheduler::run() {
                         }
                     }
                 }
-                std::cout << "Wait check — jobs: " << pending_jobs_.size() << " | idle worker: " << has_idle_worker << " | running: " << running_ << std::endl;
+                std::cout << "Wait check — jobs: " << pending_jobs_.size() << " | idle worker: " << has_idle_worker
+                          << " | running: " << running_ << "\n";
                 return (!pending_jobs_.empty() && has_idle_worker) || !running_;
             });
         }
-        if (!running_) break;
+        if (!running_) {
+            break;
+        }
         assigning_ = true;
         assignJobs();
         assigning_ = false;
         job_available_.notify_all();
     }
-    std::cout << "Scheduler stopped." << std::endl;
+    std::cout << "Scheduler stopped." << "\n";
 }
 
 void Scheduler::stop() {
@@ -155,11 +160,12 @@ void Scheduler::joinThreads() {
 void Scheduler::assignJobs() {
     std::unique_lock<std::mutex> workers_lock(workers_mutex_);
     std::unique_lock<std::mutex> queue_lock(queue_mutex_);
-    std::cout << "Assigning jobs. Queue size: " << pending_jobs_.size()  << " | Connected workers: " << workers_.size() << std::endl;
+    std::cout << "Assigning jobs. Queue size: " << pending_jobs_.size() << " | Connected workers: " << workers_.size()
+              << "\n";
     while (!pending_jobs_.empty()) {
         Worker* worker = findIdleWorker();
         if (worker == nullptr) {
-            std::cout << "No idle workers available, jobs in queue: " << pending_jobs_.size() << std::endl;
+            std::cout << "No idle workers available, jobs in queue: " << pending_jobs_.size() << "\n";
             break;
         }
         std::shared_ptr<RenderRequest> job = pending_jobs_.front();
@@ -174,11 +180,9 @@ void Scheduler::assignJobs() {
         // Spin up a thread per dispatch so gRPC calls don't block the loop
         std::lock_guard<std::mutex> tlock(threads_mutex_);
         dispatch_threads_.emplace_back([this, worker_id, worker_address, job, render_id]() {
-            std::cout << "Dispatching to: " << worker_address << std::endl;
-            RenderWorkerClient client(
-                grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials())
-            );
- 
+            std::cout << "Dispatching to: " << worker_address << "\n";
+            RenderWorkerClient client(grpc::CreateChannel(worker_address, grpc::InsecureChannelCredentials()));
+
             std::string job_id = client.RenderJob(job);
             if (job_id == "ERROR") {
                 RenderHistory::getInstance().updateStatus(job->getId(), RenderStatus::ERROR);
@@ -189,7 +193,9 @@ void Scheduler::assignJobs() {
                 {
                     std::lock_guard<std::mutex> wlock(workers_mutex_);
                     Worker* w = findWorkerByID(worker_id);
-                    if (w) w->status = WorkerStatus::OFFLINE;
+                    if (w) {
+                        w->status = WorkerStatus::OFFLINE;
+                    }
                 }
             } else {
                 {
@@ -209,7 +215,7 @@ Worker* Scheduler::findIdleWorker() {
     for (auto& worker : workers_) {
         if (worker.status == WorkerStatus::IDLE) {
             least_busy = &worker;
-            std::cout << "Worker found: " << worker.id << " | Status: " << static_cast<int>(worker.status) << std::endl;
+            std::cout << "Worker found: " << worker.id << " | Status: " << static_cast<int>(worker.status) << "\n";
             break;
         }
     }

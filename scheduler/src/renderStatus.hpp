@@ -1,21 +1,21 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 // Could maybe add 'created' state upon creation of the request
-enum class RenderStatus { COMPLETED, IN_PROGRESS, IN_QUEUE, ERROR };
+enum class RenderStatus : std::uint8_t { COMPLETED, IN_PROGRESS, IN_QUEUE, ERROR };
 
 inline std::string renderStatusToString(RenderStatus status) {
-  switch (status) {
-  case RenderStatus::COMPLETED:
-    return "Completed";
-  case RenderStatus::IN_PROGRESS:
-    return "In Progress";
-  case RenderStatus::IN_QUEUE:
-    return "In Queue";
-  case RenderStatus::ERROR:
-    return "Error";
-  default:
-    return "Error";
-  }
+    switch (status) {
+        case RenderStatus::COMPLETED:
+            return "Completed";
+        case RenderStatus::IN_PROGRESS:
+            return "In Progress";
+        case RenderStatus::IN_QUEUE:
+            return "In Queue";
+        case RenderStatus::ERROR:
+        default:
+            return "Error";
+    }
 }

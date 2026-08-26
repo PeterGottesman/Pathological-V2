@@ -1,19 +1,19 @@
 #pragma once
 
-#include "scene.hpp"
-#include "vulkan_context.hpp"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <vector>
-#include <string>
 #include <optional>
+#include <string>
+#include <vector>
+
+#include "scene.hpp"
+#include "vulkan_context.hpp"
 
 namespace tinygltf {
-    class Model;
-    struct Node;
-}
+class Model;
+struct Node;
+}  // namespace tinygltf
 
 using NodeId = uint32_t;
 using MeshId = uint32_t;
@@ -28,9 +28,7 @@ public:
     void setMesh(NodeId node, MeshId mesh);
 
     // Data creation
-    MeshId createMesh(const std::vector<Vertex>& vertices,
-                      const std::vector<uint32_t>& indices,
-                      MaterialId material);
+    MeshId createMesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, MaterialId material);
     MaterialId createMaterial(const Material& mat);
 
     // Transform updates (for animation)
@@ -39,9 +37,7 @@ public:
     void setNodeScale(NodeId node, const glm::vec3& scale);
 
     // Helper to load glTF node hierarchy
-    void loadGltfNode(const tinygltf::Node& gltfNode,
-                      std::optional<NodeId> parent,
-                      const tinygltf::Model& model);
+    void loadGltfNode(const tinygltf::Node& gltfNode, std::optional<NodeId> parent, const tinygltf::Model& model);
 
     // Flattening
     Scene flattenToScene(const VulkanContext& ctx);
@@ -72,10 +68,7 @@ private:
 
     // Helper methods
     std::vector<NodeId> getRootNodes() const;
-    void traverseAndFlatten(NodeId nodeId,
-                           const glm::mat4& parentTransform,
-                           std::vector<Vertex>& outVertices,
-                           std::vector<uint32_t>& outIndices,
-                           std::vector<uint32_t>& outMaterialIndices);
+    void traverseAndFlatten(NodeId nodeId, const glm::mat4& parentTransform, std::vector<Vertex>& outVertices,
+                            std::vector<uint32_t>& outIndices, std::vector<uint32_t>& outMaterialIndices);
     void updateNodeTransform(NodeId node);
 };

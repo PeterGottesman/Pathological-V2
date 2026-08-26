@@ -1,20 +1,20 @@
 #pragma once
 
-#include <thread>
-#include <queue>
-#include <vector>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <string>
-#include <iostream>
-#include <unordered_map>
-
 #include <grpcpp/grpcpp.h>
 
-#include "worker.hpp"
+#include <atomic>
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <queue>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <vector>
+
 #include "renderRequest.hpp"
 #include "render_client.hpp"
+#include "worker.hpp"
 
 class Scheduler {
 public:
@@ -23,13 +23,13 @@ public:
         return instance;
     }
 
-	Scheduler(const Scheduler&) = delete;
+    Scheduler(const Scheduler&) = delete;
     Scheduler& operator=(const Scheduler&) = delete;
 
-	Worker* findWorkerByID(const std::string& id);
+    Worker* findWorkerByID(const std::string& id);
 
     // Adds job to queue
-    void addJob(std::shared_ptr<RenderRequest> job);
+    void addJob(const std::shared_ptr<RenderRequest>& job);
 
     // Worker list management
     void registerWorker(const std::string& id, const std::string& ip, uint32_t port);
@@ -42,9 +42,9 @@ public:
     void stop();
 
 private:
-	// Constructor and destructor
-	Scheduler() : running_(false) {}
-    ~Scheduler() { stop(); }  
+    // Constructor and destructor
+    Scheduler() : running_(false) {}
+    ~Scheduler() { stop(); }
 
     // Job queue
     std::queue<std::shared_ptr<RenderRequest>> pending_jobs_;

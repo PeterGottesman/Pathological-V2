@@ -2,10 +2,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
 #include <tiny_gltf.h>
-#include <iostream>
-#include <stdexcept>
-#include <memory>
+
 #include <glm/gtc/quaternion.hpp>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
 
 tinygltf::Model loadGltfFile(const std::string& filename) {
     tinygltf::TinyGLTF loader;
@@ -15,7 +16,7 @@ tinygltf::Model loadGltfFile(const std::string& filename) {
     bool success = loader.LoadASCIIFromFile(&model, &err, &warn, filename);
 
     if (!warn.empty()) {
-        std::cerr << "glTF warning: " << warn << std::endl;
+        std::cerr << "glTF warning: " << warn << "\n";
     }
 
     if (!success || !err.empty()) {
@@ -29,18 +30,11 @@ tinygltf::Model loadGltfFile(const std::string& filename) {
     return model;
 }
 
-SceneGraph::SceneGraph(SceneBuilder builder,
-                       std::optional<tinygltf::Animation> animation,
+SceneGraph::SceneGraph(SceneBuilder builder, std::optional<tinygltf::Animation> animation,
                        std::shared_ptr<tinygltf::Model> model)
-    : m_builder(std::move(builder))
-    , m_animation(std::move(animation))
-    , m_model(std::move(model))
-{
-}
+    : m_builder(std::move(builder)), m_animation(std::move(animation)), m_model(std::move(model)) {}
 
-Scene SceneGraph::build(const VulkanContext& ctx) {
-    return m_builder.flattenToScene(ctx);
-}
+Scene SceneGraph::build(const VulkanContext& ctx) { return m_builder.flattenToScene(ctx); }
 
 void SceneGraph::updateAnimation(float time) {
     if (!m_animation.has_value() || !m_model) {
@@ -67,8 +61,7 @@ void SceneGraph::updateAnimation(float time) {
     }
 }
 
-SceneGraph SceneGraph::fromGltf(const VulkanContext& ctx,
-                                const std::string& filename) {
+SceneGraph SceneGraph::fromGltf(const VulkanContext& ctx, const std::string& filename) {
     auto model = std::make_shared<tinygltf::Model>(loadGltfFile(filename));
 
     SceneBuilder builder;
@@ -87,9 +80,7 @@ SceneGraph SceneGraph::fromGltf(const VulkanContext& ctx,
     return SceneGraph(builder, anim, model);
 }
 
-glm::vec3 SceneGraph::sampleVec3Channel(const tinygltf::AnimationChannel& channel,
-                                         int samplerIdx,
-                                         float time) {
+glm::vec3 SceneGraph::sampleVec3Channel(const tinygltf::AnimationChannel& channel, int samplerIdx, float time) {
     if (!m_animation.has_value() || !m_model) {
         return glm::vec3(0.0f);
     }
@@ -102,16 +93,16 @@ glm::vec3 SceneGraph::sampleVec3Channel(const tinygltf::AnimationChannel& channe
     const tinygltf::BufferView& inputBufferView = m_model->bufferViews[inputAccessor.bufferView];
     const tinygltf::Buffer& inputBuffer = m_model->buffers[inputBufferView.buffer];
 
-    const float* times = reinterpret_cast<const float*>(
-        &inputBuffer.data[inputBufferView.byteOffset + inputAccessor.byteOffset]);
+    const float* times =
+        reinterpret_cast<const float*>(&inputBuffer.data[inputBufferView.byteOffset + inputAccessor.byteOffset]);
 
     // Get output (value) accessor
     const tinygltf::Accessor& outputAccessor = m_model->accessors[sampler.output];
     const tinygltf::BufferView& outputBufferView = m_model->bufferViews[outputAccessor.bufferView];
     const tinygltf::Buffer& outputBuffer = m_model->buffers[outputBufferView.buffer];
 
-    const float* values = reinterpret_cast<const float*>(
-        &outputBuffer.data[outputBufferView.byteOffset + outputAccessor.byteOffset]);
+    const float* values =
+        reinterpret_cast<const float*>(&outputBuffer.data[outputBufferView.byteOffset + outputAccessor.byteOffset]);
 
     // Find keyframes
     size_t count = inputAccessor.count;
@@ -152,9 +143,7 @@ glm::vec3 SceneGraph::sampleVec3Channel(const tinygltf::AnimationChannel& channe
     return glm::vec3(0.0f);
 }
 
-glm::quat SceneGraph::sampleQuatChannel(const tinygltf::AnimationChannel& channel,
-                                        int samplerIdx,
-                                        float time) {
+glm::quat SceneGraph::sampleQuatChannel(const tinygltf::AnimationChannel& channel, int samplerIdx, float time) {
     if (!m_animation.has_value() || !m_model) {
         return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     }
@@ -167,16 +156,16 @@ glm::quat SceneGraph::sampleQuatChannel(const tinygltf::AnimationChannel& channe
     const tinygltf::BufferView& inputBufferView = m_model->bufferViews[inputAccessor.bufferView];
     const tinygltf::Buffer& inputBuffer = m_model->buffers[inputBufferView.buffer];
 
-    const float* times = reinterpret_cast<const float*>(
-        &inputBuffer.data[inputBufferView.byteOffset + inputAccessor.byteOffset]);
+    const float* times =
+        reinterpret_cast<const float*>(&inputBuffer.data[inputBufferView.byteOffset + inputAccessor.byteOffset]);
 
     // Get output (value) accessor
     const tinygltf::Accessor& outputAccessor = m_model->accessors[sampler.output];
     const tinygltf::BufferView& outputBufferView = m_model->bufferViews[outputAccessor.bufferView];
     const tinygltf::Buffer& outputBuffer = m_model->buffers[outputBufferView.buffer];
 
-    const float* values = reinterpret_cast<const float*>(
-        &outputBuffer.data[outputBufferView.byteOffset + outputAccessor.byteOffset]);
+    const float* values =
+        reinterpret_cast<const float*>(&outputBuffer.data[outputBufferView.byteOffset + outputAccessor.byteOffset]);
 
     // Find keyframes
     size_t count = inputAccessor.count;
@@ -187,7 +176,7 @@ glm::quat SceneGraph::sampleQuatChannel(const tinygltf::AnimationChannel& channe
 
     // Handle time before first keyframe
     if (time <= times[0]) {
-        return glm::quat(values[3], values[0], values[1], values[2]); // glm uses w,x,y,z
+        return glm::quat(values[3], values[0], values[1], values[2]);  // glm uses w,x,y,z
     }
 
     // Handle time after last keyframe

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "vulkan_context.hpp"
-#include "scene.hpp"
-#include "buffer.hpp"
-
 #include <glm/glm.hpp>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "buffer.hpp"
+#include "scene.hpp"
+#include "vulkan_context.hpp"
 
 struct PushConstants {
     glm::vec3 cameraPosition;
@@ -18,14 +18,13 @@ struct PushConstants {
     uint32_t frameIndex;
     glm::vec3 cameraUp;
     uint32_t maxBounces;
-    glm::uvec2 tileOffset;      // Tile offset in pixels
-    glm::uvec2 imageSize;       // Full image dimensions
+    glm::uvec2 tileOffset;  // Tile offset in pixels
+    glm::uvec2 imageSize;   // Full image dimensions
 };
 
 class PathTracer {
 public:
-    PathTracer(const VulkanContext& ctx, const Scene& scene,
-               uint32_t width, uint32_t height);
+    PathTracer(const VulkanContext& ctx, const Scene& scene, uint32_t width, uint32_t height);
     ~PathTracer();
 
     void render(uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose);
@@ -45,16 +44,11 @@ private:
     void createShaderBindingTable();
     void createDescriptorSets();
 
-    void renderTileRegion(uint32_t offsetX, uint32_t offsetY,
-                          uint32_t width, uint32_t height,
+    void renderTileRegion(uint32_t offsetX, uint32_t offsetY, uint32_t width, uint32_t height,
                           uint32_t samplesPerPixel);
 
-    void renderTileRecursive(uint32_t offsetX, uint32_t offsetY,
-                             uint32_t width, uint32_t height,
-                             uint32_t samplesPerPixel,
-                             uint32_t maxTileSize,
-                             bool verbose,
-                             SubdivisionStats& stats);
+    void renderTileRecursive(uint32_t offsetX, uint32_t offsetY, uint32_t width, uint32_t height,
+                             uint32_t samplesPerPixel, uint32_t maxTileSize, bool verbose, SubdivisionStats& stats);
 
     std::vector<char> loadShader(const std::string& filename);
     vk::raii::ShaderModule createShaderModule(const std::vector<char>& code);

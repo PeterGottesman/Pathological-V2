@@ -1,28 +1,31 @@
 #pragma once
 
+#include <grpcpp/grpcpp.h>
+
+#include <boost/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <grpcpp/grpcpp.h>
 #include <memory>
-#include <boost/uuid.hpp>
+#include <utility>
+
 #include "protos/render_server.grpc.pb.h"
 #include "protos/render_server.pb.h"
+#include "render_jobs.hpp"
 #include "s3_manager.hpp"
 #include "scheduler_client.hpp"
-#include "render_jobs.hpp"
 
+using boost::uuids::random_generator;
+using boost::uuids::to_string;
+using boost::uuids::uuid;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using render_server::RenderWorker;
 using render_server::RenderJobRequest;
 using render_server::RenderJobResponse;
 using render_server::RenderStatusRequest;
 using render_server::RenderStatusResponse;
-using boost::uuids::random_generator;
-using boost::uuids::uuid;
-using boost::uuids::to_string;
+using render_server::RenderWorker;
 
 // Needed for creating s3Manager
 // Defined in cpp file
@@ -30,19 +33,19 @@ extern S3Config config;
 
 class RenderServer final : public RenderWorker::Service {
 public:
-    RenderServer(SchedulerClient& client, std::string worker_id, random_generator random_gen) :
-        client(client), worker_id(worker_id), random_gen(random_gen), manager(S3Manager(config)){}
-    Status RenderJob(ServerContext *context, const RenderJobRequest *request,
-        RenderJobResponse *response);
-    Status RenderStatus(ServerContext *context, const RenderStatusRequest *request, RenderStatusResponse *response);
+    RenderServer(SchedulerClient &client, std::string worker_id, random_generator random_gen)
+        : client(client), worker_id(std::move(worker_id)), random_gen(random_gen), manager(S3Manager(config)) {}
+    Status RenderJob(ServerContext *context, const RenderJobRequest *request, RenderJobResponse *response) override;
+    Status RenderStatus(ServerContext *context, const RenderStatusRequest *request,
+                        RenderStatusResponse *response) override;
 
 private:
-    SchedulerClient& client;
+    SchedulerClient &client;
     std::string worker_id;
     random_generator random_gen;
     RenderJobs jobs;
     S3Manager manager;
 };
 
-std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient& client,
-        std::string worker_id, random_generator random_gen);
+std::unique_ptr<Server> BuildServer(uint16_t port, SchedulerClient &client, std::string worker_id,
+                                    random_generator random_gen);
