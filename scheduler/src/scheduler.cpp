@@ -156,7 +156,7 @@ bool Scheduler::markRenderCompleted(const std::string& workerJobId) {
         }
     }
 
-    render->setFramesCompleted(framesCompleted);
+    render->setFramesCompleted(static_cast<int>(framesCompleted));
 
     if (allFramesDone) {
         render->setDownloadLinks(orderedLinks);
