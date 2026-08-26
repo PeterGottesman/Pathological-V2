@@ -1,0 +1,38 @@
+name: Proto lint
+
+"on":
+  push:
+    branches: [main]
+    paths: &proto-paths
+      - "protos/**"
+      - ".github/workflows/proto-lint.yml"
+  pull_request:
+    paths: *proto-paths
+  workflow_dispatch:
+
+concurrency:
+  group: proto-lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  buf:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bufbuild/buf-setup-action@v1
+
+      - name: Lint
+        uses: bufbuild/buf-lint-action@v1
+        with:
+          input: protos
+
+      # Scheduler and render workers are deployed independently, so an incompatible change to
+      # the shared gRPC contract can break a live cluster even though every component still
+      # builds on its own. This catches that case on PRs targeting main.
+      - name: Check for breaking changes vs. main
+        if: github.event_name == 'pull_request'
+        uses: bufbuild/buf-breaking-action@v1
+        with:
+          input: protos
+          against: "https://github.com/${{ github.repository }}.git#branch=main,subdir=protos"

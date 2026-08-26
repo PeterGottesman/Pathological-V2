@@ -1,0 +1,79 @@
+name: C++ build
+
+"on":
+  push:
+    branches: [main]
+    paths: &cpp-paths
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "vcpkg.json"
+      - "vcpkg-configuration.json"
+      - "common/**"
+      - "scheduler/**"
+      - "render_worker/**"
+      - "protos/**"
+      - ".github/workflows/cpp-build.yml"
+  pull_request:
+    paths: *cpp-paths
+  workflow_dispatch:
+
+concurrency:
+  group: cpp-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # lukka/run-vcpkg auto-sets VCPKG_BINARY_SOURCES to the (now-removed) x-gha backend whenever
+  # this isn't already set, so it has to be set explicitly here. "default" tells vcpkg to use
+  # whatever VCPKG_DEFAULT_BINARY_CACHE points at (see binaryCachePath on the run-vcpkg step).
+  VCPKG_BINARY_SOURCES: "clear;default,readwrite"
+
+jobs:
+  build:
+    name: build (${{ matrix.preset }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: scheduler
+            binary_dir: build-scheduler
+            needs_vulkan: false
+          - preset: render-worker
+            binary_dir: build-render-worker
+            needs_vulkan: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake + Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Install Vulkan SDK
+        if: matrix.needs_vulkan
+        run: |
+          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | gpg --dearmor | sudo tee /usr/share/keyrings/lunarg-archive-keyring.gpg > /dev/null
+          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list https://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list
+          sudo sed -i -E 's#^deb(-src)? #deb\1 [signed-by=/usr/share/keyrings/lunarg-archive-keyring.gpg] #' /etc/apt/sources.list.d/lunarg-vulkan-noble.list
+          sudo apt-get update
+          sudo apt-get install -y vulkan-sdk
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: e7b524242c8a5d718a7afa26794c3c19bb8b0c71
+
+      # Must come after "Set up vcpkg": that step exports VCPKG_DEFAULT_BINARY_CACHE (its own
+      # default archive path, not ~/.cache) into env for this step to read. vcpkg's own "x-gha"
+      # cache backend was removed by vcpkg-tool, so this wraps the local archive path instead.
+      - name: Cache vcpkg binary archives
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: |
+            vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build ${{ matrix.binary_dir }} --parallel
