@@ -1,12 +1,13 @@
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
 
-#include <optional>
-#include <vector>
-#include <string>
 #include <functional>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <vulkan/vulkan_raii.hpp>
 
 class VulkanContext {
 public:
@@ -20,21 +21,44 @@ public:
     VulkanContext& operator=(VulkanContext&&) = delete;
 
     // Accessors
-    const vk::raii::Instance& instance() const { return *m_instance; }
-    const vk::raii::PhysicalDevice& physicalDevice() const { return *m_physicalDevice; }
-    const vk::raii::Device& device() const { return *m_device; }
-    const vk::raii::Queue& queue() const { return *m_queue; }
-    const vk::raii::CommandPool& commandPool() const { return *m_commandPool; }
+    const vk::raii::Instance& instance() const {
+        if (!m_instance.has_value()) {
+            throw std::runtime_error("Instance not initialized");
+        }
+        return *m_instance;
+    }
+    const vk::raii::PhysicalDevice& physicalDevice() const {
+        if (!m_physicalDevice.has_value()) {
+            throw std::runtime_error("Physical device not selected");
+        }
+        return *m_physicalDevice;
+    }
+    const vk::raii::Device& device() const {
+        if (!m_device.has_value()) {
+            throw std::runtime_error("Logical device not created");
+        }
+        return *m_device;
+    }
+    const vk::raii::Queue& queue() const {
+        if (!m_queue.has_value()) {
+            throw std::runtime_error("Queue not created");
+        }
+        return *m_queue;
+    }
+    const vk::raii::CommandPool& commandPool() const {
+        if (!m_commandPool.has_value()) {
+            throw std::runtime_error("Command pool not created");
+        }
+        return *m_commandPool;
+    }
     uint32_t queueFamilyIndex() const { return m_queueFamilyIndex; }
     VmaAllocator allocator() const { return m_allocator; }
 
     // Ray tracing properties
-    const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR& rtProperties() const {
-        return m_rtProperties;
-    }
+    const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR& rtProperties() const { return m_rtProperties; }
 
     // Utility: run a one-shot command
-    void executeCommands(std::function<void(vk::raii::CommandBuffer&)> func) const;
+    void executeCommands(const std::function<void(vk::raii::CommandBuffer&)>& func) const;
 
     // Recovery: recreate device and dependent resources after device lost
     void recoverFromDeviceLost();

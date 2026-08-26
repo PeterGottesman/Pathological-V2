@@ -1,8 +1,8 @@
 #include "vulkan_context.hpp"
 
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include <cstring>
 
 // Required for VMA implementation
 #define VMA_IMPLEMENTATION
@@ -10,19 +10,17 @@
 
 namespace {
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData)
-{
+VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                             VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                             void* pUserData) {
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        std::cerr << "Validation: " << pCallbackData->pMessage << std::endl;
+        std::cerr << "Validation: " << pCallbackData->pMessage << "\n";
     }
     return VK_FALSE;
 }
 
-} // namespace
+}  // namespace
 
 VulkanContext::VulkanContext() {
     createInstance();
@@ -33,9 +31,14 @@ VulkanContext::VulkanContext() {
 }
 
 VulkanContext::~VulkanContext() {
-    // Wait for device to finish before destroying allocations
-    if (m_device) {
-        m_device->waitIdle();
+    // Wait for device to finish before destroying allocations. waitIdle() can throw
+    // vk::SystemError on failure, which must not escape a destructor.
+    try {
+        if (m_device) {
+            m_device->waitIdle();
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "VulkanContext: waitIdle failed during destruction: " << e.what() << "\n";
     }
 
     if (m_allocator) {
@@ -44,13 +47,8 @@ VulkanContext::~VulkanContext() {
 }
 
 void VulkanContext::createInstance() {
-    vk::ApplicationInfo appInfo{
-        "Pathological",
-        VK_MAKE_VERSION(1, 0, 0),
-        "No Engine",
-        VK_MAKE_VERSION(1, 0, 0),
-        VK_API_VERSION_1_3
-    };
+    vk::ApplicationInfo appInfo{"Pathological", VK_MAKE_VERSION(1, 0, 0), "No Engine", VK_MAKE_VERSION(1, 0, 0),
+                                VK_API_VERSION_1_3};
 
     std::vector<const char*> layers;
     std::vector<const char*> extensions;
@@ -60,17 +58,15 @@ void VulkanContext::createInstance() {
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
-    vk::InstanceCreateInfo createInfo{
-        {},
-        &appInfo,
-        layers,
-        extensions
-    };
+    vk::InstanceCreateInfo createInfo{{}, &appInfo, layers, extensions};
 
     m_instance = vk::raii::Instance(m_context, createInfo);
 }
 
 void VulkanContext::selectPhysicalDevice() {
+    if (!m_instance.has_value()) {
+        throw std::runtime_error("Instance not initialized");
+    }
     auto devices = vk::raii::PhysicalDevices(*m_instance);
 
     if (devices.empty()) {
@@ -78,25 +74,22 @@ void VulkanContext::selectPhysicalDevice() {
     }
 
     const std::vector<const char*> requiredExtensions = {
-        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      VK_KHR_SPIRV_1_4_EXTENSION_NAME,
         VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     };
 
-    std::cout << "Found devices: " << devices.size() << std::endl;
+    std::cout << "Found devices: " << devices.size() << "\n";
 
     for (const auto& device : devices) {
         auto properties = device.getProperties();
 
-        std::cout << "Checking GPU: " << properties.deviceName << std::endl;
+        std::cout << "Checking GPU: " << properties.deviceName << "\n";
 
         // Prefer NVIDIA discrete GPU
-        //if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
-	//    std::cout << "Skipping, not a discrete gpu" << std::endl;
+        // if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
+        //    std::cout << "Skipping, not a discrete gpu" << "\n";
         //    continue;
         //}
 
@@ -113,7 +106,7 @@ void VulkanContext::selectPhysicalDevice() {
                 }
             }
             if (!found) {
-		std::cout << "Skipping, missing required extension: " << required << std::endl;
+                std::cout << "Skipping, missing required extension: " << required << "\n";
                 hasAllExtensions = false;
                 break;
             }
@@ -143,10 +136,12 @@ void VulkanContext::selectPhysicalDevice() {
         m_physicalDevice = vk::raii::PhysicalDevice(device);
 
         // Get ray tracing properties using StructureChain
-        auto props2Chain = m_physicalDevice->getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        auto props2Chain =
+            m_physicalDevice
+                ->getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
         m_rtProperties = props2Chain.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
 
-        std::cout << "Selected GPU: " << properties.deviceName << std::endl;
+        std::cout << "Selected GPU: " << properties.deviceName << "\n";
         return;
     }
 
@@ -154,22 +149,17 @@ void VulkanContext::selectPhysicalDevice() {
 }
 
 void VulkanContext::createLogicalDevice() {
+    if (!m_physicalDevice.has_value()) {
+        throw std::runtime_error("Physical device not selected");
+    }
     float queuePriority = 1.0f;
-    vk::DeviceQueueCreateInfo queueCreateInfo{
-        {},
-        m_queueFamilyIndex,
-        1,
-        &queuePriority
-    };
+    vk::DeviceQueueCreateInfo queueCreateInfo{{}, m_queueFamilyIndex, 1, &queuePriority};
 
     // Required extensions
     std::vector<const char*> extensions = {
-        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      VK_KHR_SPIRV_1_4_EXTENSION_NAME,
         VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     };
 
@@ -192,13 +182,7 @@ void VulkanContext::createLogicalDevice() {
     vk::PhysicalDeviceFeatures2 features2{};
     features2.pNext = &indexingFeatures;
 
-    vk::DeviceCreateInfo deviceCreateInfo{
-        {},
-        queueCreateInfo,
-        {},
-        extensions,
-        nullptr
-    };
+    vk::DeviceCreateInfo deviceCreateInfo{{}, queueCreateInfo, {}, extensions, nullptr};
     deviceCreateInfo.pNext = &features2;
 
     m_device = vk::raii::Device(*m_physicalDevice, deviceCreateInfo);
@@ -206,15 +190,18 @@ void VulkanContext::createLogicalDevice() {
 }
 
 void VulkanContext::createCommandPool() {
-    vk::CommandPoolCreateInfo poolInfo{
-        vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        m_queueFamilyIndex
-    };
+    if (!m_device.has_value()) {
+        throw std::runtime_error("Logical device not created");
+    }
+    vk::CommandPoolCreateInfo poolInfo{vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_queueFamilyIndex};
 
     m_commandPool = vk::raii::CommandPool(*m_device, poolInfo);
 }
 
 void VulkanContext::createAllocator() {
+    if (!m_physicalDevice.has_value() || !m_device.has_value() || !m_instance.has_value()) {
+        throw std::runtime_error("Required Vulkan objects not initialized");
+    }
     VmaAllocatorCreateInfo allocatorInfo{};
     allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     allocatorInfo.physicalDevice = **m_physicalDevice;
@@ -227,12 +214,11 @@ void VulkanContext::createAllocator() {
     }
 }
 
-void VulkanContext::executeCommands(std::function<void(vk::raii::CommandBuffer&)> func) const {
-    vk::CommandBufferAllocateInfo allocInfo{
-        **m_commandPool,
-        vk::CommandBufferLevel::ePrimary,
-        1
-    };
+void VulkanContext::executeCommands(const std::function<void(vk::raii::CommandBuffer&)>& func) const {
+    if (!m_device.has_value() || !m_commandPool.has_value() || !m_queue.has_value()) {
+        throw std::runtime_error("Required Vulkan objects not initialized");
+    }
+    vk::CommandBufferAllocateInfo allocInfo{**m_commandPool, vk::CommandBufferLevel::ePrimary, 1};
 
     auto commandBuffers = vk::raii::CommandBuffers(*m_device, allocInfo);
     auto& cmd = commandBuffers[0];
@@ -251,7 +237,7 @@ void VulkanContext::executeCommands(std::function<void(vk::raii::CommandBuffer&)
 }
 
 void VulkanContext::recoverFromDeviceLost() {
-    std::cout << "Device lost detected, attempting recovery..." << std::endl;
+    std::cout << "Device lost detected, attempting recovery..." << "\n";
 
     // Destroy allocator first (depends on device)
     if (m_allocator) {
@@ -269,5 +255,5 @@ void VulkanContext::recoverFromDeviceLost() {
     createCommandPool();
     createAllocator();
 
-    std::cout << "Device recovery complete" << std::endl;
+    std::cout << "Device recovery complete" << "\n";
 }

@@ -10,17 +10,17 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using render_server::RenderWorker;
 using render_server::RenderJobRequest;
 using render_server::RenderJobResponse;
 using render_server::RenderStatusRequest;
 using render_server::RenderStatusResponse;
+using render_server::RenderWorker;
 
 class RenderWorkerClient {
 public:
-    RenderWorkerClient(std::shared_ptr<Channel> channel) : stub_(RenderWorker::NewStub(channel)) {}
+    RenderWorkerClient(const std::shared_ptr<Channel>& channel) : stub_(RenderWorker::NewStub(channel)) {}
 
-    std::string RenderJob(std::shared_ptr<RenderRequest> render);
+    std::string RenderJob(const std::shared_ptr<RenderRequest>& render);
     int RenderStatus(std::string job);
 
 private:

@@ -1,24 +1,25 @@
 #include "render_worker.hpp"
-#include "vulkan_context.hpp"
-#include "scene_graph.hpp"
-#include "path_tracer.hpp"
 
 #include <iostream>
 
+#include "path_tracer.hpp"
+#include "scene_graph.hpp"
+#include "vulkan_context.hpp"
+
 // Peter's implementation. Refer to him when it comes to
 // any questions about the VULKAN path tracer
-void generateScene(uint32_t width, uint32_t height, uint32_t samples,
-    std::string gltfFile, std::string output, float time, uint32_t tileSize, bool verbose){
+void generateScene(uint32_t width, uint32_t height, uint32_t samples, const std::string& gltfFile,
+                   const std::string& output, float time, uint32_t tileSize, bool verbose) {
     try {
-        std::cout << "Pathological - Vulkan Path Tracer" << std::endl;
-        std::cout << "==================================" << std::endl;
-        std::cout << "glTF File: " << gltfFile << std::endl;
-        std::cout << "Resolution: " << width << "x" << height << std::endl;
-        std::cout << "Samples: " << samples << std::endl;
-        std::cout << "Animation Time: " << time << "s" << std::endl;
-        std::cout << "Tile Size: " << tileSize << "x" << tileSize << std::endl;
-        std::cout << "Output: " << output << std::endl;
-        std::cout << std::endl;
+        std::cout << "Pathological - Vulkan Path Tracer" << "\n";
+        std::cout << "==================================" << "\n";
+        std::cout << "glTF File: " << gltfFile << "\n";
+        std::cout << "Resolution: " << width << "x" << height << "\n";
+        std::cout << "Samples: " << samples << "\n";
+        std::cout << "Animation Time: " << time << "s" << "\n";
+        std::cout << "Tile Size: " << tileSize << "x" << tileSize << "\n";
+        std::cout << "Output: " << output << "\n";
+        std::cout << "\n";
 
         {
             VulkanContext ctx;
@@ -32,12 +33,12 @@ void generateScene(uint32_t width, uint32_t height, uint32_t samples,
 
             // Wait for all GPU work to complete before cleanup
             ctx.device().waitIdle();
-        } // Explicit scope to ensure cleanup order
+        }  // Explicit scope to ensure cleanup order
 
-        std::cout << std::endl;
-        std::cout << "Done!" << std::endl;
+        std::cout << "\n";
+        std::cout << "Done!" << "\n";
 
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Error: " << e.what() << "\n";
     }
 }

@@ -1,17 +1,16 @@
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
 
 #include <cstring>
 #include <stdexcept>
+#include <vulkan/vulkan_raii.hpp>
 
 class Buffer {
 public:
-    Buffer(VmaAllocator allocator, vk::DeviceSize size, vk::BufferUsageFlags usage,
-           VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags = 0)
-        : m_allocator(allocator), m_size(size)
-    {
+    Buffer(VmaAllocator allocator, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+           VmaAllocationCreateFlags flags = 0)
+        : m_allocator(allocator), m_size(size) {
         VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         bufferInfo.size = size;
         bufferInfo.usage = static_cast<VkBufferUsageFlags>(usage);
@@ -39,9 +38,10 @@ public:
     Buffer& operator=(const Buffer&) = delete;
 
     Buffer(Buffer&& other) noexcept
-        : m_allocator(other.m_allocator), m_buffer(other.m_buffer),
-          m_allocation(other.m_allocation), m_size(other.m_size)
-    {
+        : m_allocator(other.m_allocator),
+          m_buffer(other.m_buffer),
+          m_allocation(other.m_allocation),
+          m_size(other.m_size) {
         other.m_buffer = VK_NULL_HANDLE;
         other.m_allocation = VK_NULL_HANDLE;
     }
@@ -71,11 +71,9 @@ public:
         return data;
     }
 
-    void unmap() {
-        vmaUnmapMemory(m_allocator, m_allocation);
-    }
+    void unmap() { vmaUnmapMemory(m_allocator, m_allocation); }
 
-    template<typename T>
+    template <typename T>
     void upload(const T* data, size_t count) {
         void* mapped = map();
         std::memcpy(mapped, data, sizeof(T) * count);

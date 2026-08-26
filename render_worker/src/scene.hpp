@@ -1,11 +1,11 @@
 #pragma once
 
-#include "vulkan_context.hpp"
-#include "buffer.hpp"
-
 #include <glm/glm.hpp>
-#include <vector>
 #include <memory>
+#include <vector>
+
+#include "buffer.hpp"
+#include "vulkan_context.hpp"
 
 struct Vertex {
     glm::vec3 position;
@@ -22,11 +22,8 @@ struct Material {
 class Scene {
 public:
     // New constructor for dynamic scene loading
-    Scene(const VulkanContext& ctx,
-          const std::vector<Vertex>& vertices,
-          const std::vector<uint32_t>& indices,
-          const std::vector<Material>& materials,
-          const std::vector<uint32_t>& materialIndices);
+    Scene(const VulkanContext& ctx, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
+          const std::vector<Material>& materials, const std::vector<uint32_t>& materialIndices);
 
     const Buffer& vertexBuffer() const { return *m_vertexBuffer; }
     const Buffer& indexBuffer() const { return *m_indexBuffer; }

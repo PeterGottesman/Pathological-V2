@@ -1,10 +1,12 @@
+#include <drogon/drogon.h>
+
+#include <CLI/CLI.hpp>
+#include <iostream>
+#include <thread>
+
 #include "requestController.hpp"
 #include "scheduler.hpp"
 #include "scheduler_server.hpp"
-#include <CLI/CLI.hpp>
-#include <drogon/drogon.h>
-#include <thread>
-#include <iostream>
 
 int main(int argc, char **argv) {
     CLI::App app{"Pathological Scheduler"};
@@ -20,14 +22,10 @@ int main(int argc, char **argv) {
     CLI11_PARSE(app, argc, argv);
 
     // gRPC server runs on background thread
-    std::thread grpc_thread([&]() {
-        RunServer(grpc_port);
-    });
+    std::thread grpc_thread([&]() { RunServer(grpc_port); });
 
     // Scheduler loop runs on background thread
-    std::thread scheduler_thread([]() {
-        Scheduler::getInstance().run();
-    });
+    std::thread scheduler_thread([]() { Scheduler::getInstance().run(); });
 
     // Drogon HTTP server runs on main thread
     // Blocking call - everything must go above this
@@ -38,15 +36,15 @@ int main(int argc, char **argv) {
         .run();
 
     // Cleanup when Drogon shuts down
-    std::cout << "Stopping scheduler..." << std::endl;
+    std::cout << "Stopping scheduler..." << "\n";
     Scheduler::getInstance().stop();
-    std::cout << "Stopping gRPC server..." << std::endl;
+    std::cout << "Stopping gRPC server..." << "\n";
     StopServer();
-    std::cout << "Joining gRPC thread..." << std::endl;
+    std::cout << "Joining gRPC thread..." << "\n";
     grpc_thread.join();
-    std::cout << "Joining scheduler thread..." << std::endl;
+    std::cout << "Joining scheduler thread..." << "\n";
     scheduler_thread.join();
-    std::cout << "Cleanup complete." << std::endl;
+    std::cout << "Cleanup complete." << "\n";
 
     return 0;
 }

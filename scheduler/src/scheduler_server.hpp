@@ -15,13 +15,13 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using scheduler_server::WorkerConnection;
 using scheduler_server::RegistrationStatus;
+using scheduler_server::WorkerConnection;
 // using scheduler_server::WorkerStatus; **** Used internally ****
-using scheduler_server::WorkerInfo;
-using scheduler_server::WorkerID;
-using scheduler_server::ServerResponse;
 using scheduler_server::JobCompletedRequest;
+using scheduler_server::ServerResponse;
+using scheduler_server::WorkerID;
+using scheduler_server::WorkerInfo;
 
 class SchedulerServer final : public WorkerConnection::Service {
 public:

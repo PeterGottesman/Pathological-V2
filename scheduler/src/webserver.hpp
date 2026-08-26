@@ -1,4 +1,3 @@
 #include <drogon/drogon.h>
 
-class WebServer {
-};
+class WebServer {};

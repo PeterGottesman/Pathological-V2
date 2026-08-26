@@ -1,15 +1,15 @@
-#include "render_server.hpp"
-#include "scheduler_client.hpp"
-
-#include <condition_variable>
 #include <CLI/CLI.hpp>
-#include <cstdint>
+#include <condition_variable>
 #include <csignal>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+
+#include "render_server.hpp"
+#include "scheduler_client.hpp"
 
 // Creating reference to client singleton and unique pointer that will store the server
 SchedulerClient& client = SchedulerClient::getInstance();
@@ -21,7 +21,7 @@ std::condition_variable shutdownNow;
 
 // Sends to STD out the signal hit and then alerts cv for
 // shutdownServer thread
-void signalHandler(int signal){
+void signalHandler(int signal) {
     std::string sig;
     if (signal == 1) {
         sig = "SIGHUP";
@@ -32,14 +32,14 @@ void signalHandler(int signal){
     } else {
         sig = "UNDEFINED";
     }
-    std::cout << sig << " HIT" << std::endl;
-    shutdownSig = true;     // Used to stop spurious wakeup
+    std::cout << sig << " HIT" << "\n";
+    shutdownSig = true;  // Used to stop spurious wakeup
     shutdownNow.notify_one();
 }
 
-void shutdownServer(){
+void shutdownServer() {
     std::unique_lock<std::mutex> lock(mutex);
-    shutdownNow.wait(lock, [] {return shutdownSig;});
+    shutdownNow.wait(lock, [] { return shutdownSig; });
     client.Disconnect();
     server->Shutdown();
 }
@@ -54,22 +54,19 @@ int main(int argc, char** argv) {
     boost::uuids::random_generator random_gen;
 
     app.add_option("schedulerAddress", schedulerAddress, "Address and port to find scheduler at")->required();
-    app.add_option("-a,--render-address", renderServerAddress, "Address of current machine running program")->default_val("127.0.0.1");
+    app.add_option("-a,--render-address", renderServerAddress, "Address of current machine running program")
+        ->default_val("127.0.0.1");
     app.add_option("-p,--port", renderServerPort, "Port to launch server")->default_val(50051);
     app.add_option("-n, --name", worker_id, "Name that scheduler will refer to this render worker as");
     CLI11_PARSE(app, argc, argv);
 
     // Sets the members needed for the scheduler client
-    client.SetMembers(
-        grpc::CreateChannel(schedulerAddress, grpc::InsecureChannelCredentials()),
-        worker_id,
-        renderServerAddress,
-        renderServerPort
-    );
+    client.SetMembers(grpc::CreateChannel(schedulerAddress, grpc::InsecureChannelCredentials()), worker_id,
+                      renderServerAddress, renderServerPort);
 
     // If cannot establish connection with scheduler exit
-    if(client.EstablishConnection() == 1){
-        std::cerr << "Could not establish connection with scheduler. Now exiting." << std::endl;
+    if (client.EstablishConnection() == 1) {
+        std::cerr << "Could not establish connection with scheduler. Now exiting." << "\n";
         return 1;
     }
 
