@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "buffer.hpp"
+#include "image.hpp"
 #include "scene.hpp"
 #include "vulkan_context.hpp"
 
@@ -59,8 +60,7 @@ private:
     uint32_t m_height;
 
     // Output image
-    vk::Image m_outputImage;
-    VmaAllocation m_outputImageAllocation = VK_NULL_HANDLE;
+    std::unique_ptr<Image> m_outputImage;
     std::optional<vk::raii::ImageView> m_outputImageView;
 
     // Acceleration structures

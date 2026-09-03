@@ -1,10 +1,23 @@
 #include "path_tracer.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 
 #include "vulkan/vulkan.hpp"
+
+namespace {
+
+// Shaders are copied next to the executable at build time (see
+// render_worker/CMakeLists.txt). Resolve the shaders directory relative to
+// the running binary's own location rather than the process's current
+// working directory, so shader loading works regardless of cwd.
+std::filesystem::path shaderDirectory() {
+    return std::filesystem::canonical("/proc/self/exe").parent_path() / "shaders";
+}
+
+}  // namespace
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -18,11 +31,7 @@ PathTracer::PathTracer(const VulkanContext& ctx, const Scene& scene, uint32_t wi
     createDescriptorSets();
 }
 
-PathTracer::~PathTracer() {
-    if (m_outputImage) {
-        vmaDestroyImage(m_ctx.allocator(), m_outputImage, m_outputImageAllocation);
-    }
-}
+PathTracer::~PathTracer() = default;
 
 void PathTracer::createOutputImage() {
     VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
@@ -40,16 +49,11 @@ void PathTracer::createOutputImage() {
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    VkImage image;
-    if (vmaCreateImage(m_ctx.allocator(), &imageInfo, &allocInfo, &image, &m_outputImageAllocation, nullptr) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("Failed to create output image");
-    }
-    m_outputImage = image;
+    m_outputImage = std::make_unique<Image>(m_ctx.allocator(), imageInfo, allocInfo);
 
     // Create image view
     vk::ImageViewCreateInfo viewInfo{};
-    viewInfo.image = m_outputImage;
+    viewInfo.image = m_outputImage->image();
     viewInfo.viewType = vk::ImageViewType::e2D;
     viewInfo.format = vk::Format::eR8G8B8A8Unorm;
     viewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -67,7 +71,7 @@ void PathTracer::createOutputImage() {
         barrier.newLayout = vk::ImageLayout::eGeneral;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = m_outputImage;
+        barrier.image = m_outputImage->image();
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
@@ -215,9 +219,10 @@ void PathTracer::createAccelerationStructures() {
 
 void PathTracer::createRayTracingPipeline() {
     // Load shaders
-    auto raygenCode = loadShader("shaders/raygen.rgen.spv");
-    auto missCode = loadShader("shaders/miss.rmiss.spv");
-    auto chitCode = loadShader("shaders/closesthit.rchit.spv");
+    std::filesystem::path shaderDir = shaderDirectory();
+    auto raygenCode = loadShader((shaderDir / "raygen.rgen.spv").string());
+    auto missCode = loadShader((shaderDir / "miss.rmiss.spv").string());
+    auto chitCode = loadShader((shaderDir / "closesthit.rchit.spv").string());
 
     auto raygenModule = createShaderModule(raygenCode);
     auto missModule = createShaderModule(missCode);
@@ -594,7 +599,7 @@ void PathTracer::saveImage(const std::string& filename) {
         barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = m_outputImage;
+        barrier.image = m_outputImage->image();
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
@@ -622,7 +627,8 @@ void PathTracer::saveImage(const std::string& filename) {
         region.imageExtent.height = m_height;
         region.imageExtent.depth = 1;
 
-        cmd.copyImageToBuffer(m_outputImage, vk::ImageLayout::eTransferSrcOptimal, stagingBuffer.buffer(), region);
+        cmd.copyImageToBuffer(m_outputImage->image(), vk::ImageLayout::eTransferSrcOptimal, stagingBuffer.buffer(),
+                              region);
     });
 
     // Read back and save
