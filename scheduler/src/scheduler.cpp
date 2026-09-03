@@ -2,21 +2,33 @@
 
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <cstdlib>
 
 #include "renderStatus.hpp"
 #include "render_history.hpp"
 #include "s3_manager.hpp"
 
 namespace {
-constexpr const char* kBucketName = "pathological-capstone-s3-bucket";
-constexpr const char* kBucketRegion = "us-east-2";
+constexpr const char* kDefaultBucketName = "pathological-capstone-s3-bucket";
+constexpr const char* kDefaultBucketRegion = "us-east-2";
+
+// Falls back to the capstone default bucket/region so the binary keeps
+// working unconfigured; set these to point at MinIO or a different bucket
+// (e.g. for the local Kubernetes deployment) without a rebuild.
+std::string envOr(const char* name, const char* fallback) {
+    const char* value = std::getenv(name);
+    return (value != nullptr && value[0] != '\0') ? std::string(value) : std::string(fallback);
+}
 
 std::optional<std::string> buildDownloadLink(const std::string& key) {
+    static const std::string bucketName = envOr("S3_BUCKET", kDefaultBucketName);
     static S3Manager s3Manager({
-        .bucketName = kBucketName,
-        .region = kBucketRegion,
-        .profileName = "default",
+        .bucketName = bucketName,
+        .region = envOr("S3_REGION", kDefaultBucketRegion),
+        .profileName = envOr("AWS_PROFILE", "default"),
         .presignedUrlTimeout = 1200,
+        .endpointOverride = envOr("S3_ENDPOINT", ""),
+        .usePathStyle = std::getenv("S3_ENDPOINT") != nullptr,
     });
 
     auto presigned = s3Manager.createLink(key);
@@ -24,7 +36,7 @@ std::optional<std::string> buildDownloadLink(const std::string& key) {
         return presigned;
     }
 
-    return std::string("s3://") + kBucketName + "/" + key;
+    return std::string("s3://") + bucketName + "/" + key;
 }
 }  // namespace
 

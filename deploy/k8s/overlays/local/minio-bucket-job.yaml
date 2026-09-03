@@ -1,0 +1,31 @@
+# Creates the render bucket in MinIO and makes it anonymously downloadable,
+# since the frontend fetches rendered images by plain HTTP GET rather than
+# via a presigned URL.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-create-bucket
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          envFrom:
+            - configMapRef:
+                name: pathological-config
+            - secretRef:
+                name: pathological-s3-credentials
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              until mc alias set local "$S3_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; do
+                echo "waiting for minio..."
+                sleep 3
+              done
+              mc mb --ignore-existing "local/$S3_BUCKET"
+              mc anonymous set download "local/$S3_BUCKET"

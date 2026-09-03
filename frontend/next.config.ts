@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Produces a self-contained server bundle (.next/standalone) for the
+  // Docker/Kubernetes deployment in deploy/.
+  output: "standalone",
 };
 
 export default nextConfig;

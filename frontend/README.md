@@ -76,8 +76,8 @@ Expected status response includes:
 
 ## Notes For Next Students
 
-- Scheduler URL is hardcoded to `http://localhost:8080` in the Next API routes.
-- S3 bucket URL is hardcoded in `app/api/render-image/route.ts`.
+- Scheduler URL defaults to `http://localhost:8080` in the Next API routes; override with the `SCHEDULER_URL` env var (used by the Kubernetes deployment in `deploy/`).
+- S3 base URL defaults to the capstone bucket in `app/api/render-image/route.ts`; override with `S3_PUBLIC_BASE_URL`.
 - Default scene path in the form is machine-specific (`/home/...`) and should be replaced for your environment.
 - `frames_per_second` and `animation_runtime` are currently forced to constants during submit in `app/page.tsx`.
 - `app/global.css` and `app/globals.css` both exist with similar content; only `app/global.css` is imported by layout.

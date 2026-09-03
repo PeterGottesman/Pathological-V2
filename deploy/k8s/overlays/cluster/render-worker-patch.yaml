@@ -1,0 +1,28 @@
+# Extension point: this repo doesn't know your GPU hardware/scheduling setup
+# yet, so this patch is a starting skeleton, not a finished config. Fill in:
+#
+# - nodeSelector: label your GPU-capable nodes (e.g. `wt.io/gpu: "true"`) and
+#   match it here, so render-worker pods only land where a real Vulkan RT
+#   device exists.
+# - resources: a device-plugin-advertised resource (e.g. `nvidia.com/gpu: 1`
+#   with the NVIDIA k8s device plugin) if your hardware needs one; Jetson
+#   boards typically need a hostPath mount of /dev/nvhost-* and friends
+#   instead -- see NVIDIA's Jetson container docs.
+# - the container image must be one built with a runtime Vulkan ICD that
+#   talks to your real hardware, not the render_worker.Dockerfile runtime
+#   stage (which installs Mesa lavapipe, software-only).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: render-worker
+spec:
+  replicas: 2
+  template:
+    spec:
+      nodeSelector:
+        pathological.io/gpu: "true"
+      # containers:
+      #   - name: render-worker
+      #     resources:
+      #       limits:
+      #         nvidia.com/gpu: 1

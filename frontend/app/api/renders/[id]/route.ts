@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-//Set scheduler URL
-const SCHEDULER_URL = 'http://localhost:8080'
+//Scheduler URL, overridable for containerized/Kubernetes deployments
+const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
 //Define the expected structure of route parameters, basically
 type RouteContext = {
   params: { id: string } | Promise<{ id: string }>

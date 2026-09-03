@@ -1,0 +1,9 @@
+build/
+build-*/
+debug-build*/
+.cache/
+.worktrees/
+frontend/node_modules/
+frontend/.next/
+test_output/
+**/*.o
