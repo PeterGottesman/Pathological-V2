@@ -18,6 +18,7 @@ ENV VCPKG_ROOT=/opt/vcpkg
 
 WORKDIR /src
 COPY CMakeLists.txt CMakePresets.json vcpkg.json vcpkg-configuration.json ./
+COPY deploy/vcpkg-overlay-triplets deploy/vcpkg-overlay-triplets
 COPY protos protos
 COPY common common
 COPY scheduler scheduler
@@ -26,8 +27,12 @@ COPY scheduler scheduler
 # built-package archive across builds/retries (shared with
 # render_worker.Dockerfile's build, since most dependencies overlap) --
 # otherwise an interrupted build re-downloads and recompiles everything.
-RUN --mount=type=cache,target=/root/.cache/vcpkg,id=vcpkg-cache \
-    cmake --preset scheduler && cmake --build build-scheduler
+# VCPKG_OVERLAY_TRIPLETS skips building the debug variant of every
+# dependency -- a deployed container never needs it.
+RUN --mount=type=cache,target=/root/.cache/vcpkg,id=vcpkg-cache-release \
+    cmake --preset scheduler -DCMAKE_BUILD_TYPE=Release \
+    -DVCPKG_OVERLAY_TRIPLETS=/src/deploy/vcpkg-overlay-triplets \
+    && cmake --build build-scheduler
 
 FROM ubuntu:24.04 AS runtime
 
