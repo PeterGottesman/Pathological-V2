@@ -34,6 +34,7 @@ ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 
 WORKDIR /src
 COPY CMakeLists.txt CMakePresets.json vcpkg.json vcpkg-configuration.json ./
+COPY deploy/vcpkg-overlay-triplets deploy/vcpkg-overlay-triplets
 COPY protos protos
 COPY common common
 COPY render_worker render_worker
@@ -41,8 +42,22 @@ COPY render_worker render_worker
 # Cache vcpkg's built-package archive across builds/retries -- otherwise an
 # interrupted build (or any change below this layer) re-downloads and
 # recompiles all ~40 dependencies from scratch every time.
-RUN --mount=type=cache,target=/root/.cache/vcpkg,id=vcpkg-cache \
-    cmake --preset render-worker && cmake --build build-render-worker
+#
+# CMAKE_BUILD_TYPE=Release matters beyond optimization here: the non-debug
+# presets never set a build type, so NDEBUG is never defined, so
+# vulkan_context.cpp's `#ifndef NDEBUG` still requests the
+# VK_LAYER_KHRONOS_validation layer -- which this runtime image doesn't
+# ship (it's a dev/debug aid, not something a deployed render worker
+# should carry) and which fails instance creation with
+# ErrorLayerNotPresent when missing.
+#
+# VCPKG_OVERLAY_TRIPLETS skips building the debug variant of every
+# dependency -- a deployed container never needs it, and skipping it
+# roughly halves dependency build time.
+RUN --mount=type=cache,target=/root/.cache/vcpkg,id=vcpkg-cache-release \
+    cmake --preset render-worker -DCMAKE_BUILD_TYPE=Release \
+    -DVCPKG_OVERLAY_TRIPLETS=/src/deploy/vcpkg-overlay-triplets \
+    && cmake --build build-render-worker
 
 FROM ubuntu:24.04 AS runtime
 
