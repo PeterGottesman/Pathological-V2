@@ -1,7 +1,10 @@
 #include "s3_manager.hpp"
 
 #include <aws/core/Aws.h>
+#include <aws/core/auth/signer/AWSAuthV4Signer.h>
+#include <aws/core/http/Scheme.h>
 #include <aws/s3/S3Client.h>
+#include <aws/s3/S3ClientConfiguration.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
@@ -16,7 +19,19 @@ S3Manager::S3Manager(const S3Config &config) : config(config) {
     Aws::InitAPI(options);
     Aws::Client::ClientConfiguration clientConfig;
     clientConfig.region = config.region;
-    client = std::make_unique<Aws::S3::S3Client>(clientConfig);
+
+    bool useVirtualAddressing = true;
+    if (!config.endpointOverride.empty()) {
+        clientConfig.endpointOverride = config.endpointOverride;
+        clientConfig.scheme = config.endpointOverride.rfind("https://", 0) == 0
+                                   ? Aws::Http::Scheme::HTTPS
+                                   : Aws::Http::Scheme::HTTP;
+        useVirtualAddressing = !config.usePathStyle;
+    }
+
+    Aws::S3::S3ClientConfiguration s3ClientConfig(
+        clientConfig, Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never, useVirtualAddressing);
+    client = std::make_unique<Aws::S3::S3Client>(s3ClientConfig);
 }
 
 S3Manager::~S3Manager() {

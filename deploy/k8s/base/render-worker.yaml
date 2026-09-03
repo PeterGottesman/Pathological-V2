@@ -1,0 +1,75 @@
+# Workers register their own gRPC address with the scheduler on startup, and
+# the scheduler calls back into that address to dispatch jobs -- so each
+# worker needs a stable, individually addressable identity. A StatefulSet +
+# headless Service gives every pod a predictable DNS name
+# (render-worker-0.render-worker.<ns>.svc.cluster.local, ...) that survives
+# restarts, which a plain Deployment's pod IPs would not.
+apiVersion: v1
+kind: Service
+metadata:
+  name: render-worker
+  labels:
+    app: render-worker
+spec:
+  clusterIP: None
+  selector:
+    app: render-worker
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: render-worker
+  labels:
+    app: render-worker
+spec:
+  serviceName: render-worker
+  replicas: 1
+  selector:
+    matchLabels:
+      app: render-worker
+  template:
+    metadata:
+      labels:
+        app: render-worker
+    spec:
+      containers:
+        - name: render-worker
+          image: pathological-render-worker:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              exec ./pathological "$SCHEDULER_ADDRESS"
+              --port 50051
+              --render-address "$POD_NAME.render-worker.$POD_NAMESPACE.svc.cluster.local"
+              --name "$POD_NAME"
+          ports:
+            - name: grpc
+              containerPort: 50051
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          envFrom:
+            - configMapRef:
+                name: pathological-config
+            - secretRef:
+                name: pathological-s3-credentials
+          readinessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 5
+            periodSeconds: 10

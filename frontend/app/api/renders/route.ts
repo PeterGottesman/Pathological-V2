@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { SubmitRenderPayload } from '@/types/scheduler'
-//Set scheduler URL
-const SCHEDULER_URL = 'http://localhost:8080'
+//Scheduler URL, overridable for containerized/Kubernetes deployments
+const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
 //POST request to submit a render job to the scheduler
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as SubmitRenderPayload

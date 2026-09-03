@@ -1,6 +1,7 @@
 #include "render_server.hpp"
 
 #include <boost/uuid/random_generator.hpp>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -11,13 +12,25 @@
 #include "s3_manager.hpp"
 #include "scheduler_client.hpp"
 
-// Used for s3 uploads. Will need to change bucket
-// name if using different bucket. Note the default
-// profile name
+namespace {
+// Falls back to the capstone default bucket/region so the binary keeps
+// working unconfigured; set these to point at MinIO or a different bucket
+// (e.g. for the local Kubernetes deployment) without a rebuild.
+std::string envOr(const char* name, const char* fallback) {
+    const char* value = std::getenv(name);
+    return (value != nullptr && value[0] != '\0') ? std::string(value) : std::string(fallback);
+}
+}  // namespace
+
+// Used for s3 uploads. Bucket/region/endpoint/profile can be overridden via
+// the S3_BUCKET/S3_REGION/S3_ENDPOINT/AWS_PROFILE env vars; S3_ENDPOINT set
+// to anything also switches to path-style addressing (needed for MinIO).
 S3Config config{
-    .bucketName = "pathological-capstone-s3-bucket",
-    .region = "us-east-2",  // can't use other servers in same region. region must match.
-    .profileName = "default",
+    .bucketName = envOr("S3_BUCKET", "pathological-capstone-s3-bucket"),
+    .region = envOr("S3_REGION", "us-east-2"),  // can't use other servers in same region. region must match.
+    .profileName = envOr("AWS_PROFILE", "default"),
+    .endpointOverride = envOr("S3_ENDPOINT", ""),
+    .usePathStyle = std::getenv("S3_ENDPOINT") != nullptr,
 };
 
 // Renders job recieved from scheduler and uploads

@@ -1,0 +1,17 @@
+# Non-secret wiring shared by all components. Overlays patch the S3_* keys
+# to point at MinIO (local) or a real bucket/region (cluster).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pathological-config
+data:
+  # host:port the render worker dials to find the scheduler's gRPC server.
+  SCHEDULER_ADDRESS: "scheduler.pathological.svc.cluster.local:50052"
+  # URL the frontend's Next API routes forward job submissions/status to.
+  SCHEDULER_URL: "http://scheduler.pathological.svc.cluster.local:8080"
+  S3_BUCKET: "pathological-capstone-s3-bucket"
+  S3_REGION: "us-east-2"
+  # Empty means "use real AWS S3"; set by the local overlay to point at MinIO.
+  S3_ENDPOINT: ""
+  # Base URL the frontend fetches rendered images from.
+  S3_PUBLIC_BASE_URL: "https://pathological-capstone-s3-bucket.s3.us-east-2.amazonaws.com"
