@@ -5,7 +5,7 @@
 #
 # Run deploy/local-up.sh first.
 #
-# Usage: submit-job.sh [output_name] [scene_file] [width] [height] [fps] [frames] [samples]
+# Usage: [WIDTH=n] [HEIGHT=n] [FPS=n] [FRAMES=n] [SAMPLES=n] submit-job.sh [output_name] [scene_file]
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 
@@ -13,11 +13,11 @@ command -v jq >/dev/null || { echo "jq is required (apt install jq)." >&2; exit 
 
 OUTPUT_NAME="${1:-demo_render}"
 SCENE_FILE="${2:-$PROJECT_ROOT/render_worker/test_scenes/cornell_box_animated.gltf}"
-WIDTH="${3:-400}"
-HEIGHT="${4:-300}"
-FPS="${5:-24}"
-FRAMES="${6:-48}"
-SAMPLES="${7:-32}"
+WIDTH="${WIDTH:-400}"
+HEIGHT="${HEIGHT:-300}"
+FPS="${FPS:-24}"
+FRAMES="${FRAMES:-48}"
+SAMPLES="${SAMPLES:-32}"
 
 if [[ ! -f "$SCENE_FILE" ]]; then
     echo "Scene file not found: $SCENE_FILE" >&2
