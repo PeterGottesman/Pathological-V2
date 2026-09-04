@@ -15,6 +15,12 @@ struct S3Config {
     std::string profileName = "default";
     // How long generated download links remain valid, in seconds.
     uint64_t presignedUrlTimeout = 1800;
+    // S3-compatible endpoint to use instead of real AWS S3 (e.g.
+    // "http://minio:9000" for local testing). Leave empty for real AWS S3.
+    std::string endpointOverride;
+    // MinIO and other S3-compatible stores generally need path-style
+    // addressing (bucket in the URL path) rather than virtual-hosted-style.
+    bool usePathStyle = false;
 };
 
 class S3Manager {

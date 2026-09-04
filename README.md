@@ -60,6 +60,13 @@ cmake --build build-scheduler   # or: cmake --build build-render-worker
 
 All presets need `VCPKG_ROOT` set, CMake 3.20+, and ninja-build. `render_worker` additionally needs the Vulkan SDK and a ray-tracing-capable GPU. Both link AWS SDK for S3 access, using the `default` credentials profile.
 
+`vcpkg.json` pins `tinygltf` to 3.0.0#1 via an override: GitHub's tarball for
+the 2.9.7 tag our pinned baseline resolves to by default no longer matches
+the SHA512 vcpkg recorded for it, so a fresh `vcpkg install` of that version
+fails with a hash mismatch. 3.0.0 keeps the same tiny_gltf.h v2 API this
+codebase uses. Safe to drop once the vcpkg baseline is bumped past whatever
+upstream commit fixes this.
+
 ## Running the full stack
 
 Run in this order after building.
@@ -99,6 +106,12 @@ npm run dev
 
 Then open `http://localhost:3000`. See [`frontend/README.md`](frontend/README.md)
 for frontend-only setup, project conventions, and troubleshooting.
+
+## Deployment
+
+Docker images and Kubernetes manifests for running the full stack (locally
+via kind + software Vulkan + MinIO, or on a real GPU cluster) live in
+[`deploy/`](deploy/README.md).
 
 ## Adaptive Tiling
 

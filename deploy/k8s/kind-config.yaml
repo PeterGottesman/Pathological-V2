@@ -1,0 +1,17 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: pathological
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Frontend NodePort (see overlays/local/kustomization.yaml) -> localhost:3000
+      - containerPort: 30080
+        hostPort: 3000
+        protocol: TCP
+      # MinIO API/console NodePorts -> localhost:9000/9001
+      - containerPort: 30090
+        hostPort: 9000
+        protocol: TCP
+      - containerPort: 30091
+        hostPort: 9001
+        protocol: TCP

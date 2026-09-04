@@ -1,0 +1,64 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# base/kustomization.yaml's own `namespace: pathological` only applies to
+# resources listed there -- it doesn't propagate to resources listed
+# directly in this overlay, so this needs its own copy too.
+namespace: pathological
+
+resources:
+  - ../../base
+  - secret.yaml
+  - minio.yaml
+  - minio-bucket-job.yaml
+
+# Images are built locally and loaded straight into kind (see local-up.sh),
+# not pulled from a registry.
+images:
+  - name: pathological-scheduler
+    newTag: local
+  - name: pathological-render-worker
+    newTag: local
+  - name: pathological-frontend
+    newTag: local
+
+patches:
+  # Point the app at the in-cluster MinIO instead of real S3.
+  - target:
+      kind: ConfigMap
+      name: pathological-config
+    patch: |-
+      - op: replace
+        path: /data/S3_ENDPOINT
+        value: "http://minio.pathological.svc.cluster.local:9000"
+      - op: replace
+        path: /data/S3_PUBLIC_BASE_URL
+        value: "http://minio.pathological.svc.cluster.local:9000/pathological-capstone-s3-bucket"
+  # Expose the frontend on a fixed NodePort that kind-config.yaml maps to
+  # localhost:3000.
+  - target:
+      kind: Service
+      name: frontend
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30080
+  # Expose MinIO's API and console on fixed NodePorts that kind-config.yaml
+  # maps to localhost:9000/9001, so it's reachable without a manual
+  # `kubectl port-forward` (e.g. from a browser, or `mc`/aws-cli on the host).
+  - target:
+      kind: Service
+      name: minio
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30090
+      - op: add
+        path: /spec/ports/1/nodePort
+        value: 30091
