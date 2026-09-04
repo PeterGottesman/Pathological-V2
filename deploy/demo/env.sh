@@ -17,7 +17,9 @@ BUCKET="pathological-capstone-s3-bucket"
 # Must match overlays/local/secret.yaml.
 MINIO_ROOT_USER="minioadmin"
 MINIO_ROOT_PASSWORD="minioadmin"
-MINIO_PORT=9000
+# Must match overlays/local/kustomization.yaml's MinIO NodePort patch and
+# kind-config.yaml's port mapping.
+MINIO_URL="http://localhost:9000"
 # Must match overlays/local/kustomization.yaml's frontend NodePort patch and
 # kind-config.yaml's port mapping.
 FRONTEND_URL="http://localhost:3000"

@@ -51,11 +51,17 @@ What it sets up, on top of `base/`:
   only.
 - A ConfigMap patch pointing `S3_ENDPOINT`/`S3_PUBLIC_BASE_URL` at MinIO
   instead of real AWS S3.
-- A NodePort patch on the frontend Service; `kind-config.yaml` maps that
-  NodePort to `localhost:3000`.
+- NodePort patches on the frontend and MinIO Services; `kind-config.yaml`
+  maps those to `localhost:3000` (frontend) and `localhost:9000`/`9001`
+  (MinIO API/console — login `minioadmin`/`minioadmin`), so both are
+  reachable from the host without a manual `kubectl port-forward`.
 
 To tear down: `./deploy/local-down.sh` (deletes the kind cluster and
 everything in it; locally built images are left alone).
+
+Note: NodePort mappings only take effect for a kind cluster created *after*
+`kind-config.yaml` was last changed — if you're reusing an older cluster and
+a port isn't responding, recreate it (`local-down.sh` then `local-up.sh`).
 
 ### Cluster web UI (Headlamp)
 

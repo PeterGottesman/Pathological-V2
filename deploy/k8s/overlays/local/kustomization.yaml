@@ -46,3 +46,19 @@ patches:
       - op: add
         path: /spec/ports/0/nodePort
         value: 30080
+  # Expose MinIO's API and console on fixed NodePorts that kind-config.yaml
+  # maps to localhost:9000/9001, so it's reachable without a manual
+  # `kubectl port-forward` (e.g. from a browser, or `mc`/aws-cli on the host).
+  - target:
+      kind: Service
+      name: minio
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30090
+      - op: add
+        path: /spec/ports/1/nodePort
+        value: 30091
