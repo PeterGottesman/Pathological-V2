@@ -19,18 +19,9 @@ FRAMES_DIR="$RUN_DIR/frames-seq-$PREFIX"
 rm -rf "$DOWNLOAD_DIR" "$FRAMES_DIR"
 mkdir -p "$DOWNLOAD_DIR" "$FRAMES_DIR"
 
-echo "Port-forwarding MinIO..."
-kubectl -n "$NAMESPACE" port-forward service/minio "${MINIO_PORT}:9000" >/dev/null 2>&1 &
-PF_PID=$!
-trap 'kill "$PF_PID" 2>/dev/null || true' EXIT
-for _ in $(seq 1 30); do
-    curl -sf "http://localhost:${MINIO_PORT}/minio/health/live" >/dev/null 2>&1 && break
-    sleep 0.5
-done
-
 echo "Downloading frames for '$PREFIX' from bucket '$BUCKET'..."
 docker run --rm --network host \
-    -e MC_HOST_local="http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@localhost:${MINIO_PORT}" \
+    -e MC_HOST_local="http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@${MINIO_URL#http://}" \
     -v "$DOWNLOAD_DIR:/out" \
     minio/mc mirror --quiet "local/$BUCKET" /out
 
