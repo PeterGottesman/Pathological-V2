@@ -139,8 +139,8 @@ deploy/
     addons/
       headlamp.yaml         # cluster web UI, vendored static manifest
     kind-config.yaml
-  vcpkg-overlay-ports/       # tinygltf hash-mismatch fix, see vcpkg.json
   vcpkg-overlay-triplets/    # skip vcpkg debug builds in Docker (build speed)
+  demo/                      # submit a render job, download frames, make a video
   local-up.sh
   local-down.sh
 frontend/Dockerfile
