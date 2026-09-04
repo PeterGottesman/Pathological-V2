@@ -35,9 +35,9 @@ Prerequisites: `docker`, [`kind`](https://kind.sigs.k8s.io/docs/user/quick-start
 ```
 
 This builds all three images, creates (or reuses) a kind cluster named
-`pathological`, loads the images into it, applies `overlays/local`, and
-waits for everything to come up. Once it's done, open
-**http://localhost:3000**.
+`pathological`, loads the images into it, applies `overlays/local`, installs
+Headlamp (see below), and waits for everything to come up. Once it's done,
+open **http://localhost:3000**.
 
 What it sets up, on top of `base/`:
 
@@ -54,7 +54,30 @@ What it sets up, on top of `base/`:
 - A NodePort patch on the frontend Service; `kind-config.yaml` maps that
   NodePort to `localhost:3000`.
 
-To tear down: `kind delete cluster --name pathological`.
+To tear down: `./deploy/local-down.sh` (deletes the kind cluster and
+everything in it; locally built images are left alone).
+
+### Cluster web UI (Headlamp)
+
+`local-up.sh` also applies `k8s/addons/headlamp.yaml` — a vendored, static
+render of the [Headlamp](https://headlamp.dev) Helm chart (the
+community-recommended web UI now that the official Kubernetes Dashboard is
+archived/unmaintained). It's a plain manifest, not managed by Helm at deploy
+time, so bumping its version means re-rendering it (see the file's header
+comment) rather than an in-place upgrade.
+
+It installs into `kube-system`, not `pathological` — it's a general cluster
+tool, not part of the app. To use it:
+
+```bash
+kubectl port-forward -n kube-system service/my-headlamp 8080:80
+# then open http://localhost:8080 and log in with:
+kubectl create token my-headlamp --namespace kube-system --duration=24h
+```
+
+Its ServiceAccount is bound to `cluster-admin` by the chart's defaults —
+fine for local kind testing, but scope it down before ever applying this
+manifest to a real cluster with real credentials.
 
 ### Rebuilding after a code change
 
@@ -113,8 +136,13 @@ deploy/
     overlays/
       local/                # + MinIO, kind NodePort, local secret
       cluster/              # GPU scheduling / real S3 extension points
+    addons/
+      headlamp.yaml         # cluster web UI, vendored static manifest
     kind-config.yaml
+  vcpkg-overlay-ports/       # tinygltf hash-mismatch fix, see vcpkg.json
+  vcpkg-overlay-triplets/    # skip vcpkg debug builds in Docker (build speed)
   local-up.sh
+  local-down.sh
 frontend/Dockerfile
 ```
 
