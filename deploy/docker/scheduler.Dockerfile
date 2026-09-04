@@ -16,6 +16,17 @@ RUN git clone https://github.com/microsoft/vcpkg /opt/vcpkg \
     && /opt/vcpkg/bootstrap-vcpkg.sh -disableMetrics
 ENV VCPKG_ROOT=/opt/vcpkg
 
+# Matches render_worker.Dockerfile's toolchain exactly (CMake version and
+# VCPKG_FORCE_SYSTEM_BINARIES both feed vcpkg's package ABI hash) so the two
+# builds' shared dependencies (grpc, protobuf, boost, aws-sdk-cpp, ...) land
+# in the same cache entries in the mount below instead of each Dockerfile
+# rebuilding them under its own hash.
+RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v4.4.0/cmake-4.4.0-linux-x86_64.tar.gz \
+      -o /tmp/cmake.tar.gz \
+    && tar -xzf /tmp/cmake.tar.gz -C /usr/local --strip-components=1 \
+    && rm /tmp/cmake.tar.gz
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+
 WORKDIR /src
 COPY CMakeLists.txt CMakePresets.json vcpkg.json vcpkg-configuration.json ./
 COPY deploy/vcpkg-overlay-triplets deploy/vcpkg-overlay-triplets

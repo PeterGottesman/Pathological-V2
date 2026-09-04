@@ -13,3 +13,5 @@ CMakeFiles/
 /.worktrees/
 /docs/
 /CLAUDE.md
+
+/deploy/demo/.run/
