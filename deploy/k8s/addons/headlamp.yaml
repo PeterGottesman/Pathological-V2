@@ -1,0 +1,167 @@
+# Headlamp (https://headlamp.dev) -- a web UI for browsing/managing the
+# cluster. Optional; unrelated to the Pathological app itself, kept as its
+# own file rather than folded into overlays/local or overlays/cluster.
+#
+# Vendored, static output of the official Helm chart -- not templated or
+# managed by Helm at deploy time, so `helm` isn't a runtime dependency, just
+# an authoring-time one. To pick up a newer Headlamp release, regenerate
+# with:
+#   helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
+#   helm repo update headlamp
+#   helm template my-headlamp headlamp/headlamp --namespace kube-system \
+#     --version <new-version> > deploy/k8s/addons/headlamp.yaml
+# and re-add this header comment (`helm template` doesn't preserve it).
+#
+# Installs into kube-system (not the `pathological` namespace) and grants
+# its ServiceAccount cluster-admin via a ClusterRoleBinding -- fine for
+# local kind testing, but scope this down before ever pointing it at a
+# real cluster with real credentials.
+#
+# Usage: kubectl apply -f deploy/k8s/addons/headlamp.yaml
+#   kubectl port-forward -n kube-system service/my-headlamp 8080:80
+#   kubectl create token my-headlamp --namespace kube-system --duration=24h
+#   then open http://localhost:8080 and log in with that token.
+#
+# Rendered from chart headlamp-0.45.0.
+---
+# Source: headlamp/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-headlamp
+  namespace: kube-system
+  labels:
+    helm.sh/chart: headlamp-0.45.0
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: my-headlamp
+    app.kubernetes.io/version: "0.45.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: headlamp/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oidc
+  namespace: kube-system
+type: Opaque
+data:
+---
+# Source: headlamp/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: my-headlamp-admin
+  labels:
+    helm.sh/chart: headlamp-0.45.0
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: my-headlamp
+    app.kubernetes.io/version: "0.45.0"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: my-headlamp
+  namespace: kube-system
+---
+# Source: headlamp/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-headlamp
+  namespace: kube-system
+  labels:
+    helm.sh/chart: headlamp-0.45.0
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: my-headlamp
+    app.kubernetes.io/version: "0.45.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: my-headlamp
+---
+# Source: headlamp/templates/deployment.yaml
+# This block of code is used to extract the values from the env.
+# This is done to check if the values are non-empty and if they are, they are used in the deployment.yaml.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-headlamp
+  namespace: kube-system
+  labels:
+    helm.sh/chart: headlamp-0.45.0
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: my-headlamp
+    app.kubernetes.io/version: "0.45.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: headlamp
+      app.kubernetes.io/instance: my-headlamp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: headlamp
+        app.kubernetes.io/instance: my-headlamp
+    spec:
+      serviceAccountName: my-headlamp
+      automountServiceAccountToken: true
+      hostUsers: true
+      securityContext:
+        {}
+      containers:
+        - name: headlamp
+          securityContext:
+            privileged: false
+            runAsGroup: 101
+            runAsNonRoot: true
+            runAsUser: 100
+          image: "ghcr.io/headlamp-k8s/headlamp:v0.45.0"
+          imagePullPolicy: IfNotPresent
+
+          env:
+          args:
+            - "-in-cluster"
+            - "-in-cluster-context-name=main"
+            - "-plugins-dir=/headlamp/plugins"
+            - "-session-ttl=86400"
+            # Check if externalSecret is disabled
+          ports:
+            - name: http
+              containerPort: 4466
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: "/"
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: "/"
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            {}
