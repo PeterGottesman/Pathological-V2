@@ -44,6 +44,8 @@ kubectl -n kube-system rollout status deployment/my-headlamp --timeout=180s
 echo
 echo "Ready: http://localhost:3000"
 echo
+echo "MinIO console: http://localhost:9001 (login: minioadmin / minioadmin)"
+echo
 echo "Cluster web UI (Headlamp):"
 echo "  kubectl port-forward -n kube-system service/my-headlamp 8080:80"
 echo "  then open http://localhost:8080 and log in with:"
