@@ -23,9 +23,8 @@ S3Manager::S3Manager(const S3Config &config) : config(config) {
     bool useVirtualAddressing = true;
     if (!config.endpointOverride.empty()) {
         clientConfig.endpointOverride = config.endpointOverride;
-        clientConfig.scheme = config.endpointOverride.rfind("https://", 0) == 0
-                                   ? Aws::Http::Scheme::HTTPS
-                                   : Aws::Http::Scheme::HTTP;
+        clientConfig.scheme =
+            config.endpointOverride.rfind("https://", 0) == 0 ? Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
         useVirtualAddressing = !config.usePathStyle;
     }
 
