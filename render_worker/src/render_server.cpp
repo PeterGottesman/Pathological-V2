@@ -16,8 +16,8 @@ namespace {
 // Falls back to the capstone default bucket/region so the binary keeps
 // working unconfigured; set these to point at MinIO or a different bucket
 // (e.g. for the local Kubernetes deployment) without a rebuild.
-std::string envOr(const char* name, const char* fallback) {
-    const char* value = std::getenv(name);
+std::string envOr(const char *name, const char *fallback) {
+    const char *value = std::getenv(name);
     return (value != nullptr && value[0] != '\0') ? std::string(value) : std::string(fallback);
 }
 }  // namespace

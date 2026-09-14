@@ -10,7 +10,10 @@
 #   helm repo update headlamp
 #   helm template my-headlamp headlamp/headlamp --namespace kube-system \
 #     --version <new-version> > deploy/k8s/addons/headlamp.yaml
-# and re-add this header comment (`helm template` doesn't preserve it).
+# and re-add this header comment (`helm template` doesn't preserve it). Also
+# re-delete the unused, always-empty `oidc` Secret the chart renders
+# regardless of whether OIDC is configured (nothing here references it, and
+# committing it -- even empty -- trips CI's gitleaks secret scan).
 #
 # Installs into kube-system (not the `pathological` namespace) and grants
 # its ServiceAccount cluster-admin via a ClusterRoleBinding -- fine for
@@ -36,15 +39,6 @@ metadata:
     app.kubernetes.io/instance: my-headlamp
     app.kubernetes.io/version: "0.45.0"
     app.kubernetes.io/managed-by: Helm
----
-# Source: headlamp/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: oidc
-  namespace: kube-system
-type: Opaque
-data:
 ---
 # Source: headlamp/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1

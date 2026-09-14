@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Vendored Headlamp manifest: the chart always renders an empty, unused `oidc` Secret regardless of whether OIDC is configured, which trips the kubernetes-secret-yaml rule on its structure alone (no actual secret value)."
+paths = [
+  '''deploy/k8s/addons/headlamp\.yaml''',
+]
