@@ -20,10 +20,14 @@ rm -rf "$DOWNLOAD_DIR" "$FRAMES_DIR"
 mkdir -p "$DOWNLOAD_DIR" "$FRAMES_DIR"
 
 echo "Downloading frames for '$PREFIX' from bucket '$BUCKET'..."
-docker run --rm --network host \
-    -e MC_HOST_local="http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@${MINIO_URL#http://}" \
+# --network host is Linux-only (unsupported by default on Docker Desktop for
+# macOS/Windows); host.docker.internal + --add-host's host-gateway value
+# reaches the host's published ports the same way on Linux, macOS, and
+# Windows instead.
+docker run --rm --add-host=host.docker.internal:host-gateway \
+    -e MC_HOST_local="http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@host.docker.internal:${MINIO_URL##*:}" \
     -v "$DOWNLOAD_DIR:/out" \
-    minio/mc mirror --quiet "local/$BUCKET" /out
+    quay.io/minio/mc mirror --quiet "local/$BUCKET" /out
 
 python3 - "$PREFIX" "$DOWNLOAD_DIR" "$FRAMES_DIR" <<'PY'
 import os, re, shutil, sys

@@ -25,8 +25,11 @@ ENV VCPKG_ROOT=/opt/vcpkg
 # compiler/generator detection when it resumes afterwards (fails with
 # "CMake was unable to find a build program corresponding to Ninja").
 # Installing a recent CMake upfront and forcing vcpkg to use system tools
-# avoids the download-and-swap entirely.
-RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v4.4.0/cmake-4.4.0-linux-x86_64.tar.gz \
+# avoids the download-and-swap entirely. uname -m's output (x86_64/aarch64)
+# matches Kitware's release asset naming directly, so this works whether the
+# build is running natively on x86_64 or arm64 (e.g. a Jetson board).
+RUN CMAKE_ARCH="$(uname -m)" \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v4.4.0/cmake-4.4.0-linux-${CMAKE_ARCH}.tar.gz" \
       -o /tmp/cmake.tar.gz \
     && tar -xzf /tmp/cmake.tar.gz -C /usr/local --strip-components=1 \
     && rm /tmp/cmake.tar.gz
