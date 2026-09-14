@@ -20,8 +20,11 @@ ENV VCPKG_ROOT=/opt/vcpkg
 # VCPKG_FORCE_SYSTEM_BINARIES both feed vcpkg's package ABI hash) so the two
 # builds' shared dependencies (grpc, protobuf, boost, aws-sdk-cpp, ...) land
 # in the same cache entries in the mount below instead of each Dockerfile
-# rebuilding them under its own hash.
-RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v4.4.0/cmake-4.4.0-linux-x86_64.tar.gz \
+# rebuilding them under its own hash. uname -m's output (x86_64/aarch64)
+# matches Kitware's release asset naming directly, so this works on both
+# x86_64 and arm64 builds.
+RUN CMAKE_ARCH="$(uname -m)" \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v4.4.0/cmake-4.4.0-linux-${CMAKE_ARCH}.tar.gz" \
       -o /tmp/cmake.tar.gz \
     && tar -xzf /tmp/cmake.tar.gz -C /usr/local --strip-components=1 \
     && rm /tmp/cmake.tar.gz
