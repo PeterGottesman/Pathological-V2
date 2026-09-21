@@ -67,6 +67,13 @@ fails with a hash mismatch. 3.0.0 keeps the same tiny_gltf.h v2 API this
 codebase uses. Safe to drop once the vcpkg baseline is bumped past whatever
 upstream commit fixes this.
 
+### Faster dependency builds
+
+`vcpkg-configuration.json` points vcpkg at `vcpkg-overlay/`, which cuts a clean dependency build from roughly 30 minutes to under 10 on a 12-core machine:
+
+- `triplets/x64-linux.cmake` and `triplets/arm64-linux.cmake` shadow vcpkg's stock triplets with `VCPKG_BUILD_TYPE=release`, so dependencies are only built in release (not debug *and* release). Your own code still builds in Debug; you just can't step into dependency internals with symbols, and `vcpkg_installed` is ~150 MB instead of ~4 GB.
+- `ports/grpc` is vcpkg's grpc 1.71.0 port with the unused `grpc_unsecure`, `grpc++_unsecure`, `grpc_authorization_provider` libraries and non-C++ protoc plugins disabled. When bumping the vcpkg baseline, re-diff it against the upstream port (or delete it to fall back to the stock one).
+
 ## Running the full stack
 
 Run in this order after building.

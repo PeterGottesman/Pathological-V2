@@ -65,7 +65,6 @@ deploy/
     addons/
       headlamp.yaml         # cluster web UI, vendored static manifest
     kind-config.yaml
-  vcpkg-overlay-triplets/    # skip vcpkg debug builds in Docker (build speed)
   demo/                      # submit a render job, download frames, make a video
   local-up.sh
   local-down.sh
@@ -145,11 +144,9 @@ kubectl apply -k deploy/k8s/overlays/cluster
   for a kind cluster created *after* the change — editing it and rerunning
   `local-up.sh` on an existing cluster does nothing. Recreate the cluster
   (`local-down.sh` then `local-up.sh`) to pick up new mappings.
-- **vcpkg build speed.** `vcpkg-overlay-triplets/x64-linux.cmake` skips
-  building the debug variant of every C++ dependency in the Docker builds
-  (a deployed container never needs it) — roughly halves build time. Only
-  affects `deploy/docker/*.Dockerfile`; native (non-Docker) builds are
-  unaffected.
+- **vcpkg build speed.** The repo-root `vcpkg-overlay/` (see the README's
+  "Faster dependency builds" section) applies to Docker and native builds
+  alike; the Dockerfiles just `COPY` it in.
 
 ## Troubleshooting
 

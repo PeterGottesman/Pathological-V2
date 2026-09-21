@@ -8,6 +8,7 @@ name: C++ static analysis
       - "CMakePresets.json"
       - "vcpkg.json"
       - "vcpkg-configuration.json"
+      - "vcpkg-overlay/**"
       - ".clang-tidy"
       - "common/**"
       - "scheduler/**"
@@ -78,7 +79,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          key: vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlay/**') }}
           restore-keys: |
             vcpkg-archives-${{ runner.os }}-${{ matrix.preset }}-
 

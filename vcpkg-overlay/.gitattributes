@@ -1,0 +1,3 @@
+# Vendored vcpkg port files: some upstream patches are CRLF because the files
+# they patch are CRLF. Keep bytes exactly as-is so the patches still apply.
+* -text

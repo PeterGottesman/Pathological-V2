@@ -31,5 +31,5 @@ jobs:
 
       - name: Run cmake-lint
         run: |
-          files=$(find . -name CMakeLists.txt -o -name "*.cmake" | grep -v '^\./build')
+          files=$(find . -name CMakeLists.txt -o -name "*.cmake" | grep -v -e '^\./build' -e '^\./vcpkg-overlay/')
           cmake-lint $files

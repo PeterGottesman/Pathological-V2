@@ -37,7 +37,7 @@ ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 
 WORKDIR /src
 COPY CMakeLists.txt CMakePresets.json vcpkg.json vcpkg-configuration.json ./
-COPY deploy/vcpkg-overlay-triplets deploy/vcpkg-overlay-triplets
+COPY vcpkg-overlay vcpkg-overlay
 COPY protos protos
 COPY common common
 COPY render_worker render_worker
@@ -54,12 +54,10 @@ COPY render_worker render_worker
 # should carry) and which fails instance creation with
 # ErrorLayerNotPresent when missing.
 #
-# VCPKG_OVERLAY_TRIPLETS skips building the debug variant of every
-# dependency -- a deployed container never needs it, and skipping it
-# roughly halves dependency build time.
+# The vcpkg-overlay/ copied above (referenced by vcpkg-configuration.json)
+# builds release-only dependencies and a trimmed grpc port.
 RUN --mount=type=cache,target=/root/.cache/vcpkg,id=vcpkg-cache-release \
     cmake --preset render-worker -DCMAKE_BUILD_TYPE=Release \
-    -DVCPKG_OVERLAY_TRIPLETS=/src/deploy/vcpkg-overlay-triplets \
     && cmake --build build-render-worker
 
 FROM ubuntu:24.04 AS runtime
