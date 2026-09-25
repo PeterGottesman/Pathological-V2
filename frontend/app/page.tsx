@@ -386,7 +386,7 @@ export default function Home() {
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-red-300">Output filename</label>
+                      <label className="block text-sm font-semibold text-red-300">Name</label>
                       <input
                         value={form.output_filename}
                         onChange={(e) => onTextChange(i, 'output_filename', e.target.value)}
