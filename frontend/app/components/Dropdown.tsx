@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 type Option = {
     label: string;
-    value: string;
+    id: string | number;
 }
 
 interface DropdownProps {
@@ -12,14 +12,14 @@ interface DropdownProps {
     onSelectedChanges: (option: Option) => void;
 }
 
-const Dropdown: DropdownProps = ({options, placeholder = 'Select scene', selected, onSelectedChanges}) => {
+const Dropdown = ({options, placeholder = 'Select scene', selected, onSelectedChanges}: DropdownProps) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
-    const ref = useRef<HTMLDivElement | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     //make dropdown close when user clicks outside of it
     useEffect( () => {
         const onBodyClick = (event:MouseEvent) => {
-            if(ref.current && ref.current.contains(event.target as Node)) {
+            if(dropdownRef.current && dropdownRef.current.contains(event.target as Node)) {
                 return;
             }
 
@@ -31,13 +31,13 @@ const Dropdown: DropdownProps = ({options, placeholder = 'Select scene', selecte
         return () => {
             document.body.removeEventListener('click',onBodyClick);
         }
-    });
+    }, []);
     const toggleDropdown = () => {
         setIsOpen(prevState => !prevState)
     };
 
     return (
-        <div ref={ref}>
+        <div ref={dropdownRef}>
             <div className="w-full">
                 <div className="relative w-full">
                     <button 
@@ -57,9 +57,9 @@ const Dropdown: DropdownProps = ({options, placeholder = 'Select scene', selecte
                         isOpen &&
                         <ul className="absolute z-10 mt-1 w-full bg-black shadow-lg max-w-[220px] rounded-md py-1 border border red-600 ring-red-600 overflow-auto focus:outline-none text-sm">
                             {options.map(option => (
-                                <li key={option.value}
+                                <li key={option.id}
                                     onClick={() => onSelectedChanges(option)} 
-                                    className={`${selected?.value === option.value && 'bg-slate-900'} hover:bg-slate-900 transition-all text-red-500 hover:text-red-200 hover:drop-shadow-[0_0_10px_rgba(220,38,38,0.9)] flex justify-between cursor-pointer text-gray-900 select-none relative py-2 px-3 `}
+                                    className={`${selected?.id === option.id && 'bg-slate-900'} hover:bg-slate-900 transition-all text-red-500 hover:text-red-200 hover:drop-shadow-[0_0_10px_rgba(220,38,38,0.9)] flex justify-between cursor-pointer text-gray-900 select-none relative py-2 px-3 `}
                                 >
                                     <div className="flex items-center gap-x-2">
                                         <span className="block text-sm truncate">{option.label}</span>

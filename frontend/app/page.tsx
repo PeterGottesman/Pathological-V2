@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
-import Dropdown from './components/Dropdown.tsx'
+import Dropdown from './components/Dropdown'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderPayload
 type JobView = RenderJob & { imageUrl: string | null }
@@ -15,23 +15,22 @@ type SelectedImage = {
 //Type for dropdown menu option
 type Option = {
     label: string;
-    value: string;
+    id: string | number;
 }
 
-//Adds dummy data to dropdown menu
-const options: Option[] = [{
-      label: 'Scene 1',
-      value: 'Opt1'
+//Dummy data to add to dropdown menu
+const dummyOptions: Option[] = [{
+      label: 'Caesar\'s assassination',
+      id: 0
     },
     {
-      label: 'Scene 2',
-      value: 'Opt2'
+      label: 'Marty McFly arrives in 1955',
+      id: 1
     },
     {
-      label: 'Scene 3',
-      value: 'Opt3'
-    }]
-
+      label: 'Secret third thing',
+      id: 2
+}]
 
 
 //Constants for polling interval
@@ -98,10 +97,26 @@ function resolveImageUrl(
 export default function Home() {
   //State for updating dropdown menu
   const [selected, setSelected] = useState(null as Option | null)
+  const [dropdownOptions, setDropdownOptions] = useState<Option[]>([])
+  
 
   const handleSelectedChange = (option: Option) => {
     setSelected(option)
   }
+  const addOption = (option: Option) => {
+    setDropdownOptions((prev: Option[]) => [...(prev || []), option])
+  }
+  const [isDummyAdded, setIsDummyAdded] = useState(false)
+  const addDummyOptions = () => {
+    if (isDummyAdded) {
+      return
+    }
+    dummyOptions.forEach((element) => {
+      addOption(element)
+    })
+    setIsDummyAdded(true)
+  }
+
     //State for managing form inputs
   const [forms, setForms] = useState<FormState[]>([
     {
@@ -370,16 +385,16 @@ export default function Home() {
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-red-300">Scene file</label>
                     <Dropdown 
-                      options={options}
+                      options={dropdownOptions}
                       selected={selected}
                       onSelectedChanges={handleSelectedChange}
                     />
-                    <input
-                      placeholder="Absolute path to gltf file"
-                      value={form.scene_file_url}
-                      onChange={(e) => onSceneChange(i, e.target.value)}
-                      className="block w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
-                    />
+                    <button
+                      onClick={addDummyOptions}
+                      className="w-full rounded-lg border border-red-600"
+                    >
+                      Populate Dropdown
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
