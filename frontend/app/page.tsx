@@ -11,6 +11,13 @@ type SelectedImage = {
   src: string
   name: string
 }
+
+//Type for dropdown menu option
+type Option = {
+    label: string;
+    value: string;
+}
+
 //Adds dummy data to dropdown menu
 const options: Option[] = [{
       label: 'Scene 1',
