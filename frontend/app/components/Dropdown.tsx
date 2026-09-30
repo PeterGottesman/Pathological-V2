@@ -5,16 +5,16 @@ type Option = {
     value: string;
 }
 
-interface DropdownOptions {
+interface DropdownProps {
     options: Option[];
     placeholder?: string;
     selected: Option | null;
     onSelectedChanges: (option: Option) => void;
 }
 
-const Dropdown = ({options, selected, onSelectedChanges, placeholder = 'Select scene'}) => {
+const Dropdown: DropdownProps = ({options, placeholder = 'Select scene', selected, onSelectedChanges}) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
-    const ref = useRef<HTMLDataElement | null>(null);
+    const ref = useRef<HTMLDivElement | null>(null);
     
     //make dropdown close when user clicks outside of it
     useEffect( () => {
