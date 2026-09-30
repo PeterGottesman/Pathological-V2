@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
+import Dropdown from './components/Dropdown.tsx'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderPayload
 type JobView = RenderJob & { imageUrl: string | null }
@@ -10,6 +11,22 @@ type SelectedImage = {
   src: string
   name: string
 }
+//Adds dummy data to dropdown menu
+const options: Option[] = [{
+      label: 'Scene 1',
+      value: 'Opt1'
+    },
+    {
+      label: 'Scene 2',
+      value: 'Opt2'
+    },
+    {
+      label: 'Scene 3',
+      value: 'Opt3'
+    }]
+
+
+
 //Constants for polling interval
 const POLL_INTERVAL_SECONDS = 10
 const POLL_INTERVAL_MS = POLL_INTERVAL_SECONDS * 1000
@@ -72,6 +89,12 @@ function resolveImageUrl(
 }
 // The main React component for the home page, holds most UI state and logic 
 export default function Home() {
+  //State for updating dropdown menu
+  const [selected, setSelected] = useState(null as Option | null)
+
+  const handleSelectedChange = (option: Option) => {
+    setSelected(option)
+  }
     //State for managing form inputs
   const [forms, setForms] = useState<FormState[]>([
     {
@@ -338,7 +361,12 @@ export default function Home() {
                   ) : null}
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-red-300">Scene file (.gltf)</label>
+                    <label className="block text-sm font-semibold text-red-300">Scene file</label>
+                    <Dropdown 
+                      options={options}
+                      selected={selected}
+                      onSelectedChanges={handleSelectedChange}
+                    />
                     <input
                       placeholder="Absolute path to gltf file"
                       value={form.scene_file_url}
