@@ -14,7 +14,7 @@ type SelectedImage = {
 const POLL_INTERVAL_SECONDS = 10
 const POLL_INTERVAL_MS = POLL_INTERVAL_SECONDS * 1000
 const DEFAULT_FPS = 30
-const DEFAULT_RUNTIME = 0.3
+const DEFAULT_RUNTIME = 10
 // Helper function to build an API image URL from an object key.
 function buildImageApiUrl(outputFilename: string) {
   return `/api/render-image?image=${encodeURIComponent(outputFilename)}&ts=${Date.now()}`
