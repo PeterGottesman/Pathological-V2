@@ -12,9 +12,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: mc
-          # MinIO's docker.io images (minio/mc) now require auth to pull,
-          # even pinned versions -- quay.io/minio is their public mirror.
-          image: quay.io/minio/mc:latest
+          image: cgr.dev/chainguard/minio-client:latest-dev
           envFrom:
             - configMapRef:
                 name: pathological-config
