@@ -337,6 +337,7 @@ export default function Home() {
 //UI rendering logic
   return (
     <div className="flex min-h-screen flex-col bg-black text-red-500 font-mono">
+<<<<<<< HEAD
       <header className="w-full border-b border-red-800 bg-black p-6 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
   <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
     <div className="flex flex-col">
@@ -372,18 +373,9 @@ export default function Home() {
   </div>
 </header>
 
+=======
+>>>>>>> origin/main
       <main className="flex flex-1 flex-col items-center justify-center p-6 md:p-24">
-        <div className="mb-6 w-full max-w-6xl rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
-          <h2 className="text-xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)] md:text-2xl">
-            About
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-red-200 md:text-base">
-            Pathological V2 is a distributed render pipeline. You submit a scene (GLTF) to scheduler with render parameters
-            (resolution, frames, samples-per-pixel). The scheduler gets the job, dispatches work to render workers, and uploads
-            results back to S3.
-          </p>
-        </div>
-
         <div className="grid w-full max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
             <h2 className="mb-2 text-2xl font-bold text-red-500 drop-shadow-[0_0_6px_rgba(220,38,38,0.7)] md:text-3xl">

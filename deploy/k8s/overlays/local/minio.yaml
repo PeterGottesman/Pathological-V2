@@ -20,7 +20,13 @@ spec:
     spec:
       containers:
         - name: minio
+<<<<<<< HEAD
           image: cgr.dev/chainguard/minio:latest
+=======
+          # MinIO's docker.io images (minio/minio) now require auth to pull,
+          # even pinned versions -- quay.io/minio is their public mirror.
+          image: quay.io/minio/minio:latest
+>>>>>>> origin/main
           args: ["server", "/data", "--console-address", ":9001"]
           ports:
             - name: api

@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'node:path'
+<<<<<<< HEAD
 import fs from 'node:fs'
 
 const S3_PUBLIC_BASE_URL =
   process.env.S3_PUBLIC_BASE_URL ||
   'https://pathological-capstone-s3-bucket.s3.us-east-2.amazonaws.com'
 
+=======
+// Base URL to fetch rendered objects from, overridable for containerized/Kubernetes
+// deployments (e.g. an in-cluster MinIO endpoint for local testing).
+const S3_PUBLIC_BASE_URL =
+  process.env.S3_PUBLIC_BASE_URL ||
+  'https://pathological-capstone-s3-bucket.s3.us-east-2.amazonaws.com'
+//Helper function to encode S3 object keys while preserving slashes
+>>>>>>> origin/main
 function encodeS3Key(key: string) {
   return key
     .split('/')
