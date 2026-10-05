@@ -140,23 +140,6 @@ export default function Home() {
   useEffect(() => {
     jobsRef.current = jobs
   }, [jobs])
-  
-  function onSceneChange(index: number, value: string) {
-    const v = value ?? ''
-    const last = v.split('/').pop() || ''
-    const base = last.replace(/\.[^/.]+$/, '')
-    const filename = base ? `${base}.png` : 'frontend_render.png'
-
-    setForms((prev) => {
-      const next = [...prev]
-      next[index] = {
-        ...next[index],
-        scene_file_url: v,
-        output_filename: filename,
-      }
-      return next
-    })
-  }
 
   function onTextChange(index: number, key: keyof FormState, value: string) {
     setForms((prev) => {
