@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
+import Link from 'next/link'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderPayload
 type JobView = RenderJob & { imageUrl: string | null }
@@ -72,7 +73,7 @@ function resolveImageUrl(
 }
 // The main React component for the home page, holds most UI state and logic 
 export default function Home() {
-    //State for managing form inputs
+  //State for managing form inputs
   const [forms, setForms] = useState<FormState[]>([
     {
       width: 1920,
@@ -80,11 +81,12 @@ export default function Home() {
       frames_per_second: DEFAULT_FPS,
       animation_runtime: DEFAULT_RUNTIME,
       samples_per_pixel: 16,
-      scene_file_url: '/home/dtre/Pathological-V2/render_worker/test_scenes/cornell_box.gltf',
+      scene_file_url: '', // <-- Cleared the hardcoded path so the dropdown starts fresh
       output_filename: 'cornell_box.png',
     },
   ])
-  //States for managing submission status, list of render jobs, countdown for next poll, and currently selected image for viewing
+  
+  // Existing states...
   const [submitting, setSubmitting] = useState(false)
   const [jobs, setJobs] = useState<JobView[]>([])
   const [secondsUntilNextPoll, setSecondsUntilNextPoll] = useState(POLL_INTERVAL_SECONDS)
@@ -92,10 +94,29 @@ export default function Home() {
 
   const jobsRef = useRef<JobView[]>([])
 
+  // NEW: State to hold the fetched scenes for the dropdown
+  const [availableScenes, setAvailableScenes] = useState<string[]>([])
+
+  // NEW: Fetch scenes when the page loads
+  useEffect(() => {
+    async function loadScenes() {
+      try {
+        const res = await fetch('/api/scenes')
+        if (res.ok) {
+          const data = await res.json()
+          setAvailableScenes(data.scenes || [])
+        }
+      } catch (err) {
+        console.error("Failed to load scenes", err)
+      }
+    }
+    loadScenes()
+  }, [])
+
   useEffect(() => {
     jobsRef.current = jobs
   }, [jobs])
-  
+
   function onSceneChange(index: number, value: string) {
     const v = value ?? ''
     const last = v.split('/').pop() || ''
@@ -317,30 +338,39 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-black text-red-500 font-mono">
       <header className="w-full border-b border-red-800 bg-black p-6 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-bold tracking-tighter text-red-500 drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
-              PATHOLOGICAL V2
-            </h1>
-            <p className="text-xs text-red-800">BACS CAPSTONE: TEAM 19</p>
-          </div>
+  <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
+    <div className="flex flex-col">
+      <h1 className="text-3xl font-bold tracking-tighter text-red-500 drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
+        PATHOLOGICAL V2
+      </h1>
+      <p className="text-xs text-red-800">BACS CAPSTONE: TEAM 19</p>
+    </div>
 
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-red-400">
-            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
-              Dontre Quarles
-            </span>
-            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
-              Kobie Morales
-            </span>
-            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
-              Hunter Ellenberger
-            </span>
-            <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
-              Austin Johnson
-            </span>
-          </div>
-        </div>
-      </header>
+    <div className="flex items-center gap-8">
+      <div className="flex flex-wrap justify-center gap-6 text-sm text-red-400">
+        <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
+          Dontre Quarles
+        </span>
+        <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
+          Kobie Morales
+        </span>
+        <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
+          Hunter Ellenberger
+        </span>
+        <span className="cursor-default transition-all hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,1)]">
+          Austin Johnson
+        </span>
+      </div>
+      
+      <Link 
+        href="/scenes"
+        className="whitespace-nowrap rounded border border-red-800 px-4 py-2 text-sm font-semibold transition-all hover:bg-red-900/30 hover:text-red-200 hover:drop-shadow-[0_0_8px_rgba(220,38,38,0.9)]"
+      >
+        Upload Scene
+      </Link>
+    </div>
+  </div>
+</header>
 
       <main className="flex flex-1 flex-col items-center justify-center p-6 md:p-24">
         <div className="mb-6 w-full max-w-6xl rounded-xl border border-red-800 bg-black/40 p-6 shadow-[0_0_20px_rgba(220,38,38,0.25)]">
@@ -376,13 +406,19 @@ export default function Home() {
 
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-red-300">Scene file (.gltf)</label>
-                    <input
-                      placeholder="Absolute path to gltf file"
+                    <select
                       value={form.scene_file_url}
                       onChange={(e) => onSceneChange(i, e.target.value)}
-                      className="block w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
-                    />
-                  </div>
+                      className="block w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-sm text-red-200 focus:outline-none focus:ring-2 focus:ring-red-700 appearance-none"
+                    >
+                      <option value="" disabled className="text-red-700">Select an uploaded scene...</option>
+                      {availableScenes.map((scene) => (
+                        <option key={scene} value={scene}>
+                          {scene}
+                        </option>
+                      ))}
+                  </select>
+                </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
