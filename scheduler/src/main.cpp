@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
     // Blocking call - everything must go above this
     drogon::app()
         .registerHandler("/renders", &RequestController::createRenderRequest, {drogon::Post})
+        .registerHandler("/renders", &RequestController::listRenders, {drogon::Get})
         .registerHandler("/renders/{1}/status", &RequestController::getStatus, {drogon::Get})
         .registerHandler("/upload-scene", &RequestController::uploadSceneFile, {drogon::Post})
         .addListener(listen_address, http_port)
