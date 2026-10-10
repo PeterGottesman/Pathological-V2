@@ -1,6 +1,12 @@
 # Creates the render bucket in MinIO and makes it anonymously downloadable,
 # since the frontend fetches rendered images by plain HTTP GET rather than
 # via a presigned URL.
+#
+# MinIO's own images (docker.io minio/*, quay.io/minio/*) now require auth to
+# pull; Chainguard publishes anonymously pullable builds. Their mc image is
+# distroless (no /bin/sh), so there is no wait-for-minio shell loop: mc gets
+# its connection from MC_HOST_local instead of `mc alias set`, and the Job's
+# restartPolicy/backoffLimit retries until MinIO is up.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -10,24 +16,30 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      initContainers:
+        - name: make-bucket
+          image: cgr.dev/chainguard/minio-client:latest
+          args: ["mb", "--ignore-existing", "local/$(S3_BUCKET)"]
+          env: &mcEnv
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pathological-s3-credentials
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pathological-s3-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: pathological-config
+                  key: S3_BUCKET
+            - name: MC_HOST_local
+              value: "http://$(MINIO_ROOT_USER):$(MINIO_ROOT_PASSWORD)@minio:9000"
       containers:
-        - name: mc
-          # MinIO's docker.io images (minio/mc) now require auth to pull,
-          # even pinned versions -- quay.io/minio is their public mirror.
-          image: quay.io/minio/mc:latest
-          envFrom:
-            - configMapRef:
-                name: pathological-config
-            - secretRef:
-                name: pathological-s3-credentials
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              until mc alias set local "$S3_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; do
-                echo "waiting for minio..."
-                sleep 3
-              done
-              mc mb --ignore-existing "local/$S3_BUCKET"
-              mc anonymous set download "local/$S3_BUCKET"
+        - name: set-anonymous-download
+          image: cgr.dev/chainguard/minio-client:latest
+          args: ["anonymous", "set", "download", "local/$(S3_BUCKET)"]
+          env: *mcEnv

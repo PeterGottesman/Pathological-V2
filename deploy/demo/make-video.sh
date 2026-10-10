@@ -27,7 +27,7 @@ echo "Downloading frames for '$PREFIX' from bucket '$BUCKET'..."
 docker run --rm --add-host=host.docker.internal:host-gateway \
     -e MC_HOST_local="http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@host.docker.internal:${MINIO_URL##*:}" \
     -v "$DOWNLOAD_DIR:/out" \
-    quay.io/minio/mc mirror --quiet "local/$BUCKET" /out
+    cgr.dev/chainguard/minio-client mirror --quiet "local/$BUCKET" /out
 
 python3 - "$PREFIX" "$DOWNLOAD_DIR" "$FRAMES_DIR" <<'PY'
 import os, re, shutil, sys
