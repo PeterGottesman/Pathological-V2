@@ -160,7 +160,7 @@ kubectl apply -k deploy/k8s/overlays/cluster
   `mesa-vulkan-drivers` for this — check that the installed Mesa version is
   24+ (earlier versions lack lavapipe's ray-tracing support).
 - **MinIO/Headlamp `ImagePullBackOff`.** Both rely on public images
-  (`quay.io/minio/*`, `ghcr.io/headlamp-k8s/*`) pulled fresh into the kind
+  (`cgr.dev/chainguard/minio*`, `ghcr.io/headlamp-k8s/*`) pulled fresh into the kind
   cluster; a registry outage or a vendor moving/restricting an image tag
   will surface here. `kubectl -n pathological describe pod <pod>` (MinIO) or
   `kubectl -n kube-system describe pod <pod>` (Headlamp) shows the actual
