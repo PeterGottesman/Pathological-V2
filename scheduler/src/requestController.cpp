@@ -29,6 +29,10 @@ void RequestController::getStatus(const HttpRequestPtr &req, std::function<void(
 void RequestController::listRenders(const HttpRequestPtr &req,
                                     std::function<void(const HttpResponsePtr &)> &&callback) {
     Json::Value jobs(Json::arrayValue);
+    // (#86): Returns every render in RenderHistory as a JSON array.
+    for (const auto &render : RenderHistory::getInstance().getAllRenders()) {
+        jobs.append(render->toJson());
+    }
     callback(HttpResponse::newHttpJsonResponse(jobs));
 }
 
