@@ -20,6 +20,17 @@ void RequestController::getStatus(const HttpRequestPtr &req, std::function<void(
     callback(resp);
 }
 
+// (#86): Stub for now
+void RequestController::listRenders(const HttpRequestPtr &req,
+                                    std::function<void(const HttpResponsePtr &)> &&callback) {
+    Json::Value jobs(Json::arrayValue);
+    // (#86): Returns every render in RenderHistory as a JSON array.
+    for (const auto &render : RenderHistory::getInstance().getAllRenders()) {
+        jobs.append(render->toJson());
+    }
+    callback(HttpResponse::newHttpJsonResponse(jobs));
+}
+
 // This function accepts a raw JSON input for now.
 // Eventually JSON will be replaced with DTO object to validate entry.
 void RequestController::createRenderRequest(const HttpRequestPtr &req,
