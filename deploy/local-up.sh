@@ -34,6 +34,7 @@ kubectl apply -k "$K8S_DIR/overlays/local"
 echo "==> Waiting for rollout"
 kubectl -n pathological rollout status deployment/scheduler --timeout=180s
 kubectl -n pathological rollout status deployment/minio --timeout=180s
+kubectl -n pathological wait --for=condition=complete job/minio-create-bucket --timeout=180s
 kubectl -n pathological rollout status statefulset/render-worker --timeout=180s
 kubectl -n pathological rollout status deployment/frontend --timeout=180s
 
