@@ -5,7 +5,7 @@ const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
 export async function POST(req: NextRequest) {
     const body = await req.json()
   
-    const schedulerRes = await fetch(`${SCHEDULER_URL}/to-scheduler`, {
+    const schedulerRes = await fetch(`${SCHEDULER_URL}/upload-scene`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
