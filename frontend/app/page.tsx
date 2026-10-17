@@ -2,7 +2,7 @@
 //Main and only page for the frontend, contains the form to submit render jobs to the scheduler and a section to display rendered images with options to download or delete them. It also implements polling to update the status of submitted jobs and their rendered images.
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
+import type { SubmitRenderPayload, RenderJob, UploadScenePayload } from '@/types/scheduler'
 import Dropdown from './components/Dropdown'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderPayload
@@ -252,11 +252,16 @@ export default function Home() {
     try {
 
       const sceneRes = await fetch(sceneFile)
-      const sceneData = await sceneRes.json()
+      const sceneData = await sceneRes.text()
+      const payload: UploadScenePayload = {
+        scene_file_url: sceneFile,
+        scene_data: sceneData,
+      }
+
       const uploadRes = await fetch('/api/upload-scene', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sceneData),
+        body: JSON.stringify(payload),
       })
 
       if (!uploadRes.ok) {
