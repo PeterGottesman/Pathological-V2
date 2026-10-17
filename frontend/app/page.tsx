@@ -253,7 +253,7 @@ export default function Home() {
 
       const sceneRes = await fetch(sceneFile)
       const sceneData = await sceneRes.json()
-      const uploadRes = await fetch('/api/to-scheduler', {
+      const uploadRes = await fetch('/api/upload-scene', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sceneData),
