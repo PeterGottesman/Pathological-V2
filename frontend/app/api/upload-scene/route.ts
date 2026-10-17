@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
         message: 'Upload Successful'
     }, {status: 200})
 
+    //this is the response that it should receive from the scheduler when fully implemented
     /*
     const data = await schedulerRes.json()
     return NextResponse.json(data, { status: schedulerRes.status })

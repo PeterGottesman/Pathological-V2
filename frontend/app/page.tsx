@@ -2,7 +2,7 @@
 //Main and only page for the frontend, contains the form to submit render jobs to the scheduler and a section to display rendered images with options to download or delete them. It also implements polling to update the status of submitted jobs and their rendered images.
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import type { SubmitRenderPayload, RenderJob, UploadScenePayload } from '@/types/scheduler'
+import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
 import Dropdown from './components/Dropdown'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderPayload
@@ -244,34 +244,6 @@ export default function Home() {
     }
   }
 
-//Handler for uploading scene file to scheduler
-  const [sceneFile, setSceneFile] = useState<string>('/test_scenes/cornell_box.gltf')
-
-  async function onUpload() {
-      
-    try {
-
-      const sceneRes = await fetch(sceneFile)
-      const sceneData = await sceneRes.text()
-      const payload: UploadScenePayload = {
-        scene_file_url: sceneFile,
-        scene_data: sceneData,
-      }
-
-      const uploadRes = await fetch('/api/upload-scene', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!uploadRes.ok) {
-        throw new Error(`Upload failed with status ${uploadRes.status}`)
-      }
-
-    } catch(error) {
-      console.error(error)
-    }
-  }
 
 //useEffect hook to implement polling for job status updates and image URL resolution, with a countdown timer for the next poll
   useEffect(() => {
@@ -407,12 +379,6 @@ export default function Home() {
                       className="w-full rounded-lg border border-red-600"
                     >
                       Populate Dropdown
-                    </button>
-                    <button
-                      onClick={onUpload}
-                      className="w-full rounded-lg border border-red-600"
-                    >
-                      Test Upload
                     </button>
                   </div>
 

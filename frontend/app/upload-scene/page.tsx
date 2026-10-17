@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import type { UploadScenePayload } from '@/types/scheduler' 
 
 export default function UploadScene() {
   const [file, setFile] = useState<File | null>(null)
@@ -30,13 +31,33 @@ export default function UploadScene() {
     setUploading(true)
     setMessage('')
 
-    // Placeholder: for now we simulate a 2-second server upload that just leads to nothing, will change it in the future
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const fileText = await file.text()
 
-    setMessage(`Success: ${file.name} uploaded! (Mock)`)
-    setUploading(false)
-    setFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
+      const payload: UploadScenePayload = {
+        scene_name: scenename,
+        scene_file_url: file.name,
+        scene_data: fileText,
+      }
+
+      const uploadRes = await fetch('../api/upload-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed with status ${uploadRes.status}`)
+      }
+      setMessage(`Success: ${file.name} uploaded!`)
+    } catch (error) {
+      setMessage(`Failure: ${file.name} not uploaded`)
+      console.error(error)
+    } finally {
+      setUploading(false)
+      setFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   return (

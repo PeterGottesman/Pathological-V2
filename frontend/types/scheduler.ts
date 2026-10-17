@@ -29,6 +29,7 @@ export type RenderJob = {
 }
 
 export type UploadScenePayload = {
+  scene_name?: string
   scene_file_url: string
   scene_data: string
 }
