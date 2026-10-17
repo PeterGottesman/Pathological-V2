@@ -243,6 +243,31 @@ export default function Home() {
       setSubmitting(false)
     }
   }
+
+//Handler for uploading scene file to scheduler
+  const [sceneFile, setSceneFile] = useState<string>('/test_scenes/cornell_box.gltf')
+
+  async function onUpload() {
+      
+    try {
+
+      const sceneRes = await fetch(sceneFile)
+      const sceneData = await sceneRes.json()
+      const uploadRes = await fetch('/api/upload-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sceneData),
+      })
+
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed with status ${uploadRes.status}`)
+      }
+
+    } catch(error) {
+      console.error(error)
+    }
+  }
+
 //useEffect hook to implement polling for job status updates and image URL resolution, with a countdown timer for the next poll
   useEffect(() => {
     if (jobs.length === 0) {
@@ -377,6 +402,12 @@ export default function Home() {
                       className="w-full rounded-lg border border-red-600"
                     >
                       Populate Dropdown
+                    </button>
+                    <button
+                      onClick={onUpload}
+                      className="w-full rounded-lg border border-red-600"
+                    >
+                      Test Upload
                     </button>
                   </div>
 
