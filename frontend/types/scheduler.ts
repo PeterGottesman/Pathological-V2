@@ -27,3 +27,8 @@ export type RenderJob = {
   output_filename: string
   download_link: string | null
 }
+
+export type UploadScenePayload = {
+  scene_file_url: string
+  scene_data: string
+}
