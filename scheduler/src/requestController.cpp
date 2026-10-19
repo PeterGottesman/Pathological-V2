@@ -68,9 +68,9 @@ void RequestController::createRenderRequest(const HttpRequestPtr &req,
     }
 }
 
-//stub, currently only returns dummy response to frontend
+// This API endpoint is a stub, currently it only returns a dummy response to the frontend.
 void RequestController::uploadSceneFile(const HttpRequestPtr &req,
-                                            std::function<void(const HttpResponsePtr &)> &&callback) {
+                                        std::function<void(const HttpResponsePtr &)> &&callback) {
     try {
         auto payload = req->getJsonObject();
         if (!payload) {
@@ -84,12 +84,9 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
         
         Json::Value dummyResp;
         dummyResp["message"] = "Dummy response";
-
         auto resp = HttpResponse::newHttpJsonResponse(dummyResp);
         resp->setStatusCode(k200OK);
         callback(resp);
-        
-        
     } catch (const std::exception &e) {
         Json::Value error;
         error["error"] = e.what();
