@@ -81,7 +81,7 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
             callback(resp);
             return;
         }
-        
+
         Json::Value dummyResp;
         dummyResp["message"] = "Dummy response";
         auto resp = HttpResponse::newHttpJsonResponse(dummyResp);
