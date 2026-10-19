@@ -67,3 +67,34 @@ void RequestController::createRenderRequest(const HttpRequestPtr &req,
         callback(resp);
     }
 }
+
+//stub, currently only returns dummy response to frontend
+void RequestController::uploadSceneFile(const HttpRequestPtr &req,
+                                            std::function<void(const HttpResponsePtr &)> &&callback) {
+    try {
+        auto payload = req->getJsonObject();
+        if (!payload) {
+            Json::Value err;
+            err["error"] = req->getJsonError();
+            auto resp = HttpResponse::newHttpJsonResponse(err);
+            resp->setStatusCode(k400BadRequest);
+            callback(resp);
+            return;
+        }
+        
+        Json::Value dummyResp;
+        dummyResp["message"] = "Dummy response";
+
+        auto resp = HttpResponse::newHttpJsonResponse(dummyResp);
+        resp->setStatusCode(k200OK);
+        callback(resp);
+        
+        
+    } catch (const std::exception &e) {
+        Json::Value error;
+        error["error"] = e.what();
+        auto resp = HttpResponse::newHttpJsonResponse(error);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+    }
+}
