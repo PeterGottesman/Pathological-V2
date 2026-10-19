@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     drogon::app()
         .registerHandler("/renders", &RequestController::createRenderRequest, {drogon::Post})
         .registerHandler("/renders/{1}/status", &RequestController::getStatus, {drogon::Get})
+        .registerHandler("/upload-scene", &RequestController::uploadSceneFile, {drogon::Post})
         .addListener(listen_address, http_port)
         .run();
 

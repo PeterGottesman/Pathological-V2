@@ -25,4 +25,6 @@ public:
                    const std::string &id) const;
 
     void createRenderRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
+
+    void uploadSceneFile(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
 };

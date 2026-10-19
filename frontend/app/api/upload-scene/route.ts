@@ -12,16 +12,8 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(body),
         cache: 'no-store',
     })
-    //return mock success status for debugging purposes, will be replaced with actual response from scheduler when fully implemented
-    return NextResponse.json({
-        message: 'Upload Successful'
-    }, {status: 200})
 
-    //this is the response that it should receive from the scheduler when fully implemented
-    /*
+    //response from scheduler
     const data = await schedulerRes.json()
-    return NextResponse.json(data, { status: schedulerRes.status })
-    */
-
-    
+    return NextResponse.json(data, { status: schedulerRes.status })    
 }
