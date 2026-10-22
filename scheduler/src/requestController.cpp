@@ -130,7 +130,7 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
         successResp["scenes"] = scenesStr;
 
         auto resp = HttpResponse::newHttpJsonResponse(successResp);
-        resp->setStatusCode(k200OK);
+        resp->setStatusCode(k201Created);
         callback(resp);
 
     } catch (const std::exception &e) {
