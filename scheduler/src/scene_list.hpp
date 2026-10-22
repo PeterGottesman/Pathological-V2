@@ -2,14 +2,8 @@
  * Singleton class desgined to track scenes currently uploaded to S3.
  * Uses vector of strings to track uploaded scenes
  */
-#include <algorithm>
-#include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
-
-#include "renderRequest.hpp"
-#include "renderStatus.hpp"
 
 class SceneList {
 public:
