@@ -21,6 +21,7 @@ add_executable(pathological-sched
     src/main.cpp
     src/renderRequest.cpp
     src/requestController.cpp
+    src/scene_list.cpp
     src/scheduler.cpp
     src/scheduler_server.cpp
     src/render_client.cpp
