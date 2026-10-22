@@ -6,6 +6,7 @@
 #include <boost/uuid.hpp>
 #include <optional>
 #include <unordered_map>
+#include <vector>
 
 #include "renderRequest.hpp"
 #include "renderStatus.hpp"
@@ -24,6 +25,7 @@ public:
     bool deleteRender(const boost::uuids::uuid &id);
     bool updateStatus(const boost::uuids::uuid &id, RenderStatus status);
     std::shared_ptr<RenderRequest> getRenderRequest(const boost::uuids::uuid &id) const;
+    std::vector<std::shared_ptr<RenderRequest>> getAllRenders() const;
 
 private:
     RenderHistory() = default;

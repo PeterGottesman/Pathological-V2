@@ -29,3 +29,12 @@ std::shared_ptr<RenderRequest> RenderHistory::getRenderRequest(const boost::uuid
 
     return req->second;
 }
+
+std::vector<std::shared_ptr<RenderRequest>> RenderHistory::getAllRenders() const {
+    std::vector<std::shared_ptr<RenderRequest>> renders;
+    renders.reserve(history.size());
+    for (const auto &entry : history) {
+        renders.push_back(entry.second);
+    }
+    return renders;
+}
