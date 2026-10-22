@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { SubmitRenderPayload } from '@/types/scheduler'
+import type { RenderJobList, SubmitRenderPayload } from '@/types/scheduler'
 //Scheduler URL, overridable for containerized/Kubernetes deployments
 const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
 //POST request to submit a render job to the scheduler
@@ -15,4 +15,33 @@ export async function POST(req: NextRequest) {
   //Return the scheduler's response directly to the client
   const data = await schedulerRes.json()
   return NextResponse.json(data, { status: schedulerRes.status })
+}
+//GET request to grab the list of all render jobs from the scheduler
+export async function GET() {
+  try {
+    const schedulerRes = await fetch(`${SCHEDULER_URL}/renders`, {
+      method: 'GET',
+      cache: 'no-store',
+    })
+
+    //If the scheduler had a problem, just pass its status along
+    if (!schedulerRes.ok) {
+      return NextResponse.json(
+        { error: 'Scheduler could not list render jobs.' },
+        { status: schedulerRes.status }
+      )
+    }
+    //Return the scheduler's response directly to the client
+    const data = (await schedulerRes.json()) as RenderJobList
+    return NextResponse.json(data)
+  } catch (error) {
+    //Probably means the scheduler isn't running
+    return NextResponse.json(
+      {
+        error: 'Could not reach scheduler render list endpoint.',
+        detail: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 502 }
+    )
+  }
 }
