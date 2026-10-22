@@ -6,8 +6,12 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "renderRequest.hpp"
+#include "scene_list.hpp"
 #include "scheduler.hpp"
 
 void RequestController::getStatus(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
@@ -75,12 +79,7 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
     try {
         auto payload = req->getJsonObject();
         if (!payload) {
-            Json::Value err;
-            err["error"] = req->getJsonError();
-            auto resp = HttpResponse::newHttpJsonResponse(err);
-            resp->setStatusCode(k400BadRequest);
-            callback(resp);
-            return;
+            throw std::runtime_error("Bad/malformed payload");
         }
 
         std::string sceneData = (*payload)["scene_data"].asString();
@@ -97,28 +96,42 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
             sceneName.append(".gltf");
         }
 
+        if (SceneList::getInstance().findSceneByUrl(sceneName) >= 0) {
+            throw std::runtime_error("A scene with this name already exists");
+        }
+
         std::stringstream ss(sceneData);
         std::streambuf *buf = ss.rdbuf();
 
-        bool success = Scheduler::getInstance().uploadScene(buf, sceneName);
+        bool uploaded = Scheduler::getInstance().uploadScene(buf, sceneName);
 
-        if (!success) {
-            Json::Value err;
-            err["error"] = req->getJsonError();
-            auto resp = HttpResponse::newHttpJsonResponse(err);
-            resp->setStatusCode(k400BadRequest);
-            callback(resp);
-            return;
+        if (!uploaded) {
+            throw std::runtime_error("Failed to upload to S3 bucket");
         }
 
-        if (success) {
-            Json::Value successResp;
-            successResp["message"] = "Successfully uploaded";
+        bool listUpdated = SceneList::getInstance().addScene(sceneName);
 
-            auto resp = HttpResponse::newHttpJsonResponse(successResp);
-            resp->setStatusCode(k200OK);
-            callback(resp);
+        if (!listUpdated) {
+            throw std::runtime_error("Internal scene list failed to update");
         }
+
+        std::vector scenes = SceneList::getInstance().getScenes();
+        std::string scenesStr;
+
+        for (int i = 0; i < scenes.size(); i++) {
+            if (i != scenes.size() - 1) {
+                scenesStr.append(scenes[i]);
+                scenesStr.append(", ");
+            } else {
+                scenesStr.append(scenes[i]);
+            }
+        }
+        Json::Value successResp;
+        successResp["scenes"] = scenesStr;
+
+        auto resp = HttpResponse::newHttpJsonResponse(successResp);
+        resp->setStatusCode(k200OK);
+        callback(resp);
 
     } catch (const std::exception &e) {
         Json::Value error;
