@@ -98,8 +98,8 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
         }
 
         std::stringstream ss(sceneData);
-        std::streambuf* buf = ss.rdbuf();
- 
+        std::streambuf *ebuf = ss.rdbuf();
+
         bool success = Scheduler::getInstance().uploadScene(buf, sceneName);
 
         if (!success) {
