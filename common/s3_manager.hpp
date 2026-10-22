@@ -31,6 +31,7 @@ public:
     bool keyExists(const std::string &s3Key);
     bool getObject(const std::string &s3Key, const std::string &localPath);
     bool putObject(const std::string &localPath, const std::string &s3Key, bool overwriteExisting);
+    bool writeFileToPath(const std::string &path, std::streambuf *data, long long expectedLen);
     std::string createLink(const std::string &s3Key);
 
 private:
@@ -38,6 +39,5 @@ private:
     Aws::SDKOptions options;
     std::unique_ptr<Aws::S3::S3Client> client;
 
-    bool writeFileToPath(const std::string &path, std::streambuf *data, long long expectedLen);
     std::shared_ptr<Aws::IOStream> readFileToAWSStream(const std::string &localPath);
 };
