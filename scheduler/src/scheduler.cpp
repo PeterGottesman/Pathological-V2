@@ -70,7 +70,7 @@ bool Scheduler::uploadScene(std::streambuf* data, const std::string& sceneUrl) {
 
     return s3Manager.putObject(tempPath, sceneUrl, true);
 }
-
+ 
 void Scheduler::addJob(const std::shared_ptr<RenderRequest>& job) {
     const int totalFrames = job->getAnimationRuntimeInFrames();
     const int fps = job->getFramesPerSecond();
