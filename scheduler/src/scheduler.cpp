@@ -3,6 +3,7 @@
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdlib>
+#include <filesystem>
 
 #include "renderStatus.hpp"
 #include "render_history.hpp"
@@ -39,6 +40,36 @@ std::optional<std::string> buildDownloadLink(const std::string& key) {
     return std::string("s3://") + bucketName + "/" + key;
 }
 }  // namespace
+
+bool Scheduler::uploadScene(std::streambuf* data, const std::string& sceneUrl) {
+    static const std::string bucketName = envOr("S3_BUCKET", kDefaultBucketName);
+    static S3Manager s3Manager({
+        .bucketName = bucketName,
+        .region = envOr("S3_REGION", kDefaultBucketRegion),
+        .profileName = envOr("AWS_PROFILE", "default"),
+        .presignedUrlTimeout = 1200,
+        .endpointOverride = envOr("S3_ENDPOINT", ""),
+        .usePathStyle = std::getenv("S3_ENDPOINT") != nullptr,
+    });
+
+    std::filesystem::path tempPath;
+    try {
+        std::filesystem::path tempDir = std::filesystem::temp_directory_path();
+        tempPath = tempDir / "tmp.gltf";
+    } catch (const std::exception &e) {
+        std::cerr << "Failed to locate temp directory." << "\n";
+        return false;
+    }
+
+    bool written = s3Manager.writeFileToPath(tempPath, data, -1);
+
+    if (!written) {
+        std::cerr << "Failed to write temp file to system." << "\n";
+        return false;
+    }
+
+    return s3Manager.putObject(tempPath, sceneUrl, true);
+}
 
 void Scheduler::addJob(const std::shared_ptr<RenderRequest>& job) {
     const int totalFrames = job->getAnimationRuntimeInFrames();

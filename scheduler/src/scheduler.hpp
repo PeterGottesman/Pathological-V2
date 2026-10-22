@@ -9,6 +9,7 @@
 #include <mutex>
 #include <optional>
 #include <queue>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -53,6 +54,9 @@ public:
     Scheduler& operator=(const Scheduler&) = delete;
 
     Worker* findWorkerByID(const std::string& id);
+
+    // Takes gltf data, writes it to temporary file, and uploads to S3 bucket
+    bool uploadScene(std::streambuf* data, const std::string& sceneUrl);
 
     // Splits the render into one FrameJob per animation frame and queues them.
     void addJob(const std::shared_ptr<RenderRequest>& job);

@@ -1,5 +1,6 @@
 #include "requestController.hpp"
 
+#include <algorithm>
 #include <boost/uuid.hpp>
 #include <chrono>
 #include <ctime>
@@ -82,11 +83,43 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
             return;
         }
 
-        Json::Value dummyResp;
-        dummyResp["message"] = "Dummy response";
-        auto resp = HttpResponse::newHttpJsonResponse(dummyResp);
-        resp->setStatusCode(k200OK);
-        callback(resp);
+        std::string sceneData = (*payload)["scene_data"].asString();
+        std::string sceneUrl = (*payload)["scene_file_url"].asString();
+        std::string sceneName = (*payload)["scene_name"].asString();
+
+        // Ensures that the scene name translates into a proper gltf file for uploading
+        if (sceneName.empty()) {
+            sceneName = sceneUrl;
+        } else {
+            std::replace(sceneName.begin(), sceneName.end(), ' ', '_');
+            std::replace(sceneName.begin(), sceneName.end(), '/', '-');
+            sceneName.erase(std::remove(sceneName.begin(), sceneName.end(), '.'), sceneName.end());
+            sceneName.append(".gltf");
+        }
+
+        std::stringstream ss(sceneData);
+        std::streambuf* buf = ss.rdbuf();
+
+        bool success = Scheduler::getInstance().uploadScene(buf, sceneName);
+
+        if (!success) {
+            Json::Value err;
+            err["error"] = req->getJsonError();
+            auto resp = HttpResponse::newHttpJsonResponse(err);
+            resp->setStatusCode(k400BadRequest);
+            callback(resp);
+            return;
+        }
+
+        if (success) {
+            Json::Value successResp;
+            successResp["message"] = "Successfully uploaded";
+
+            auto resp = HttpResponse::newHttpJsonResponse(successResp);
+            resp->setStatusCode(k200OK);
+            callback(resp);
+        }
+
     } catch (const std::exception &e) {
         Json::Value error;
         error["error"] = e.what();
