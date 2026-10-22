@@ -33,3 +33,7 @@ export type UploadScenePayload = {
   scene_file_url: string
   scene_data: string
 }
+
+export type UploadSceneResponse = {
+  scenes: string
+}
