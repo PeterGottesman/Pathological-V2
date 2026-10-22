@@ -56,7 +56,7 @@ bool Scheduler::uploadScene(std::streambuf* data, const std::string& sceneUrl) {
     try {
         std::filesystem::path tempDir = std::filesystem::temp_directory_path();
         tempPath = tempDir / "tmp.gltf";
-    } catch (cconst fs::filesystem_error& e) {
+    } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return false;
     }
