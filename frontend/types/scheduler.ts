@@ -11,7 +11,7 @@ export type SubmitRenderPayload = {
 export type SubmitRenderRequest = SubmitRenderPayload
 
 export type RenderStatus = 'Completed' | 'In Progress' | 'In Queue' | 'Error'
-
+// What GET /renders sends back
 export type RenderJob = {
   id: string | number
   status: RenderStatus
@@ -26,6 +26,7 @@ export type RenderJob = {
   scene_file_url: string
   output_filename: string
   download_link: string | null
+  download_links: string[]
 }
 
 export type UploadScenePayload = {
@@ -37,3 +38,5 @@ export type UploadScenePayload = {
 export type UploadSceneResponse = {
   scenes: string
 }
+
+export type RenderJobList = RenderJob[]
