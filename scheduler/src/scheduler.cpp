@@ -56,8 +56,8 @@ bool Scheduler::uploadScene(std::streambuf* data, const std::string& sceneUrl) {
     try {
         std::filesystem::path tempDir = std::filesystem::temp_directory_path();
         tempPath = tempDir / "tmp.gltf";
-    } catch (const std::exception &e) {
-        std::cerr << "Failed to locate temp directory." << "\n";
+    } catch (cconst fs::filesystem_error& e) {
+        std::cerr << "Error: " << e.what() << "\n";
         return false;
     }
 
@@ -70,7 +70,7 @@ bool Scheduler::uploadScene(std::streambuf* data, const std::string& sceneUrl) {
 
     return s3Manager.putObject(tempPath, sceneUrl, true);
 }
- 
+
 void Scheduler::addJob(const std::shared_ptr<RenderRequest>& job) {
     const int totalFrames = job->getAnimationRuntimeInFrames();
     const int fps = job->getFramesPerSecond();
