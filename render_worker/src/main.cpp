@@ -10,6 +10,8 @@
 
 #include "render_server.hpp"
 #include "scheduler_client.hpp"
+#include "s3_downloader.hpp"
+#include "aws/core/Aws.h"
 
 // Creating reference to client singleton and unique pointer that will store the server
 SchedulerClient& client = SchedulerClient::getInstance();
@@ -45,6 +47,8 @@ void shutdownServer() {
 }
 
 int main(int argc, char** argv) {
+    Aws::SDKOptions options;
+    Aws::InitAPI(options);
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
     std::string schedulerAddress;
@@ -67,6 +71,7 @@ int main(int argc, char** argv) {
     // If cannot establish connection with scheduler exit
     if (client.EstablishConnection() == 1) {
         std::cerr << "Could not establish connection with scheduler. Now exiting." << "\n";
+        Aws::ShutdownAPI(options);
         return 1;
     }
 
@@ -80,6 +85,7 @@ int main(int argc, char** argv) {
     std::thread shutdown_thread(shutdownServer);
     server->Wait();
     shutdown_thread.join();
+    Aws::ShutdownAPI(options);
 
     return 0;
 }
