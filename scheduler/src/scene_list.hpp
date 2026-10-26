@@ -2,7 +2,9 @@
  * Singleton class desgined to track scenes currently uploaded to S3.
  * Uses unordered_map of strings to track uploaded scenes
  */
+
 #include <json/json.h>
+
 #include <string>
 #include <unordered_map>
 
