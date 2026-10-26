@@ -14,6 +14,6 @@ export async function POST(req: NextRequest) {
     })
 
     //response from scheduler
-    const data = (await schedulerRes.json()) as UploadSceneResponse
+    const data = await schedulerRes.json()
     return NextResponse.json(data, { status: schedulerRes.status })    
 }

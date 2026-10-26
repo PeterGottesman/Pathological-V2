@@ -36,7 +36,7 @@ export default function UploadScene() {
 
       const payload: UploadScenePayload = {
         scene_name: scenename,
-        scene_file_url: file.name,
+        scene_file_name: file.name,
         scene_data: fileText,
       }
 

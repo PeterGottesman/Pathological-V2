@@ -94,20 +94,21 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
         }
 
         std::string sceneData = (*payload)["scene_data"].asString();
-        std::string sceneUrl = (*payload)["scene_file_url"].asString();
+        std::string sceneFileName = (*payload)["scene_file_name"].asString();
         std::string sceneName = (*payload)["scene_name"].asString();
 
         // Ensures that the scene name translates into a proper gltf file for uploading
+        std::string sceneNameS3 = sceneName;
         if (sceneName.empty()) {
-            sceneName = sceneUrl;
+            sceneNameS3 = sceneFileName;
         } else {
-            std::replace(sceneName.begin(), sceneName.end(), ' ', '_');
-            std::replace(sceneName.begin(), sceneName.end(), '/', '-');
-            sceneName.erase(std::remove(sceneName.begin(), sceneName.end(), '.'), sceneName.end());
-            sceneName.append(".gltf");
+            std::replace(sceneNameS3.begin(), sceneNameS3.end(), ' ', '_');
+            std::replace(sceneNameS3.begin(), sceneNameS3.end(), '/', '-');
+            sceneNameS3.erase(std::remove(sceneNameS3.begin(), sceneNameS3.end(), '.'), sceneNameS3.end());
+            sceneNameS3.append(".gltf");
         }
 
-        if (SceneList::getInstance().findSceneByUrl(sceneName) >= 0) {
+        if (SceneList::getInstance().findSceneByKey(sceneName).empty() == false) {
             throw std::runtime_error("A scene with this name already exists");
         }
 
@@ -120,27 +121,15 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
             throw std::runtime_error("Failed to upload to S3 bucket");
         }
 
-        bool listUpdated = SceneList::getInstance().addScene(sceneName);
+        bool listUpdated = SceneList::getInstance().addScene(sceneName, sceneNameS3);
 
         if (!listUpdated) {
             throw std::runtime_error("Internal scene list failed to update");
         }
 
-        std::vector scenes = SceneList::getInstance().getScenes();
-        std::string scenesStr;
+        Json::Value scenesResp = SceneList::getInstance().scenesToJson();
 
-        for (int i = 0; i < scenes.size(); i++) {
-            if (i != scenes.size() - 1) {
-                scenesStr.append(scenes[i]);
-                scenesStr.append(", ");
-            } else {
-                scenesStr.append(scenes[i]);
-            }
-        }
-        Json::Value successResp;
-        successResp["scenes"] = scenesStr;
-
-        auto resp = HttpResponse::newHttpJsonResponse(successResp);
+        auto resp = HttpResponse::newHttpJsonResponse(scenesResp);
         resp->setStatusCode(k201Created);
         callback(resp);
 
