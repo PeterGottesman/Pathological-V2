@@ -1,32 +1,27 @@
 #include "scene_list.hpp"
 
-bool SceneList::addScene(const std::string& sceneUrl) {
-    if (sceneUrl.empty()) {
+bool SceneList::addScene(const std::string& sceneName, const std::string& sceneFileName) {
+    if (sceneName.empty() || sceneFileName.empty()) {
         return false;
     }
-    this->scenes.push_back(sceneUrl);
+    this->scenes.emplace(sceneName, sceneFileName);
     return true;
 }
 
-bool SceneList::deleteScene(const std::string& sceneUrl) {
-    if (sceneUrl.empty()) {
-        return false;
+bool SceneList::deleteScene(const std::string& sceneName) { return this->scenes.erase(sceneName) > 0; }
+
+std::string SceneList::findSceneByKey(const std::string& sceneName) {
+    auto req = scenes.find(sceneName);
+    if (req == scenes.end()) {
+        return {};
     }
-    int sceneID = findSceneByUrl(sceneUrl);
-    if (sceneID < 0) {
-        return false;
-    }
-    this->scenes.erase(scenes.begin() + sceneID + 1);
-    return true;
+    return req->second;
 }
 
-int SceneList::findSceneByUrl(const std::string& sceneUrl) {
-    for (int i = 0; i < this->scenes.size(); i++) {
-        if (this->scenes[i] == sceneUrl) {
-            return i;
-        }
+Json::Value SceneList::scenesToJson() {
+    Json::Value scenes_json;
+    for (const auto& [key, value] : scenes) {
+        scenes_json[key] = value;
     }
-    return -1;
-}
-
-std::vector<std::string> SceneList::getScenes() { return this->scenes; }
+    return scenes_json;
+};

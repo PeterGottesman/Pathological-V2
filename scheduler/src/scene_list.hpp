@@ -1,9 +1,10 @@
 /*
  * Singleton class desgined to track scenes currently uploaded to S3.
- * Uses vector of strings to track uploaded scenes
+ * Uses unordered_map of strings to track uploaded scenes
  */
+#include <json/json.h>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 class SceneList {
 public:
@@ -15,14 +16,14 @@ public:
     SceneList(const SceneList&) = delete;
     SceneList& operator=(const SceneList&) = delete;
 
-    bool addScene(const std::string& sceneUrl);
-    bool deleteScene(const std::string& sceneUrl);
-    int findSceneByUrl(const std::string& sceneUrl);
-    std::vector<std::string> getScenes();
+    bool addScene(const std::string& sceneName, const std::string& sceneFileName);
+    bool deleteScene(const std::string& sceneName);
+    std::string findSceneByKey(const std::string& sceneName);
+    Json::Value scenesToJson();
 
 private:
     SceneList() = default;
     ~SceneList() = default;
 
-    std::vector<std::string> scenes;
+    std::unordered_map<std::string, std::string> scenes;
 };
