@@ -27,6 +27,6 @@ public:
     void createRenderRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
 
     void uploadSceneFile(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
-    
+
     void listRenders(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
 };
