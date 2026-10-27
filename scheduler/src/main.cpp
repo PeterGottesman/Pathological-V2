@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
         .registerHandler("/renders", &RequestController::listRenders, {drogon::Get})
         .registerHandler("/renders/{1}/status", &RequestController::getStatus, {drogon::Get})
         .registerHandler("/upload-scene", &RequestController::uploadSceneFile, {drogon::Post})
-        .registerHandler("/get-scenes", &RequestController::getScenes, {drogon::Get})
+        .registerHandler("/get-scenes", &RequestController::getSceneList, {drogon::Get})
         .addListener(listen_address, http_port)
         .run();
 
