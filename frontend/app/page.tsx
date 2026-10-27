@@ -14,9 +14,10 @@ type SelectedImage = {
 
 //Type for dropdown menu option
 type Option = {
-    label: string;
-    id: string | number;
+  label: string;
+  id: string | number;
 }
+
 
 //Dummy data to add to dropdown menu
 const dummyOptions: Option[] = [{
@@ -95,10 +96,26 @@ function resolveImageUrl(
 }
 // The main React component for the home page, holds most UI state and logic 
 export default function Home() {
-  //State for updating dropdown menu
+  // State for updating dropdown menu
   const [selected, setSelected] = useState(null as Option | null)
   const [dropdownOptions, setDropdownOptions] = useState<Option[]>([])
   
+  // Function for Updating Dropdown with list of Scenes
+  async function getSceneList() {
+  try {
+    const res = await fetch('/api/get-scenes', {
+      method: 'GET',
+      cache: 'no-store',
+    })
+    const data = (await res.json()) as Option[]
+  } catch (error) {
+    console.error(error)
+  }
+  }
+
+  useEffect(() => {
+    getSceneList();
+  }, [])
 
   const handleSelectedChange = (option: Option) => {
     setSelected(option)

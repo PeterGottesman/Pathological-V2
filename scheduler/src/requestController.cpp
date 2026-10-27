@@ -141,3 +141,12 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
         callback(resp);
     }
 }
+
+
+void RequestController::getScenes(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
+
+    auto scenes = SceneList::getInstance().scenesToJson();
+
+    auto resp = HttpResponse::newHttpJsonResponse(scenes);
+    callback(resp);
+}
