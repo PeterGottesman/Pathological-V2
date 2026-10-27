@@ -142,8 +142,8 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
     }
 }
 
-void RequestController::getScenes(const HttpRequestPtr &req,
-                                  std::function<void(const HttpResponsePtr &)> &&callback) {
+void RequestController::getSceneList(const HttpRequestPtr &req,
+                                     std::function<void(const HttpResponsePtr &)> &&callback) {
     auto scenes = SceneList::getInstance().scenesToJson();
 
     auto resp = HttpResponse::newHttpJsonResponse(scenes);
