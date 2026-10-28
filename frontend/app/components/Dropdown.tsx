@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 type Option = {
     label: string;
-    id: string | number;
+    id: string;
 }
 
 interface DropdownProps {

@@ -2,7 +2,7 @@
 //Main and only page for the frontend, contains the form to submit render jobs to the scheduler and a section to display rendered images with options to download or delete them. It also implements polling to update the status of submitted jobs and their rendered images.
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import type { SubmitRenderPayload, RenderJob } from '@/types/scheduler'
+import type { SubmitRenderPayload, RenderJob, SceneListResponse } from '@/types/scheduler'
 import Dropdown from './components/Dropdown'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
 type FormState = SubmitRenderPayload
@@ -15,22 +15,22 @@ type SelectedImage = {
 //Type for dropdown menu option
 type Option = {
   label: string;
-  id: string | number;
+  id: string;
 }
 
 
 //Dummy data to add to dropdown menu
 const dummyOptions: Option[] = [{
       label: 'Caesar\'s assassination',
-      id: 0
+      id: '0'
     },
     {
       label: 'Marty McFly arrives in 1955',
-      id: 1
+      id: '1'
     },
     {
       label: 'Secret third thing',
-      id: 2
+      id: '2'
 }]
 
 
@@ -107,7 +107,17 @@ export default function Home() {
       method: 'GET',
       cache: 'no-store',
     })
-    const data = (await res.json()) as Option[]
+    const data: SceneListResponse = await res.json()
+    console.log(Object.entries(data))
+    if (!data) {
+      return
+    }
+    const sceneList: Option[] = Object.entries(data).map(([key, value]: [string, string]) => ({
+      label: key,
+      id: value
+    }))
+    console.log(sceneList)
+    setDropdownOptions(sceneList)
   } catch (error) {
     console.error(error)
   }
