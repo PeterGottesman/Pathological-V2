@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-type Option = {
+export type Option = {
     label: string;
     id: string;
 }
