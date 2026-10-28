@@ -74,7 +74,7 @@ function resolveImageUrl(
 // The main React component for the home page, holds most UI state and logic 
 export default function Home() {
   // State for updating dropdown menu
-  const [selected, setSelected] = useState(null as Option | null)
+  const [selected, setSelected] = useState<(Option | null)[]>([null])
   const [dropdownOptions, setDropdownOptions] = useState<Option[]>([])
   
   // Function for Updating Dropdown with list of Scenes
@@ -100,13 +100,10 @@ export default function Home() {
   }
   }
 
+  // useEffect hook for updating the dropdown with the list scenes whenever the submit renders page is loaded
   useEffect(() => {
     getSceneList();
   }, [])
-
-  const handleSelectedChange = (option: Option) => {
-    setSelected(option)
-  }
 
     //State for managing form inputs
   const [forms, setForms] = useState<FormState[]>([
@@ -132,6 +129,31 @@ export default function Home() {
     jobsRef.current = jobs
   }, [jobs])
 
+  function canSubmit() {
+    return submitting || selected.includes(null)
+  }
+
+  function handleSelectedChange(index: number, option: Option) {
+    setSelected((prev) => {
+      const next = [...prev]
+      next[index] = option
+      return next
+    })
+    const scene_filename = option.id ?? ''
+    const base = scene_filename.replace(/\.[^/.]+$/, '')
+    const output_filename = base ? `${base}.png` : 'frontend_render.png'
+
+    setForms((prev) => {
+      const next = [...prev]
+      next[index] = {
+        ...next[index],
+        scene_file_url: scene_filename,
+        output_filename: output_filename,
+      }
+      return next
+    })
+  }
+
   function onTextChange(index: number, key: keyof FormState, value: string) {
     setForms((prev) => {
       const next = [...prev]
@@ -149,6 +171,9 @@ export default function Home() {
   }
 
   function onAdd() {
+    setSelected((prev) => [
+      ...prev, null
+    ])
     setForms((prev) => [
       ...prev,
       {
@@ -164,6 +189,7 @@ export default function Home() {
   }
 
   function onRemove(index: number) {
+    setSelected((prev) => prev.filter((_, i) => i !== index))
     setForms((prev) => prev.filter((_, i) => i !== index))
   }
 
@@ -362,8 +388,8 @@ export default function Home() {
                     <label className="block text-sm font-semibold text-red-300">Scene file</label>
                     <Dropdown 
                       options={dropdownOptions}
-                      selected={selected}
-                      onSelectedChanges={handleSelectedChange}
+                      selected={selected[i]}
+                      onSelectedChanges={(e) => handleSelectedChange(i, e)}
                     />
                   </div>
 
@@ -415,9 +441,9 @@ export default function Home() {
 
               <button
                 onClick={onSubmit}
-                disabled={submitting}
+                disabled={canSubmit()}
                 className={`w-full rounded-lg border border-red-600 px-4 py-3 font-semibold transition-all ${
-                  submitting
+                  canSubmit()
                     ? 'cursor-not-allowed opacity-60'
                     : 'hover:text-red-200 hover:drop-shadow-[0_0_10px_rgba(220,38,38,0.9)]'
                 }`}
