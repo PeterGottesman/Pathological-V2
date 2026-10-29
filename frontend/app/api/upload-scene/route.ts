@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { UploadScenePayload, UploadSceneResponse } from '@/types/scheduler'
+import type { UploadScenePayload } from '@/types/scheduler'
 //Scheduler URL, overridable for containerized/Kubernetes deployments
 const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
 //POST request to send GLTF scene file to scheduler, which will in turn send it to S3 
@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(body),
         cache: 'no-store',
     })
-
     //response from scheduler
     const data = await schedulerRes.json()
     return NextResponse.json(data, { status: schedulerRes.status })    

@@ -35,10 +35,6 @@ export type UploadScenePayload = {
   scene_data: string
 }
 
-export type UploadSceneResponse = {
-  scenes: string
-}
-
 export type SceneListResponse = Record<string, string>
 
 export type RenderJobList = RenderJob[]
