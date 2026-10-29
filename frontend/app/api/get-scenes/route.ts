@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { SceneListResponse } from '@/types/scheduler'
 //Scheduler URL, overridable for containerized/Kubernetes deployments
 const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
-//GET request to fetch the status of a render job from the scheduler
-
-export async function GET(req: NextRequest) {
+//GET request to fetch the list of uploaded scenes from the scheduler
+export async function GET() {
     try {
     const res = await fetch(`${SCHEDULER_URL}/get-scenes`, {
       method: 'GET',
       cache: 'no-store',
     })
-
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: 'Scheduler could not list scenes.' },
+        { status: res.status }
+      )
+    }
     const data = (await res.json()) as SceneListResponse
     
     if (data) {
