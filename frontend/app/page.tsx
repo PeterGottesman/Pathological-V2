@@ -85,7 +85,6 @@ export default function Home() {
       cache: 'no-store',
     })
     const data: SceneListResponse = await res.json()
-    console.log(Object.entries(data))
     if (!data) {
       return
     }
@@ -93,7 +92,6 @@ export default function Home() {
       label: key,
       id: value
     }))
-    console.log(sceneList)
     setDropdownOptions(sceneList)
   } catch (error) {
     console.error(error)
