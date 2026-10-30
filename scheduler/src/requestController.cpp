@@ -115,7 +115,7 @@ void RequestController::uploadSceneFile(const HttpRequestPtr &req,
         std::stringstream ss(sceneData);
         std::streambuf *buf = ss.rdbuf();
 
-        bool uploaded = Scheduler::getInstance().uploadScene(buf, sceneName);
+        bool uploaded = Scheduler::getInstance().uploadScene(buf, sceneNameS3);
 
         if (!uploaded) {
             throw std::runtime_error("Failed to upload to S3 bucket");
