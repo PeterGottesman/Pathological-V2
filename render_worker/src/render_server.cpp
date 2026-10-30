@@ -51,32 +51,48 @@ Status RenderServer::RenderJob(ServerContext *context, const RenderJobRequest *r
     response->set_job_identifier(job_id);
     this->jobs.AddJob(job_id, job);
 
-    // Generates scene
-    generateScene(job->getWidth(), job->getHeight(), job->getSamples(), job->getGLTF(), job->getOutput(),
-                  job->getTime(), 512, false);
+    try {
+        // Generates scene
+        generateScene(job->getWidth(), job->getHeight(), job->getSamples(), job->getGLTF(), job->getOutput(),
+                      job->getTime(), 512, false);
 
-    // Generates name for s3 upload: {output}_{frame_index}. Keyed by frame
-    // index (not the float time) so uploads are deterministic and sort in
-    // frame order.
-    std::string job_name = job->getOutput() + "_" + std::to_string(job->getFrameIndex());
-    std::cout << job_name << "\n";
+        // Generates name for s3 upload: {output}_{frame_index}. Keyed by frame
+        // index (not the float time) so uploads are deterministic and sort in
+        // frame order.
+        std::string job_name = job->getOutput() + "_" + std::to_string(job->getFrameIndex());
+        std::cout << job_name << "\n";
 
-    // Adds render to s3 bucket and removes render from
-    // filesystem that host render worker. IF SAME NAME
-    // IS IN BUCKET IT WILL OVERWRITE IT. Refer to
-    // s3_manager.cpp
-    this->manager.putObject(job->getOutput(), job_name, true);
-    if (std::filesystem::remove(job->getOutput())) {
-        std::cout << "Removed: " << job->getOutput() << " locally." << "\n";
-    } else {
-        std::cout << "Could not find render to delete" << "\n";
+        // Adds render to s3 bucket and removes render from
+        // filesystem that host render worker. IF SAME NAME
+        // IS IN BUCKET IT WILL OVERWRITE IT. Refer to
+        // s3_manager.cpp
+        this->manager.putObject(job->getOutput(), job_name, true);
+        if (std::filesystem::remove(job->getOutput())) {
+            std::cout << "Removed: " << job->getOutput() << " locally." << "\n";
+        } else {
+            std::cout << "Could not find render to delete" << "\n";
+        }
+
+        // Updates internal RenderJobs instance to note that the job
+        // has been completed successfully
+        this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
+        this->client.JobCompleted(job_id);
+
+        return Status::OK;
+
+    } catch (const std::exception &e) {
+        std::cerr << "RenderJob failed: " << e.what() << "\n";
+
+        // Peter's error handling requirements:
+        // 1. Update status to ERROR instead of COMPLETED
+        this->jobs.UpdateJobStatus(job_id, render_server::Status::ERROR);
+
+        // 2. Call JobCompleted so the scheduler frees up this worker
+        this->client.JobCompleted(job_id);
+
+        // 3. Return a specific gRPC error status (INTERNAL) rather than OK
+        return Status(grpc::StatusCode::INTERNAL, e.what());
     }
-
-    // Updates internal RenderJobs instance to note that the job
-    // has been completed and alerts scheduler that job has been completed
-    this->jobs.UpdateJobStatus(job_id, render_server::Status::COMPLETED);
-    this->client.JobCompleted(job_id);
-    return Status::OK;
 }
 
 // Returns status of specific job to a scheduler
