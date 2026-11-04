@@ -32,8 +32,8 @@ void generateScene(uint32_t width, uint32_t height, uint32_t samples, const std:
         std::cout << "\n";
 
         S3Config config{
-            .bucketName = envOr("S3_bucket", "pathological-capstone-s3-bucket"),
-            .region = envOr("S3_region", "us-east-2"),
+            .bucketName = envOr("S3_BUCKET", "pathological-capstone-s3-bucket"),
+            .region = envOr("S3_REGION", "us-east-2"),
             .profileName = envOr("AWS_PROFILE", "default"),
             .endpointOverride = envOr("S3_ENDPOINT", ""),
             .usePathStyle = std::getenv("S3_ENDPOINT") != nullptr,
