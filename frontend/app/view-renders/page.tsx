@@ -44,7 +44,8 @@ export default function ViewRendersPage() {
   // Which job's output is open, and which frame is showing
   const [outputJobId, setOutputJobId] = useState<string | number | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [failedFrames, setFailedFrames] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +98,8 @@ export default function ViewRendersPage() {
     }
     setOutputJobId(job.id);
     setFrameIndex(0);
-    setPlaying(true);
+    setPlaying(false);
+    setFailedFrames(new Set());
   }
 
   function stepFrame(amount: number) {
@@ -184,12 +186,35 @@ export default function ViewRendersPage() {
               {/* Frame viewer */}
               {showOutput && (
                 <div className="mt-2 rounded border border-red-900/50 bg-black p-6">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/api/render-image?image=${encodeURIComponent(currentFrame)}`}
-                    alt={`${job.output_filename} frame ${frameIndex + 1}`}
-                    className="mb-4 max-w-full rounded border border-red-900/50"
-                  />
+                  {/* One image per frame, each loaded once; only the current one is shown */}
+                  <div className="mb-4 w-full max-w-3xl">
+                  {outputFrames.map((name, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={name}
+                      src={`/api/render-image?image=${encodeURIComponent(name)}`}
+                      alt={`${job.output_filename} frame ${i + 1}`}
+                      onError={() => setFailedFrames((prev) => new Set(prev).add(name))}
+                      className={`w-full rounded border border-red-900/50 [image-rendering:pixelated] ${
+                        i === frameIndex && !failedFrames.has(name) ? 'block' : 'hidden'
+                      }`}
+                    />
+                  ))}
+                  {failedFrames.has(currentFrame) && (
+                    <div
+                      className="flex w-full items-center justify-center rounded border border-red-900/50 text-red-400"
+                      style={{ aspectRatio: `${job.width} / ${job.height}` }}
+                    >
+                      Frame {frameIndex + 1} could not be loaded
+                    </div>
+                  )}
+                </div>
+                  {failedFrames.size > 0 && (
+                    <p className="mb-4 text-red-400">
+                      {failedFrames.size} of {outputFrames.length} frames could not be loaded. The
+                      render may have failed or the files are missing.
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-4 text-sm">
                     <button
                       onClick={() => stepFrame(-1)}
