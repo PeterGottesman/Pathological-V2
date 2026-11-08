@@ -47,11 +47,14 @@ export default function UploadScene() {
       })
 
       if (!uploadRes.ok) {
+        const errorData = await uploadRes.json()
+        setMessage(`Upload failure: ${errorData['error']}`)
         throw new Error(`Upload failed with status ${uploadRes.status}`)
+      } else {
+        setMessage(`Success: ${file.name} uploaded!`)
       }
-      setMessage(`Success: ${file.name} uploaded!`)
+      
     } catch (error) {
-      setMessage(`Failure: ${file.name} not uploaded`)
       console.error(error)
     } finally {
       setUploading(false)
