@@ -5,7 +5,8 @@ import Image from 'next/image'
 import type { SubmitRenderPayload, RenderJob, SceneListResponse } from '@/types/scheduler'
 import Dropdown, { Option } from './components/Dropdown'
 // Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
-type FormState = SubmitRenderPayload
+type NumberField = 'width' | 'height' | 'frames_per_second' | 'animation_runtime' | 'samples_per_pixel'
+type FormState = Omit<SubmitRenderPayload, NumberField> & Record<NumberField, string>
 type JobView = RenderJob & { imageUrl: string | null }
 type SelectedImage = {
   src: string
@@ -106,11 +107,11 @@ export default function Home() {
     //State for managing form inputs
   const [forms, setForms] = useState<FormState[]>([
     {
-      width: 1920,
-      height: 1080,
-      frames_per_second: DEFAULT_FPS,
-      animation_runtime: DEFAULT_RUNTIME,
-      samples_per_pixel: 16,
+      width: '1920',
+      height: '1080',
+      frames_per_second: String(DEFAULT_FPS),
+      animation_runtime: String(DEFAULT_RUNTIME),
+      samples_per_pixel: '16',
       scene_file_url: '/home/dtre/Pathological-V2/render_worker/test_scenes/cornell_box.gltf',
       output_filename: 'cornell_box.png',
     },
@@ -128,7 +129,20 @@ export default function Home() {
   }, [jobs])
 
   function canSubmit() {
-    return submitting || selected.includes(null)
+    return submitting || selected.includes(null) || forms.some((form) =>
+    [
+      form.width,
+      form.height,
+      form.samples_per_pixel,
+      form.animation_runtime,
+      form.frames_per_second
+    ].some(
+      (value) =>
+        !/^\d+$/.test(value) ||
+      !Number.isSafeInteger(Number(value)) ||
+      Number(value) < 1
+      )
+    )
   }
 
   function handleSelectedChange(index: number, option: Option) {
@@ -160,10 +174,10 @@ export default function Home() {
     })
   }
 
-  function onNumberChange(index: number, key: keyof FormState, value: string) {
+  function onNumberChange(index: number, key: NumberField, value: string) {
     setForms((prev) => {
       const next = [...prev]
-      next[index] = { ...next[index], [key]: Number(value) as never }
+      next[index] = { ...next[index], [key]: value }
       return next
     })
   }
@@ -175,11 +189,11 @@ export default function Home() {
     setForms((prev) => [
       ...prev,
       {
-        width: 1920,
-        height: 1080,
-        frames_per_second: DEFAULT_FPS,
-        animation_runtime: DEFAULT_RUNTIME,
-        samples_per_pixel: 16,
+        width: '1920',
+        height: '1080',
+        frames_per_second: String(DEFAULT_FPS),
+        animation_runtime: String(DEFAULT_RUNTIME),
+        samples_per_pixel: '16',
         scene_file_url: '',
         output_filename: '',
       },
@@ -226,8 +240,11 @@ export default function Home() {
         forms.map(async (form) => {
           const payload: SubmitRenderPayload = {
             ...form,
-            frames_per_second: DEFAULT_FPS,
-            animation_runtime: DEFAULT_RUNTIME,
+            width: Number(form.width),
+            height: Number(form.height),
+            samples_per_pixel: Number(form.samples_per_pixel),
+            animation_runtime: Number(form.animation_runtime),
+            frames_per_second: Number(form.frames_per_second),
           }
 
           const res = await fetch('/api/renders', {
@@ -258,7 +275,6 @@ export default function Home() {
       setSubmitting(false)
     }
   }
-
 
 //useEffect hook to implement polling for job status updates and image URL resolution, with a countdown timer for the next poll
   useEffect(() => {
@@ -356,7 +372,6 @@ export default function Home() {
     if (job.status === 'Completed' && job.imageUrl !== null) return false
     return true
   }).length
-
   
 //UI rendering logic
   return (
@@ -430,6 +445,30 @@ export default function Home() {
                         min={1}
                         value={form.height}
                         onChange={(e) => onNumberChange(i, 'height', e.target.value)}
+                        className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-red-300">Animation Runtime (Frames)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={form.animation_runtime}
+                        onChange={(e) => onNumberChange(i, 'animation_runtime', e.target.value)}
+                        className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-red-300">Frames Per Second</label>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={form.frames_per_second}
+                        onChange={(e) => onNumberChange(i, 'frames_per_second', e.target.value)}
                         className="w-full rounded-lg border border-red-800 bg-black px-3 py-2 text-red-200 placeholder:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-700"
                       />
                     </div>
