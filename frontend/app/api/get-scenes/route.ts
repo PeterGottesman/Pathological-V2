@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import type { SceneListResponse } from '@/types/scheduler'
 //Scheduler URL, overridable for containerized/Kubernetes deployments
 const SCHEDULER_URL = process.env.SCHEDULER_URL || 'http://localhost:8080'
