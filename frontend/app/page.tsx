@@ -1,77 +1,18 @@
 'use client'
-//Main and only page for the frontend, contains the form to submit render jobs to the scheduler and a section to display rendered images with options to download or delete them. It also implements polling to update the status of submitted jobs and their rendered images.
-import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
-import type { SubmitRenderPayload, RenderJob, SceneListResponse } from '@/types/scheduler'
+//Submit page for the frontend, contains the form to submit render jobs from the list of currently uploaded scenes
+import { useEffect, useState } from 'react'
+import type { SubmitRenderPayload, SceneListResponse } from '@/types/scheduler'
 import Dropdown, { Option } from './components/Dropdown'
-// Creates type for form state based on the SubmitRenderRequest type, and a JobView type that extends RenderJob with additional fields for the requested file name and the local image URL. Also defines a SelectedImage type for managing the currently selected image in the UI.
+// Creates type for form state based on the SubmitRenderRequest type
 type NumberField = 'width' | 'height' | 'frames_per_second' | 'animation_runtime' | 'samples_per_pixel'
 type FormState = Omit<SubmitRenderPayload, NumberField> & Record<NumberField, string>
-type JobView = RenderJob & { imageUrl: string | null }
-type SelectedImage = {
-  src: string
-  name: string
-}
-//Constants for polling interval
-const POLL_INTERVAL_SECONDS = 10
-const POLL_INTERVAL_MS = POLL_INTERVAL_SECONDS * 1000
+
+//Constants for animation FPS and runtime
 const DEFAULT_FPS = 30
-const DEFAULT_RUNTIME = 10
-// Helper function to build an API image URL from an object key.
-function buildImageApiUrl(outputFilename: string) {
-  return `/api/render-image?image=${encodeURIComponent(outputFilename)}&ts=${Date.now()}`
-}
-//Helper function to resolve an image URL by checking object-key candidates through the /api/render-image endpoint.
-function resolveApiImageUrl(
-  outputFilename: string,
-  downloadLink: string | null,
-  animationRuntime: number
-) {
-  if (downloadLink) {
-    const key = normalizeDownloadKey(downloadLink)
-    if (key) return key
-  }
+const DEFAULT_RUNTIME = 5
 
-  const base = toFileName(outputFilename).trim()
-  if (!base) return null
-  return `${base}_${Math.trunc(animationRuntime)}`
-}
-//Function to extract the file name from a path, used to help generate output file names and resolve image URLs.
-function toFileName(value: string) {
-  return value.split('/').pop() ?? value
-}
-//Ensure file ends in .png, return a default name if result is empty after trimming
-function ensurePngName(name: string) {
-  const trimmed = toFileName(name).trim()
-  if (!trimmed) return 'render.png'
-  return /\.png$/i.test(trimmed) ? trimmed : `${trimmed}.png`
-}
-//Normarilize download link by handling both s3:// and object key
-function normalizeDownloadKey(downloadLink: string) {
-  const raw = downloadLink.trim()
 
-  if (raw.startsWith('s3://')) {
-    const withoutScheme = raw.slice('s3://'.length)
-    const slashIndex = withoutScheme.indexOf('/')
-    if (slashIndex < 0) return null
-    return withoutScheme.slice(slashIndex + 1)
-  }
 
-  if (raw.startsWith('http://') || raw.startsWith('https://')) {
-    return raw
-  }
-
-  return raw
-}
-//Resolve the image URL for a render job by checking the download link and output filename, returning a local API URL if possible
-function resolveImageUrl(
-  outputFilename: string,
-  downloadLink: string | null,
-  animationRuntime: number
-) {
-  const key = resolveApiImageUrl(outputFilename, downloadLink, animationRuntime)
-  return key ? buildImageApiUrl(key) : null
-}
 // The main React component for the home page, holds most UI state and logic 
 export default function Home() {
   // State for updating dropdown menu
@@ -116,17 +57,9 @@ export default function Home() {
       output_filename: 'cornell_box.png',
     },
   ])
-  //States for managing submission status, list of render jobs, countdown for next poll, and currently selected image for viewing
+  //State for managing submission status
   const [submitting, setSubmitting] = useState(false)
-  const [jobs, setJobs] = useState<JobView[]>([])
-  const [secondsUntilNextPoll, setSecondsUntilNextPoll] = useState(POLL_INTERVAL_SECONDS)
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null)
 
-  const jobsRef = useRef<JobView[]>([])
-
-  useEffect(() => {
-    jobsRef.current = jobs
-  }, [jobs])
 
   function canSubmit() {
     return submitting || selected.includes(null) || forms.some((form) =>
@@ -205,38 +138,13 @@ export default function Home() {
     setForms((prev) => prev.filter((_, i) => i !== index))
   }
 
-  async function onDownload(job: JobView) {
-    const key = resolveApiImageUrl(job.output_filename, job.download_link, job.animation_runtime)
-    if (!key) return
 
-    const downloadName = ensurePngName(job.output_filename)
-
-    const localDownloadUrl = `/api/render-image?image=${encodeURIComponent(key)}&download=${encodeURIComponent(downloadName)}`
-    const anchor = document.createElement('a')
-    anchor.href = localDownloadUrl
-    anchor.download = downloadName
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-  }
-//Handler for when a user clicks on a rendered image to view it, sets the selected image state to open the image viewer modal
-  async function onOpenImage(job: JobView) {
-    const src = resolveImageUrl(job.output_filename, job.download_link, job.animation_runtime)
-
-    if (!src) return
-    setSelectedImage({ src, name: job.output_filename })
-  }
-
-  function onDelete(index: number, outputFilename: string) {
-    setJobs((prev) => prev.filter((_, i) => i !== index))
-    setSelectedImage((prev) => (prev?.name === outputFilename ? null : prev))
-  }
-//Handler for submitting the render job form; sends a POST request to the /api/renders endpoint for each form, then updates the jobs state with the responses and starts the polling countdown
+//Handler for submitting the render job form; sends a POST request to the /api/renders endpoint for each form
   async function onSubmit() {
     try {
       setSubmitting(true)
 
-      const results = await Promise.all(
+      await Promise.all(
         forms.map(async (form) => {
           const payload: SubmitRenderPayload = {
             ...form,
@@ -256,19 +164,8 @@ export default function Home() {
           if (!res.ok) {
             throw new Error(`Submit failed with status ${res.status}`)
           }
-
-          const data = (await res.json()) as RenderJob
-          const imageUrl = resolveImageUrl(data.output_filename, data.download_link, data.animation_runtime)
-
-          return {
-            ...data,
-            imageUrl,
-          } as JobView
         })
       )
-
-      setJobs(results)
-      setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
     } catch (error) {
       console.error(error)
     } finally {
@@ -276,102 +173,6 @@ export default function Home() {
     }
   }
 
-//useEffect hook to implement polling for job status updates and image URL resolution, with a countdown timer for the next poll
-  useEffect(() => {
-    if (jobs.length === 0) {
-      setSecondsUntilNextPoll(POLL_INTERVAL_SECONDS)
-      return
-    }
-
-    let isCancelled = false
-    let remaining = POLL_INTERVAL_SECONDS
-
-    setSecondsUntilNextPoll(remaining)
-
-    const countdownInterval = setInterval(() => {
-      remaining = remaining > 1 ? remaining - 1 : POLL_INTERVAL_SECONDS
-      if (!isCancelled) {
-        setSecondsUntilNextPoll(remaining)
-      }
-    }, 1000)
-
-    const pollInterval = setInterval(async () => {
-      try {
-        const currentJobs = jobsRef.current
-        const hasPollableJobs = currentJobs.some((job) => {
-          const id = String(job.id ?? '').trim()
-          const shouldRefreshStatus = job.status !== 'Completed' && job.status !== 'Error'
-          const shouldResolveImage = job.status !== 'Error' && job.imageUrl === null
-          return id !== '' && (shouldRefreshStatus || shouldResolveImage)
-        })
-
-        if (!hasPollableJobs) return
-
-        const updated = await Promise.all(
-          currentJobs.map(async (job) => {
-            if (job.status === 'Error') return job
-
-            const id = String(job.id ?? '').trim()
-            if (!id) return job
-
-            const currentImageUrl = resolveImageUrl(job.output_filename, job.download_link, job.animation_runtime)
-
-            if (job.status === 'Completed') {
-              return {
-                ...job,
-                imageUrl: currentImageUrl,
-              } as JobView
-            }
-
-            try {
-              const res = await fetch(`/api/renders/${encodeURIComponent(String(job.id))}`, {
-                method: 'GET',
-                cache: 'no-store',
-              })
-
-              if (!res.ok) {
-                return {
-                  ...job,
-                  imageUrl: currentImageUrl,
-                } as JobView
-              }
-
-              const data = (await res.json()) as RenderJob
-              const imageUrl = resolveImageUrl(data.output_filename, data.download_link, data.animation_runtime)
-
-              return {
-                ...data,
-                imageUrl,
-              } as JobView
-            } catch {
-              return {
-                ...job,
-                imageUrl: currentImageUrl,
-              } as JobView
-            }
-          })
-        )
-
-        if (!isCancelled) {
-          setJobs(updated)
-        }
-      } catch (error) {
-        console.error(error)
-      }
-    }, POLL_INTERVAL_MS)
-
-    return () => {
-      isCancelled = true
-      clearInterval(countdownInterval)
-      clearInterval(pollInterval)
-    }
-  }, [jobs.length])
-
-  const activeJobCount = jobs.filter((job) => {
-    if (job.status === 'Error') return false
-    if (job.status === 'Completed' && job.imageUrl !== null) return false
-    return true
-  }).length
   
 //UI rendering logic
   return (
