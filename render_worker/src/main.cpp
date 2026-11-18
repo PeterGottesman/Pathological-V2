@@ -2,6 +2,7 @@
 #include <condition_variable>
 #include <csignal>
 #include <cstdint>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -45,6 +46,12 @@ void shutdownServer() {
 }
 
 int main(int argc, char** argv) {
+    // Line-buffer stdout/stderr. When stdout is a pipe (containers), stdio is
+    // fully buffered by default, so logs show up minutes late or only at exit,
+    // which makes `kubectl logs` misleading while debugging.
+    std::setvbuf(stdout, nullptr, _IOLBF, 0);
+    std::setvbuf(stderr, nullptr, _IOLBF, 0);
+
     CLI::App app{"Pathological - Vulkan Path Tracer"};
 
     std::string schedulerAddress;
@@ -64,9 +71,17 @@ int main(int argc, char** argv) {
     client.SetMembers(grpc::CreateChannel(schedulerAddress, grpc::InsecureChannelCredentials()), worker_id,
                       renderServerAddress, renderServerPort);
 
+    // Start listening *before* registering with the scheduler. On registration
+    // (or re-registration after a restart) the scheduler marks this worker idle
+    // and may dispatch a queued frame immediately; if our gRPC server isn't up
+    // yet that dispatch fails, and the scheduler then marks the worker offline
+    // for good -- leaving the job stuck with a healthy but unused worker.
+    server = BuildServer(renderServerPort, client, worker_id, random_gen);
+
     // If cannot establish connection with scheduler exit
     if (client.EstablishConnection() == 1) {
         std::cerr << "Could not establish connection with scheduler. Now exiting." << "\n";
+        server->Shutdown();
         return 1;
     }
 
@@ -76,7 +91,6 @@ int main(int argc, char** argv) {
     signal(SIGHUP, signalHandler);  // Probably should change this to just pause process
                                     // but exits for now
 
-    server = BuildServer(renderServerPort, client, worker_id, random_gen);
     std::thread shutdown_thread(shutdownServer);
     server->Wait();
     shutdown_thread.join();

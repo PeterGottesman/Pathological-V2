@@ -1,6 +1,7 @@
 #include <drogon/drogon.h>
 
 #include <CLI/CLI.hpp>
+#include <cstdio>
 #include <iostream>
 #include <thread>
 
@@ -9,6 +10,12 @@
 #include "scheduler_server.hpp"
 
 int main(int argc, char **argv) {
+    // Line-buffer stdout/stderr. When stdout is a pipe (containers), stdio is
+    // fully buffered by default, so logs arrive in delayed bursts and
+    // `kubectl logs` can look frozen when the scheduler is actually working.
+    std::setvbuf(stdout, nullptr, _IOLBF, 0);
+    std::setvbuf(stderr, nullptr, _IOLBF, 0);
+
     CLI::App app{"Pathological Scheduler"};
 
     uint16_t grpc_port = 50052;
