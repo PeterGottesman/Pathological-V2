@@ -66,9 +66,13 @@ FROM ubuntu:24.04 AS runtime
 
 # libvulkan1 is the loader; mesa-vulkan-drivers provides the lavapipe (lvp)
 # software ICD used for local testing. ca-certificates is for the AWS SDK's
-# HTTPS calls (S3).
+# HTTPS calls (S3). libgl1/libegl1/libglx0/libxext6 are not needed by lavapipe
+# but the NVIDIA Vulkan driver the container toolkit injects on GPU nodes
+# (libGLX_nvidia) needs them at init; without them vkCreateInstance fails with
+# ERROR_INCOMPATIBLE_DRIVER.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libvulkan1 mesa-vulkan-drivers ca-certificates \
+        libgl1 libegl1 libglx0 libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
