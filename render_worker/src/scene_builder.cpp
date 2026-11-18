@@ -154,6 +154,28 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode, std::optional<No
     glm::mat4 transform = getGltfNodeTransform(gltfNode);
     setLocalTransform(nodeId, transform);
 
+    // Keep the TRS components on the node so animation channels that only drive
+    // some of them (e.g. rotation on a node with a static translation) don't
+    // reset the others to identity when the local transform is recomposed.
+    // glTF forbids animating nodes that use a matrix, so skip those.
+    if (gltfNode.matrix.size() != 16) {
+        Node& n = m_nodes[nodeId];
+        if (gltfNode.translation.size() == 3) {
+            n.translation = glm::vec3(static_cast<float>(gltfNode.translation[0]),
+                                      static_cast<float>(gltfNode.translation[1]),
+                                      static_cast<float>(gltfNode.translation[2]));
+        }
+        if (gltfNode.rotation.size() == 4) {
+            // glTF uses [x, y, z, w], glm uses [w, x, y, z]
+            n.rotation = glm::quat(static_cast<float>(gltfNode.rotation[3]), static_cast<float>(gltfNode.rotation[0]),
+                                   static_cast<float>(gltfNode.rotation[1]), static_cast<float>(gltfNode.rotation[2]));
+        }
+        if (gltfNode.scale.size() == 3) {
+            n.scale = glm::vec3(static_cast<float>(gltfNode.scale[0]), static_cast<float>(gltfNode.scale[1]),
+                                static_cast<float>(gltfNode.scale[2]));
+        }
+    }
+
     // Set parent relationship
     if (parent.has_value()) {
         setParent(nodeId, parent.value());
