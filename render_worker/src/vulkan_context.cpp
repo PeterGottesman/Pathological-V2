@@ -20,6 +20,31 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
     return VK_FALSE;
 }
 
+// Holds one VkInstance (and the loader behind it) for the life of the process.
+//
+// Every render builds a fresh VulkanContext, and destroying the last live
+// VkInstance makes the Vulkan loader unload the driver's ICD library. NVIDIA's
+// userspace driver (libGLX_nvidia) can't be loaded/unloaded repeatedly in one
+// process: after ~27 cycles vkCreateInstance fails with
+// VK_ERROR_INCOMPATIBLE_DRIVER for the rest of the process's life, and a
+// worker that was healthy suddenly fails every frame. Keeping an instance
+// alive means the ICD is loaded once and never unloaded. (Mesa/lavapipe
+// doesn't have this problem, which is why it only shows up on real GPUs.)
+struct DriverPin {
+    vk::raii::Context context;
+    vk::raii::Instance instance;
+    explicit DriverPin(const vk::InstanceCreateInfo& createInfo) : context(), instance(context, createInfo) {}
+};
+
+void pinDriver(const vk::InstanceCreateInfo& createInfo) {
+    // Intentionally leaked: it must outlive every VulkanContext and we don't
+    // want static-destruction-order issues at process exit. A function-local
+    // static is initialised exactly once, thread-safely, and retried if the
+    // first attempt throws.
+    static DriverPin* const pin = new DriverPin(createInfo);
+    (void)pin;
+}
+
 }  // namespace
 
 VulkanContext::VulkanContext() {
@@ -59,6 +84,8 @@ void VulkanContext::createInstance() {
 #endif
 
     vk::InstanceCreateInfo createInfo{{}, &appInfo, layers, extensions};
+
+    pinDriver(createInfo);
 
     m_instance = vk::raii::Instance(m_context, createInfo);
 }
