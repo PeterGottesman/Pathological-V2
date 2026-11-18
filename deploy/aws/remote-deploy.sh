@@ -16,7 +16,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SSH_OPTS=(-i "$KEY" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30)
 
 do_sync() {
-  rsync -az -e "ssh ${SSH_OPTS[*]}" \
+  # --delete so the instance holds exactly this checkout (no stale files).
+  rsync -az --delete -e "ssh ${SSH_OPTS[*]}" \
     --exclude .git --exclude 'build*' --exclude test_output --exclude uploads --exclude node_modules \
     "$REPO_ROOT/" "$USER_NAME@$HOST:pathological/"
 }
