@@ -161,9 +161,9 @@ void SceneBuilder::loadGltfNode(const tinygltf::Node& gltfNode, std::optional<No
     if (gltfNode.matrix.size() != 16) {
         Node& n = m_nodes[nodeId];
         if (gltfNode.translation.size() == 3) {
-            n.translation = glm::vec3(static_cast<float>(gltfNode.translation[0]),
-                                      static_cast<float>(gltfNode.translation[1]),
-                                      static_cast<float>(gltfNode.translation[2]));
+            n.translation =
+                glm::vec3(static_cast<float>(gltfNode.translation[0]), static_cast<float>(gltfNode.translation[1]),
+                          static_cast<float>(gltfNode.translation[2]));
         }
         if (gltfNode.rotation.size() == 4) {
             // glTF uses [x, y, z, w], glm uses [w, x, y, z]
