@@ -1,0 +1,26 @@
+# Give the render worker the instance's GPU and expose the NVIDIA Vulkan ICD.
+#
+# - nvidia.com/gpu: 1 is advertised by the NVIDIA device plugin
+#   (k8s/addons/nvidia-device-plugin.yaml). One GPU on the instance => one worker.
+# - NVIDIA_DRIVER_CAPABILITIES must include "graphics" or the container
+#   toolkit won't inject the Vulkan ICD / libGLX_nvidia into the container.
+# - render_worker.Dockerfile pins VK_ICD_FILENAMES to lavapipe; override it to
+#   the NVIDIA ICD (the toolkit mounts it at one of these two paths).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: render-worker
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: render-worker
+          env:
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: all
+            - name: VK_ICD_FILENAMES
+              value: /etc/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json
+          resources:
+            limits:
+              nvidia.com/gpu: 1

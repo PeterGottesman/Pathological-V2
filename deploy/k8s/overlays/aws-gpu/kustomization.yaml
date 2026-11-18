@@ -1,0 +1,14 @@
+# Single-node GPU deployment on an EC2 GPU instance (k3s, see
+# deploy/aws-gpu-up.sh). Reuses the local overlay (MinIO standing in for S3,
+# frontend/MinIO NodePorts) and makes the render worker use the host's real
+# NVIDIA Vulkan driver instead of Mesa lavapipe.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pathological
+
+resources:
+  - ../local
+
+patches:
+  - path: render-worker-patch.yaml
