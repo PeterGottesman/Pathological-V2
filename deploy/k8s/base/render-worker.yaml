@@ -12,6 +12,13 @@ metadata:
     app: render-worker
 spec:
   clusterIP: None
+  # Publish each pod's DNS record as soon as it has an IP, not only once it
+  # passes its readiness probe. A restarted worker re-registers with the
+  # scheduler right away, and the scheduler dispatches to its DNS name
+  # immediately; if the name doesn't resolve yet, that dispatch fails and the
+  # scheduler marks the worker offline permanently. Safe because the worker
+  # only registers after its gRPC server is already listening (main.cpp).
+  publishNotReadyAddresses: true
   selector:
     app: render-worker
   ports:
